@@ -1,87 +1,58 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus } from 'lucide-react';
-
-const mockUsers = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john@example.com',
-    role: 'Admin',
-    status: 'Active',
-    lastLogin: '2024-01-15'
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    role: 'Manager',
-    status: 'Active',
-    lastLogin: '2024-01-14'
-  },
-  {
-    id: 3,
-    name: 'Bob Wilson',
-    email: 'bob@example.com',
-    role: 'Cashier',
-    status: 'Inactive',
-    lastLogin: '2024-01-10'
-  }
-];
-
-const roles = [
-  {
-    name: 'Admin',
-    description: 'Full system access',
-    permissions: ['All permissions']
-  },
-  {
-    name: 'Manager',
-    description: 'Manage products, orders, and reports',
-    permissions: ['Products', 'Orders', 'Reports', 'Customers']
-  },
-  {
-    name: 'Cashier',
-    description: 'Process sales and handle customers',
-    permissions: ['Sales', 'Customers (view only)']
-  }
-];
+import { Plus, UserMinus } from 'lucide-react';
 
 export function UserSettings() {
+  const [users] = useState([
+    { id: 1, name: 'John Admin', email: 'admin@bizwiz.com', role: 'admin', status: 'active' },
+    { id: 2, name: 'Jane Manager', email: 'manager@bizwiz.com', role: 'manager', status: 'active' },
+    { id: 3, name: 'Bob Cashier', email: 'cashier@bizwiz.com', role: 'cashier', status: 'inactive' }
+  ]);
+
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    role: 'cashier'
+  });
+
+  const handleAddUser = () => {
+    console.log('Adding user:', newUser);
+    setNewUser({ name: '', email: '', role: 'cashier' });
+  };
+
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>User Management</CardTitle>
-            <CardDescription>Manage users and their access levels</CardDescription>
-          </div>
-          <Button>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Add User
-          </Button>
+        <CardHeader>
+          <CardTitle>User Management</CardTitle>
+          <CardDescription>
+            Manage user accounts and permissions
+          </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="space-y-4">
-            {mockUsers.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-medium">{user.name}</h4>
-                    <Badge variant={user.status === 'Active' ? 'default' : 'secondary'}>
-                      {user.status}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                  <p className="text-xs text-muted-foreground">Last login: {user.lastLogin}</p>
+            {users.map((user) => (
+              <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <div className="font-medium">{user.name}</div>
+                  <div className="text-sm text-muted-foreground">{user.email}</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline">{user.role}</Badge>
-                  <Button variant="outline" size="sm">Edit</Button>
-                  <Button variant="outline" size="sm">Delete</Button>
+                  <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                    {user.role}
+                  </Badge>
+                  <Badge variant={user.status === 'active' ? 'default' : 'outline'}>
+                    {user.status}
+                  </Badge>
+                  <Button variant="outline" size="sm">
+                    <UserMinus className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -91,35 +62,51 @@ export function UserSettings() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Role Management</CardTitle>
-          <CardDescription>Configure roles and permissions</CardDescription>
+          <CardTitle>Add New User</CardTitle>
+          <CardDescription>
+            Invite new team members to your business
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            {roles.map((role) => (
-              <Card key={role.name}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{role.name}</CardTitle>
-                  <CardDescription>{role.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <h5 className="font-medium text-sm">Permissions:</h5>
-                    <div className="space-y-1">
-                      {role.permissions.map((permission) => (
-                        <Badge key={permission} variant="secondary" className="mr-1 mb-1">
-                          {permission}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" className="w-full mt-4">
-                    Edit Role
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="userName">Name</Label>
+              <Input
+                id="userName"
+                value={newUser.name}
+                onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="userEmail">Email</Label>
+              <Input
+                id="userEmail"
+                type="email"
+                value={newUser.email}
+                onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+              />
+            </div>
           </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="userRole">Role</Label>
+            <Select value={newUser.role} onValueChange={(value) => setNewUser({...newUser, role: value})}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">Administrator</SelectItem>
+                <SelectItem value="manager">Manager</SelectItem>
+                <SelectItem value="cashier">Cashier</SelectItem>
+                <SelectItem value="viewer">Viewer</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button onClick={handleAddUser}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add User
+          </Button>
         </CardContent>
       </Card>
     </div>

@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 
@@ -13,128 +14,252 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ onClose }: ProductFormProps) {
-  const [productType, setProductType] = useState('product');
-  const [trackStock, setTrackStock] = useState(true);
+  const [product, setProduct] = useState({
+    name: '',
+    sku: '',
+    category: '',
+    type: 'product',
+    price: '',
+    cost: '',
+    unit: 'piece',
+    description: '',
+    trackStock: true,
+    minStock: '',
+    maxStock: '',
+    hasVariants: false,
+    variants: [''],
+    hasSerialNumbers: false
+  });
+
+  const generateSKU = () => {
+    const prefix = product.type.toUpperCase().substring(0, 3);
+    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+    setProduct({...product, sku: `${prefix}-${random}`});
+  };
+
+  const addVariant = () => {
+    setProduct({...product, variants: [...product.variants, '']});
+  };
+
+  const updateVariant = (index: number, value: string) => {
+    const newVariants = [...product.variants];
+    newVariants[index] = value;
+    setProduct({...product, variants: newVariants});
+  };
+
+  const removeVariant = (index: number) => {
+    const newVariants = product.variants.filter((_, i) => i !== index);
+    setProduct({...product, variants: newVariants});
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Creating product:', product);
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <Card className="w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Add New Product/Service</CardTitle>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
-              <Input id="name" placeholder="Product/Service name" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="sku">SKU</Label>
-              <Input id="sku" placeholder="Unique identifier" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="type">Type</Label>
-              <Select value={productType} onValueChange={setProductType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="product">Product</SelectItem>
-                  <SelectItem value="service">Service</SelectItem>
-                  <SelectItem value="package">Package/Bundle</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Input id="category" placeholder="Product category" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="price">Price *</Label>
-              <Input id="price" type="number" placeholder="0.00" step="0.01" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="unit">Unit</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select unit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="piece">Piece</SelectItem>
-                  <SelectItem value="hour">Hour</SelectItem>
-                  <SelectItem value="kg">Kilogram</SelectItem>
-                  <SelectItem value="liter">Liter</SelectItem>
-                  <SelectItem value="meter">Meter</SelectItem>
-                  <SelectItem value="package">Package</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tax">Tax Rate (%)</Label>
-              <Input id="tax" type="number" placeholder="0" step="0.01" />
-            </div>
-          </div>
-
-          {productType !== 'service' && (
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="track-stock"
-                  checked={trackStock}
-                  onCheckedChange={setTrackStock}
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  value={product.name}
+                  onChange={(e) => setProduct({...product, name: e.target.value})}
+                  required
                 />
-                <Label htmlFor="track-stock">Track Stock</Label>
               </div>
-
-              {trackStock && (
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="stock">Current Stock</Label>
-                    <Input id="stock" type="number" placeholder="0" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="min-stock">Min Stock Level</Label>
-                    <Input id="min-stock" type="number" placeholder="0" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="max-stock">Max Stock Level</Label>
-                    <Input id="max-stock" type="number" placeholder="0" />
-                  </div>
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="type">Type *</Label>
+                <Select value={product.type} onValueChange={(value) => setProduct({...product, type: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="product">Physical Product</SelectItem>
+                    <SelectItem value="service">Service</SelectItem>
+                    <SelectItem value="package">Package/Bundle</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          )}
 
-          <div className="space-y-2">
-            <Label htmlFor="variants">Variants (comma-separated)</Label>
-            <Input id="variants" placeholder="e.g., Red, Blue, Large, Small" />
-          </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="sku">SKU</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="sku"
+                    value={product.sku}
+                    onChange={(e) => setProduct({...product, sku: e.target.value})}
+                  />
+                  <Button type="button" variant="outline" onClick={generateSKU}>
+                    Generate
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select value={product.category} onValueChange={(value) => setProduct({...product, category: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="electronics">Electronics</SelectItem>
+                    <SelectItem value="services">Services</SelectItem>
+                    <SelectItem value="packages">Packages</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="unit">Unit</Label>
+                <Select value={product.unit} onValueChange={(value) => setProduct({...product, unit: value})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="piece">Piece</SelectItem>
+                    <SelectItem value="hour">Hour</SelectItem>
+                    <SelectItem value="package">Package</SelectItem>
+                    <SelectItem value="kg">Kilogram</SelectItem>
+                    <SelectItem value="liter">Liter</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <textarea
-              id="description"
-              className="w-full p-2 border rounded-md"
-              rows={3}
-              placeholder="Product description..."
-            />
-          </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="price">Selling Price *</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  step="0.01"
+                  value={product.price}
+                  onChange={(e) => setProduct({...product, price: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cost">Cost Price</Label>
+                <Input
+                  id="cost"
+                  type="number"
+                  step="0.01"
+                  value={product.cost}
+                  onChange={(e) => setProduct({...product, cost: e.target.value})}
+                />
+              </div>
+            </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button>Save Product</Button>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={product.description}
+                onChange={(e) => setProduct({...product, description: e.target.value})}
+              />
+            </div>
+
+            {product.type === 'product' && (
+              <>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="trackStock"
+                    checked={product.trackStock}
+                    onCheckedChange={(checked) => setProduct({...product, trackStock: checked})}
+                  />
+                  <Label htmlFor="trackStock">Track Stock Levels</Label>
+                </div>
+
+                {product.trackStock && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="minStock">Minimum Stock</Label>
+                      <Input
+                        id="minStock"
+                        type="number"
+                        value={product.minStock}
+                        onChange={(e) => setProduct({...product, minStock: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="maxStock">Maximum Stock</Label>
+                      <Input
+                        id="maxStock"
+                        type="number"
+                        value={product.maxStock}
+                        onChange={(e) => setProduct({...product, maxStock: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="hasSerialNumbers"
+                    checked={product.hasSerialNumbers}
+                    onCheckedChange={(checked) => setProduct({...product, hasSerialNumbers: checked})}
+                  />
+                  <Label htmlFor="hasSerialNumbers">Has Serial Numbers (Auto-generated)</Label>
+                </div>
+              </>
+            )}
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="hasVariants"
+                checked={product.hasVariants}
+                onCheckedChange={(checked) => setProduct({...product, hasVariants: checked})}
+              />
+              <Label htmlFor="hasVariants">Has Variants</Label>
+            </div>
+
+            {product.hasVariants && (
+              <div className="space-y-2">
+                <Label>Product Variants</Label>
+                {product.variants.map((variant, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input
+                      value={variant}
+                      onChange={(e) => updateVariant(index, e.target.value)}
+                      placeholder="Variant name"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removeVariant(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" onClick={addVariant}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Variant
+                </Button>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit">Create Product</Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
     </div>
