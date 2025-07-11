@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -17,14 +17,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const isSupabaseConfigured = supabase !== null;
+  const isSupabaseConfigured = true; // Always true with integrated client
 
   useEffect(() => {
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
-
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -43,9 +38,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    if (!supabase) {
-      throw new Error('Supabase is not configured');
-    }
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -54,20 +46,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
-    if (!supabase) {
-      throw new Error('Supabase is not configured');
-    }
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`
+      }
     });
     if (error) throw error;
   };
 
   const signOut = async () => {
-    if (!supabase) {
-      throw new Error('Supabase is not configured');
-    }
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };

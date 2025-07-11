@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from './AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 
@@ -13,17 +12,17 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const { signIn, signUp, isSupabaseConfigured } = useAuth();
+  const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isSupabaseConfigured) {
+    if (!email || !password) {
       toast({
         variant: "destructive",
-        title: "Configuration Error",
-        description: "Supabase is not configured. Please check your environment variables.",
+        title: "Validation Error",
+        description: "Please enter both email and password.",
       });
       return;
     }
@@ -48,7 +47,7 @@ export function LoginForm() {
       toast({
         variant: "destructive",
         title: "Authentication Error",
-        description: error.message,
+        description: error.message || "An error occurred during authentication.",
       });
     } finally {
       setIsLoading(false);
@@ -68,14 +67,6 @@ export function LoginForm() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {!isSupabaseConfigured && (
-            <Alert className="mb-4">
-              <AlertDescription>
-                Supabase is not configured. Please set up your Supabase environment variables to enable authentication.
-              </AlertDescription>
-            </Alert>
-          )}
-          
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -85,7 +76,7 @@ export function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={!isSupabaseConfigured}
+                placeholder="Enter your email"
               />
             </div>
             <div className="space-y-2">
@@ -96,32 +87,31 @@ export function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                disabled={!isSupabaseConfigured}
+                placeholder="Enter your password"
+                minLength={6}
               />
             </div>
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading || !isSupabaseConfigured}
+              disabled={isLoading}
             >
               {isLoading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
             </Button>
           </form>
           
-          {isSupabaseConfigured && (
-            <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="text-sm text-primary hover:underline"
-              >
-                {isSignUp 
-                  ? 'Already have an account? Sign in'
-                  : "Don't have an account? Sign up"
-                }
-              </button>
-            </div>
-          )}
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-sm text-primary hover:underline"
+            >
+              {isSignUp 
+                ? 'Already have an account? Sign in'
+                : "Don't have an account? Sign up"
+              }
+            </button>
+          </div>
         </CardContent>
       </Card>
     </div>

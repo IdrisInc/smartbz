@@ -1,118 +1,220 @@
 
 import React, { useState } from 'react';
-import { X, Calculator, Receipt } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Search, ShoppingCart, CreditCard, Banknote } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface POSInterfaceProps {
   onClose: () => void;
 }
 
-export function POSInterface({ onClose }: POSInterfaceProps) {
-  const [cart, setCart] = useState<any[]>([]);
-  const [serialInput, setSerialInput] = useState('');
+const mockProducts = [
+  { id: 1, name: 'iPhone 15', price: 999.99, category: 'Electronics' },
+  { id: 2, name: 'Coffee Mug', price: 12.99, category: 'Accessories' },
+  { id: 3, name: 'Notebook', price: 5.99, category: 'Stationery' },
+  { id: 4, name: 'Wireless Headphones', price: 199.99, category: 'Electronics' },
+];
 
-  const handleSerialScan = (serial: string) => {
-    // This would lookup product by serial number
-    console.log('Looking up product with serial:', serial);
-    // Add product to cart based on serial
+interface CartItem {
+  id: number;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+export function POSInterface({ onClose }: POSInterfaceProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { toast } = useToast();
+
+  const filteredProducts = mockProducts.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const addToCart = (product: typeof mockProducts[0]) => {
+    const existingItem = cart.find(item => item.id === product.id);
+    if (existingItem) {
+      setCart(cart.map(item =>
+        item.id === product.id
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      ));
+    } else {
+      setCart([...cart, { ...product, quantity: 1 }]);
+    }
+  };
+
+  const updateQuantity = (id: number, quantity: number) => {
+    if (quantity <= 0) {
+      setCart(cart.filter(item => item.id !== id));
+    } else {
+      setCart(cart.map(item =>
+        item.id === id ? { ...item, quantity } : item
+      ));
+    }
+  };
+
+  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const tax = subtotal * 0.1; // 10% tax
+  const total = subtotal + tax;
+
+  const processPayment = async (method: string) => {
+    if (cart.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Empty Cart",
+        description: "Please add items to the cart before processing payment.",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      toast({
+        title: "Payment Successful",
+        description: `Payment of $${total.toFixed(2)} processed via ${method}.`,
+      });
+      
+      setCart([]);
+      onClose();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Payment Failed",
+        description: "There was an error processing the payment.",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="w-full max-w-6xl h-[90vh] bg-background rounded-lg overflow-hidden">
-        <div className="flex h-full">
-          {/* Product Grid */}
-          <div className="flex-1 p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Products</h3>
-              <Button variant="ghost" size="icon" onClick={onClose}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <div className="mb-4">
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[1200px] h-[80vh]">
+        <DialogHeader>
+          <DialogTitle>Point of Sale System</DialogTitle>
+        </DialogHeader>
+
+        <div className="grid grid-cols-3 gap-6 h-full">
+          {/* Product Selection */}
+          <div className="col-span-2 space-y-4">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Scan or enter serial number..."
-                value={serialInput}
-                onChange={(e) => setSerialInput(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSerialScan(serialInput);
-                    setSerialInput('');
-                  }
-                }}
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
               />
             </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              {/* Product buttons would go here */}
-              <Button variant="outline" className="h-24 flex flex-col">
-                <div className="font-medium">iPhone 15 Pro</div>
-                <div className="text-sm text-muted-foreground">$999.99</div>
-              </Button>
-              <Button variant="outline" className="h-24 flex flex-col">
-                <div className="font-medium">Consultation</div>
-                <div className="text-sm text-muted-foreground">$150.00</div>
-              </Button>
+            
+            <div className="grid grid-cols-3 gap-3 max-h-96 overflow-y-auto">
+              {filteredProducts.map((product) => (
+                <Card key={product.id} className="cursor-pointer hover:bg-gray-50" onClick={() => addToCart(product)}>
+                  <CardContent className="p-4">
+                    <div className="text-sm font-medium">{product.name}</div>
+                    <div className="text-xs text-muted-foreground">{product.category}</div>
+                    <div className="text-lg font-bold mt-2">${product.price}</div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
 
-          {/* Cart */}
-          <div className="w-80 border-l bg-muted/20 p-4">
-            <h3 className="text-lg font-semibold mb-4">Current Sale</h3>
-            
-            <div className="space-y-2 mb-4">
-              {cart.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  Cart is empty
-                </p>
-              ) : (
-                cart.map((item, index) => (
-                  <div key={index} className="flex justify-between p-2 bg-background rounded">
-                    <div>
-                      <div className="font-medium">{item.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Qty: {item.quantity}
-                      </div>
+          {/* Cart and Checkout */}
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Cart ({cart.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 max-h-64 overflow-y-auto">
+                {cart.map((item) => (
+                  <div key={item.id} className="flex justify-between items-center">
+                    <div className="flex-1">
+                      <div className="text-sm font-medium">{item.name}</div>
+                      <div className="text-xs text-muted-foreground">${item.price} each</div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-medium">${item.total}</div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      >
+                        -
+                      </Button>
+                      <span className="w-8 text-center">{item.quantity}</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      >
+                        +
+                      </Button>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+                {cart.length === 0 && (
+                  <div className="text-center text-muted-foreground py-8">
+                    Cart is empty
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            <div className="border-t pt-4 space-y-2">
-              <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span>$0.00</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Tax:</span>
-                <span>$0.00</span>
-              </div>
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total:</span>
-                <span>$0.00</span>
-              </div>
-            </div>
+            {/* Totals */}
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span>${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Tax (10%):</span>
+                  <span>${tax.toFixed(2)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-bold text-lg">
+                  <span>Total:</span>
+                  <span>${total.toFixed(2)}</span>
+                </div>
+              </CardContent>
+            </Card>
 
-            <div className="mt-4 space-y-2">
-              <Button className="w-full">
-                <Receipt className="mr-2 h-4 w-4" />
-                Complete Sale
+            {/* Payment Buttons */}
+            <div className="space-y-2">
+              <Button 
+                className="w-full" 
+                onClick={() => processPayment('Cash')}
+                disabled={isProcessing}
+              >
+                <Banknote className="h-4 w-4 mr-2" />
+                {isProcessing ? 'Processing...' : 'Pay with Cash'}
               </Button>
-              <Button variant="outline" className="w-full">
-                <Calculator className="mr-2 h-4 w-4" />
-                Calculator
+              <Button 
+                className="w-full" 
+                variant="outline" 
+                onClick={() => processPayment('Card')}
+                disabled={isProcessing}
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                {isProcessing ? 'Processing...' : 'Pay with Card'}
               </Button>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
