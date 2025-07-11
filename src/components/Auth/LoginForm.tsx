@@ -1,47 +1,60 @@
 
 import React, { useState } from 'react';
-import { useAuth } from './AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from './AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setIsLoading(true);
 
-    const { error } = await signIn(email, password);
-
-    if (error) {
+    try {
+      if (isSignUp) {
+        await signUp(email, password);
+        toast({
+          title: "Account created",
+          description: "Please check your email to verify your account.",
+        });
+      } else {
+        await signIn(email, password);
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully signed in.",
+        });
+      }
+    } catch (error: any) {
       toast({
-        title: 'Error',
+        variant: "destructive",
+        title: "Authentication Error",
         description: error.message,
-        variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'Success',
-        description: 'Logged in successfully',
-      });
+    } finally {
+      setIsLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Sign In</CardTitle>
-          <CardDescription>Enter your credentials to access your account</CardDescription>
+          <CardTitle>{isSignUp ? 'Create Account' : 'Sign In'}</CardTitle>
+          <CardDescription>
+            {isSignUp 
+              ? 'Enter your details to create a new account'
+              : 'Enter your credentials to access your account'
+            }
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -65,10 +78,22 @@ export function LoginForm() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing In...' : 'Sign In'}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
             </Button>
           </form>
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-sm text-primary hover:underline"
+            >
+              {isSignUp 
+                ? 'Already have an account? Sign in'
+                : "Don't have an account? Sign up"
+              }
+            </button>
+          </div>
         </CardContent>
       </Card>
     </div>
