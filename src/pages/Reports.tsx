@@ -97,8 +97,11 @@ export default function Reports() {
                 <CardDescription>Revenue trends over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  Sales performance chart would be rendered here
+                <div className="h-64 flex items-center justify-center text-muted-foreground border-2 border-dashed border-gray-300 rounded-lg">
+                  <div className="text-center">
+                    <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p>Sales performance chart will be implemented</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -135,8 +138,11 @@ export default function Reports() {
                 <CardDescription>Current inventory status</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  Inventory levels chart would be rendered here
+                <div className="h-64 flex items-center justify-center text-muted-foreground border-2 border-dashed border-gray-300 rounded-lg">
+                  <div className="text-center">
+                    <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p>Inventory levels chart will be implemented</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -193,8 +199,11 @@ export default function Reports() {
                 <CardDescription>Money in vs money out</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  Cash flow chart would be rendered here
+                <div className="h-64 flex items-center justify-center text-muted-foreground border-2 border-dashed border-gray-300 rounded-lg">
+                  <div className="text-center">
+                    <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p>Cash flow chart will be implemented</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -209,8 +218,11 @@ export default function Reports() {
                 <CardDescription>New customers over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  Customer acquisition chart would be rendered here
+                <div className="h-64 flex items-center justify-center text-muted-foreground border-2 border-dashed border-gray-300 rounded-lg">
+                  <div className="text-center">
+                    <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p>Customer acquisition chart will be implemented</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
