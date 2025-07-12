@@ -222,7 +222,7 @@ export default function Reports() {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span>High Value (>$1000)</span>
+                    <span>High Value ($1000+)</span>
                     <Badge>245 customers</Badge>
                   </div>
                   <div className="flex justify-between items-center">
@@ -230,7 +230,7 @@ export default function Reports() {
                     <Badge variant="secondary">486 customers</Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span>Low Value (<$500)</span>
+                    <span>Low Value ($500-)</span>
                     <Badge variant="outline">892 customers</Badge>
                   </div>
                 </div>
