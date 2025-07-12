@@ -6,6 +6,7 @@ import { BusinessSettings } from '@/components/Settings/BusinessSettings';
 import { TaxSettings } from '@/components/Settings/TaxSettings';
 import { FeatureSettings } from '@/components/Settings/FeatureSettings';
 import { UserSettings } from '@/components/Settings/UserSettings';
+import { LogsSettings } from '@/components/Settings/LogsSettings';
 
 export default function Settings() {
   return (
@@ -18,11 +19,12 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="business" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="business">Business</TabsTrigger>
           <TabsTrigger value="tax">Tax & Currency</TabsTrigger>
           <TabsTrigger value="features">Features & Plans</TabsTrigger>
           <TabsTrigger value="users">Users & Roles</TabsTrigger>
+          <TabsTrigger value="logs">System Logs</TabsTrigger>
         </TabsList>
 
         <TabsContent value="business">
@@ -39,6 +41,10 @@ export default function Settings() {
 
         <TabsContent value="users">
           <UserSettings />
+        </TabsContent>
+
+        <TabsContent value="logs">
+          <LogsSettings />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +13,8 @@ import Contacts from "@/pages/Contacts";
 import Sales from "@/pages/Sales";
 import Inventory from "@/pages/Inventory";
 import Finance from "@/pages/Finance";
+import Employees from "@/pages/Employees";
+import Reports from "@/pages/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,8 +44,8 @@ function AppContent() {
           <Route path="sales" element={<Sales />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="finance" element={<Finance />} />
-          <Route path="employees" element={<div className="p-6"><h2 className="text-2xl font-bold">Employee Management</h2><p className="text-muted-foreground">Coming soon...</p></div>} />
-          <Route path="reports" element={<div className="p-6"><h2 className="text-2xl font-bold">Reports & Analytics</h2><p className="text-muted-foreground">Coming soon...</p></div>} />
+          <Route path="employees" element={<Employees />} />
+          <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<NotFound />} />
