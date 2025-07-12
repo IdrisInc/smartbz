@@ -8,6 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PayrollTab } from '@/components/Employees/PayrollTab';
+import { AttendanceTab } from '@/components/Employees/AttendanceTab';
+import { PerformanceTab } from '@/components/Employees/PerformanceTab';
 
 const mockEmployees = [
   {
@@ -188,46 +191,16 @@ export default function Employees() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="payroll" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Payroll Management</CardTitle>
-              <CardDescription>Process payroll and manage employee compensation</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Payroll processing interface would be implemented here
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="payroll">
+          <PayrollTab />
         </TabsContent>
 
-        <TabsContent value="attendance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Attendance Tracking</CardTitle>
-              <CardDescription>Monitor employee attendance and time tracking</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Attendance tracking interface would be implemented here
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="attendance">
+          <AttendanceTab />
         </TabsContent>
 
-        <TabsContent value="performance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Performance Reviews</CardTitle>
-              <CardDescription>Track employee performance and conduct reviews</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Performance review interface would be implemented here
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="performance">
+          <PerformanceTab />
         </TabsContent>
       </Tabs>
     </div>

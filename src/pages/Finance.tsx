@@ -3,6 +3,9 @@ import React from 'react';
 import { DollarSign, TrendingUp, TrendingDown, Receipt } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InvoicesTab } from '@/components/Finance/InvoicesTab';
+import { ExpensesTab } from '@/components/Finance/ExpensesTab';
+import { ReportsTab } from '@/components/Finance/ReportsTab';
 
 export default function Finance() {
   return (
@@ -92,46 +95,16 @@ export default function Finance() {
           </div>
         </TabsContent>
 
-        <TabsContent value="invoices" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Invoices</CardTitle>
-              <CardDescription>Manage customer invoices and payments</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Invoice management interface would go here
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="invoices">
+          <InvoicesTab />
         </TabsContent>
 
-        <TabsContent value="expenses" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Expense Tracking</CardTitle>
-              <CardDescription>Record and categorize business expenses</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Expense tracking interface would go here
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="expenses">
+          <ExpensesTab />
         </TabsContent>
 
-        <TabsContent value="reports" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Financial Reports</CardTitle>
-              <CardDescription>Generate profit/loss and other financial reports</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Financial reports would go here
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="reports">
+          <ReportsTab />
         </TabsContent>
       </Tabs>
     </div>
