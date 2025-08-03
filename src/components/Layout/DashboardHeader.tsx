@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/components/Auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { OrganizationSelector } from '@/components/Organization/OrganizationSelector';
 
 export function DashboardHeader() {
   const { signOut, user } = useAuth();
@@ -33,17 +34,20 @@ export function DashboardHeader() {
         
         <div className="flex-1" />
         
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">{user?.email}</span>
-          <Button variant="ghost" size="icon">
-            <Bell className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <User className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={handleSignOut}>
-            <LogOut className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center gap-4">
+          <OrganizationSelector />
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">{user?.email}</span>
+            <Button variant="ghost" size="icon">
+              <Bell className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon">
+              <User className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
     </header>
