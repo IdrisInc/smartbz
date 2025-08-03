@@ -10,20 +10,187 @@ export type Database = {
   // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
-      [_ in never]: never
+      organization_memberships: {
+        Row: {
+          id: string
+          is_owner: boolean
+          joined_at: string
+          organization_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          is_owner?: boolean
+          joined_at?: string
+          organization_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          is_owner?: boolean
+          joined_at?: string
+          organization_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_memberships_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string | null
+          id: string
+          organization_id: string
+          payment_type: string
+          plan: Database["public"]["Enums"]["subscription_plan"] | null
+          status: string
+          stripe_session_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string | null
+          id?: string
+          organization_id: string
+          payment_type: string
+          plan?: Database["public"]["Enums"]["subscription_plan"] | null
+          status?: string
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string | null
+          id?: string
+          organization_id?: string
+          payment_type?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"] | null
+          status?: string
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_payments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          address: string | null
+          business_sector: Database["public"]["Enums"]["business_sector"]
+          city: string | null
+          country: string | null
+          created_at: string
+          description: string | null
+          email: string | null
+          id: string
+          is_active: boolean
+          logo_url: string | null
+          name: string
+          phone: string | null
+          subscription_end: string | null
+          subscription_plan: Database["public"]["Enums"]["subscription_plan"]
+          timezone: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          business_sector?: Database["public"]["Enums"]["business_sector"]
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name: string
+          phone?: string | null
+          subscription_end?: string | null
+          subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
+          timezone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          business_sector?: Database["public"]["Enums"]["business_sector"]
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          subscription_end?: string | null
+          subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
+          timezone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_organization_with_membership: {
+        Args: {
+          org_name: string
+          org_sector?: Database["public"]["Enums"]["business_sector"]
+          org_description?: string
+        }
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      business_sector:
+        | "retail"
+        | "manufacturing"
+        | "technology"
+        | "healthcare"
+        | "finance"
+        | "education"
+        | "hospitality"
+        | "real_estate"
+        | "construction"
+        | "transportation"
+        | "agriculture"
+        | "entertainment"
+        | "consulting"
+        | "non_profit"
+        | "other"
+      subscription_plan: "free" | "basic" | "premium" | "enterprise"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +317,25 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      business_sector: [
+        "retail",
+        "manufacturing",
+        "technology",
+        "healthcare",
+        "finance",
+        "education",
+        "hospitality",
+        "real_estate",
+        "construction",
+        "transportation",
+        "agriculture",
+        "entertainment",
+        "consulting",
+        "non_profit",
+        "other",
+      ],
+      subscription_plan: ["free", "basic", "premium", "enterprise"],
+    },
   },
 } as const
