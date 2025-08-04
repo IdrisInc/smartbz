@@ -8,6 +8,8 @@ import { FeatureSettings } from '@/components/Settings/FeatureSettings';
 import { UserSettings } from '@/components/Settings/UserSettings';
 import { LogsSettings } from '@/components/Settings/LogsSettings';
 import { SubscriptionSettings } from '@/components/Settings/SubscriptionSettings';
+import { RolesPermissionsTab } from '@/components/Settings/RolesPermissionsTab';
+import { BranchManagement } from '@/components/Organization/BranchManagement';
 
 export default function Settings() {
   return (
@@ -20,12 +22,14 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="business" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="business">Business</TabsTrigger>
           <TabsTrigger value="subscription">Subscription</TabsTrigger>
           <TabsTrigger value="tax">Tax & Currency</TabsTrigger>
           <TabsTrigger value="features">Features</TabsTrigger>
           <TabsTrigger value="users">Users & Roles</TabsTrigger>
+          <TabsTrigger value="branches">Branches</TabsTrigger>
+          <TabsTrigger value="permissions">Permissions</TabsTrigger>
           <TabsTrigger value="logs">System Logs</TabsTrigger>
         </TabsList>
 
@@ -47,6 +51,14 @@ export default function Settings() {
 
         <TabsContent value="users">
           <UserSettings />
+        </TabsContent>
+
+        <TabsContent value="branches">
+          <BranchManagement />
+        </TabsContent>
+
+        <TabsContent value="permissions">
+          <RolesPermissionsTab />
         </TabsContent>
 
         <TabsContent value="logs">

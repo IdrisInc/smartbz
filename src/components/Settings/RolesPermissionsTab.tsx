@@ -1,127 +1,147 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash2, Shield, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { UserPlus, Trash2, Edit } from 'lucide-react';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-const mockRoles = [
-  { 
-    id: 1, 
-    name: 'Administrator', 
-    description: 'Full system access', 
-    userCount: 2, 
-    permissions: {
-      dashboard: true, products: true, sales: true, inventory: true, 
-      finance: true, employees: true, reports: true, settings: true, contacts: true
-    }
-  },
-  { 
-    id: 2, 
-    name: 'Manager', 
-    description: 'Management level access', 
-    userCount: 5, 
-    permissions: {
-      dashboard: true, products: true, sales: true, inventory: true, 
-      finance: true, employees: true, reports: true, settings: false, contacts: true
-    }
-  },
-  { 
-    id: 3, 
-    name: 'Cashier', 
-    description: 'Point of sale access', 
-    userCount: 8, 
-    permissions: {
-      dashboard: true, products: false, sales: true, inventory: false, 
-      finance: false, employees: false, reports: false, settings: false, contacts: true
-    }
-  },
-  { 
-    id: 4, 
-    name: 'Viewer', 
-    description: 'Read-only access', 
-    userCount: 3, 
-    permissions: {
-      dashboard: true, products: false, sales: false, inventory: false, 
-      finance: false, employees: false, reports: true, settings: false, contacts: false
-    }
-  }
-];
+interface OrganizationMember {
+  id: string;
+  user_id: string;
+  role: 'admin' | 'business_owner' | 'manager' | 'cashier' | 'staff';
+  is_owner: boolean;
+  joined_at: string;
+  branch_id?: string;
+}
 
-const systemModules = [
-  { key: 'dashboard', name: 'Dashboard', description: 'View main dashboard' },
-  { key: 'products', name: 'Products', description: 'Manage product catalog' },
-  { key: 'sales', name: 'Sales', description: 'Process sales and POS' },
-  { key: 'inventory', name: 'Inventory', description: 'Manage stock levels' },
-  { key: 'finance', name: 'Finance', description: 'View financial data' },
-  { key: 'employees', name: 'Employees', description: 'Manage staff' },
-  { key: 'reports', name: 'Reports', description: 'Generate reports' },
-  { key: 'contacts', name: 'Contacts', description: 'Manage customers' },
-  { key: 'settings', name: 'Settings', description: 'System configuration' }
-];
+interface Branch {
+  id: string;
+  name: string;
+  address?: string;
+}
 
 export function RolesPermissionsTab() {
-  const [selectedRole, setSelectedRole] = useState<number | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
-  const [newRole, setNewRole] = useState({
-    name: '',
-    description: '',
-    permissions: {} as Record<string, boolean>
-  });
+  const { currentOrganization } = useOrganization();
+  const { toast } = useToast();
+  const [members, setMembers] = useState<OrganizationMember[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'manager' | 'cashier' | 'staff'>('staff');
+  const [inviteBranch, setInviteBranch] = useState<string>('');
 
-  const handleCreateRole = () => {
-    setIsCreating(true);
-    setNewRole({
-      name: '',
-      description: '',
-      permissions: systemModules.reduce((acc, module) => ({ ...acc, [module.key]: false }), {})
-    });
-  };
+  useEffect(() => {
+    if (currentOrganization) {
+      loadMembersAndBranches();
+    }
+  }, [currentOrganization]);
 
-  const handleSaveRole = () => {
-    console.log('Saving role:', newRole);
-    setIsCreating(false);
-    setNewRole({ name: '', description: '', permissions: {} });
-  };
+  const loadMembersAndBranches = async () => {
+    try {
+      setLoading(true);
+      
+      // Load members
+      const { data: membersData, error: membersError } = await supabase
+        .from('organization_memberships')
+        .select('*')
+        .eq('organization_id', currentOrganization?.id);
 
-  const handlePermissionChange = (module: string, enabled: boolean) => {
-    if (isCreating) {
-      setNewRole(prev => ({
-        ...prev,
-        permissions: { ...prev.permissions, [module]: enabled }
-      }));
+      if (membersError) throw membersError;
+      setMembers(membersData || []);
+
+      // Load branches
+      const { data: branchesData, error: branchesError } = await supabase
+        .from('branches')
+        .select('id, name, address')
+        .eq('organization_id', currentOrganization?.id)
+        .eq('is_active', true);
+
+      if (branchesError) throw branchesError;
+      setBranches(branchesData || []);
+
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load members and branches",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleInviteMember = async () => {
+    if (!inviteEmail || !currentOrganization) return;
+
+    try {
+      // In a real app, you'd send an invitation email
+      // For now, we'll just show a message
+      toast({
+        title: "Invitation Sent",
+        description: `Invitation sent to ${inviteEmail} as ${inviteRole}`,
+      });
+      
+      setInviteEmail('');
+      setInviteRole('staff');
+      setInviteBranch('');
+    } catch (error) {
+      console.error('Error inviting member:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send invitation",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'admin': return 'destructive';
+      case 'business_owner': return 'default';
+      case 'manager': return 'secondary';
+      case 'cashier': return 'outline';
+      default: return 'outline';
+    }
+  };
+
+  const getRolePermissions = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'Full system access, manage all organizations';
+      case 'business_owner':
+        return 'Full organization access, manage all branches';
+      case 'manager':
+        return 'Branch management, view reports, manage staff';
+      case 'cashier':
+        return 'Process sales, view products';
+      case 'staff':
+        return 'Basic access, assigned tasks only';
+      default:
+        return 'Limited access';
+    }
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-medium">Roles & Permissions</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage user roles and their access to system modules
-          </p>
-        </div>
-        <Button onClick={handleCreateRole}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Role
-        </Button>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Current Members */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              System Roles
-            </CardTitle>
+            <CardTitle>Team Members</CardTitle>
             <CardDescription>
-              Manage roles and their permissions
+              Manage your organization members and their roles
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -129,38 +149,39 @@ export function RolesPermissionsTab() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Role</TableHead>
-                  <TableHead>Users</TableHead>
+                  <TableHead>Branch</TableHead>
+                  <TableHead>Joined</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockRoles.map((role) => (
-                  <TableRow 
-                    key={role.id}
-                    className={selectedRole === role.id ? 'bg-muted' : ''}
-                  >
+                {members.map((member) => (
+                  <TableRow key={member.id}>
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{role.name}</div>
-                        <div className="text-sm text-muted-foreground">{role.description}</div>
-                      </div>
+                      <Badge variant={getRoleBadgeVariant(member.role)}>
+                        {member.role.replace('_', ' ')}
+                      </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{role.userCount}</Badge>
+                      {member.branch_id 
+                        ? branches.find(b => b.id === member.branch_id)?.name || 'Unknown'
+                        : 'All branches'
+                      }
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setSelectedRole(role.id)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {new Date(member.joined_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {!member.is_owner && (
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -169,74 +190,92 @@ export function RolesPermissionsTab() {
           </CardContent>
         </Card>
 
+        {/* Invite New Member */}
         <Card>
           <CardHeader>
-            <CardTitle>
-              {isCreating ? 'Create New Role' : selectedRole ? `Edit ${mockRoles.find(r => r.id === selectedRole)?.name}` : 'Module Permissions'}
-            </CardTitle>
+            <CardTitle>Invite Team Member</CardTitle>
             <CardDescription>
-              {isCreating ? 'Configure permissions for the new role' : 'Select a role to view and edit its permissions'}
+              Add new members to your organization
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {isCreating && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="roleName">Role Name</Label>
-                  <Input
-                    id="roleName"
-                    value={newRole.name}
-                    onChange={(e) => setNewRole(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Enter role name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="roleDescription">Description</Label>
-                  <Input
-                    id="roleDescription"
-                    value={newRole.description}
-                    onChange={(e) => setNewRole(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Enter role description"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Module Access</Label>
-              {systemModules.map((module) => {
-                const currentRole = selectedRole ? mockRoles.find(r => r.id === selectedRole) : null;
-                const hasPermission = isCreating 
-                  ? newRole.permissions[module.key] 
-                  : currentRole?.permissions[module.key as keyof typeof currentRole.permissions];
-
-                return (
-                  <div key={module.key} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">{module.name}</div>
-                      <div className="text-sm text-muted-foreground">{module.description}</div>
-                    </div>
-                    <Switch
-                      checked={hasPermission || false}
-                      onCheckedChange={(checked) => handlePermissionChange(module.key, checked)}
-                      disabled={!isCreating && !selectedRole}
-                    />
-                  </div>
-                );
-              })}
+            <div>
+              <Label htmlFor="inviteEmail">Email Address</Label>
+              <Input
+                id="inviteEmail"
+                type="email"
+                placeholder="member@example.com"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+              />
             </div>
 
-            {isCreating && (
-              <div className="flex gap-2 pt-4">
-                <Button onClick={handleSaveRole}>Create Role</Button>
-                <Button variant="outline" onClick={() => setIsCreating(false)}>
-                  Cancel
-                </Button>
+            <div>
+              <Label htmlFor="inviteRole">Role</Label>
+              <Select value={inviteRole} onValueChange={(value: any) => setInviteRole(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="cashier">Cashier</SelectItem>
+                  <SelectItem value="staff">Staff</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {branches.length > 0 && (
+              <div>
+                <Label htmlFor="inviteBranch">Branch (Optional)</Label>
+                <Select value={inviteBranch} onValueChange={setInviteBranch}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All branches" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All branches</SelectItem>
+                    {branches.map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id}>
+                        {branch.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
+
+            <Button onClick={handleInviteMember} className="w-full">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Send Invitation
+            </Button>
           </CardContent>
         </Card>
       </div>
+
+      {/* Role Permissions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Role Permissions</CardTitle>
+          <CardDescription>
+            Understanding what each role can do in your organization
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {['admin', 'business_owner', 'manager', 'cashier', 'staff'].map((role) => (
+              <div key={role} className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <Badge variant={getRoleBadgeVariant(role)} className="mb-2">
+                    {role.replace('_', ' ').toUpperCase()}
+                  </Badge>
+                  <p className="text-sm text-muted-foreground">
+                    {getRolePermissions(role)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

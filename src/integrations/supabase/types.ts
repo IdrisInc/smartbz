@@ -14,32 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      branches: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branches_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_memberships: {
         Row: {
+          branch_id: string | null
           id: string
           is_owner: boolean
           joined_at: string
           organization_id: string
-          role: string
+          role: Database["public"]["Enums"]["user_role"]
           user_id: string
         }
         Insert: {
+          branch_id?: string | null
           id?: string
           is_owner?: boolean
           joined_at?: string
           organization_id: string
-          role?: string
+          role: Database["public"]["Enums"]["user_role"]
           user_id: string
         }
         Update: {
+          branch_id?: string | null
           id?: string
           is_owner?: boolean
           joined_at?: string
           organization_id?: string
-          role?: string
+          role?: Database["public"]["Enums"]["user_role"]
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "organization_memberships_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "organization_memberships_organization_id_fkey"
             columns: ["organization_id"]
@@ -172,6 +229,14 @@ export type Database = {
         }
         Returns: string
       }
+      get_user_role_in_organization: {
+        Args: { org_id: string; user_id: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+      is_organization_owner: {
+        Args: { org_id: string; user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       business_sector:
@@ -191,6 +256,7 @@ export type Database = {
         | "non_profit"
         | "other"
       subscription_plan: "free" | "basic" | "premium" | "enterprise"
+      user_role: "admin" | "business_owner" | "manager" | "cashier" | "staff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -336,6 +402,7 @@ export const Constants = {
         "other",
       ],
       subscription_plan: ["free", "basic", "premium", "enterprise"],
+      user_role: ["admin", "business_owner", "manager", "cashier", "staff"],
     },
   },
 } as const
