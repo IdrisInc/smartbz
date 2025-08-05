@@ -1,18 +1,9 @@
 
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import {
-  Package,
-  Users,
-  ShoppingCart,
-  Truck,
-  DollarSign,
-  UserCheck,
-  BarChart3,
-  Settings,
-  Home,
-  Crown
-} from 'lucide-react';
+import { Crown } from 'lucide-react';
+import { useRoleBasedNavigation } from './RoleBasedNavigation';
+import { useUserRole } from '@/hooks/useUserRole';
 import {
   Sidebar,
   SidebarContent,
@@ -24,22 +15,13 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-
-const menuItems = [
-  { title: 'Dashboard', url: '/', icon: Home },
-  { title: 'Products & Services', url: '/products', icon: Package },
-  { title: 'Customers & Suppliers', url: '/contacts', icon: Users },
-  { title: 'Sales & Orders', url: '/sales', icon: ShoppingCart },
-  { title: 'Purchases & Inventory', url: '/inventory', icon: Truck },
-  { title: 'Finance & Accounting', url: '/finance', icon: DollarSign },
-  { title: 'Employee Management', url: '/employees', icon: UserCheck },
-  { title: 'Reports & Analytics', url: '/reports', icon: BarChart3 },
-  { title: 'Settings', url: '/settings', icon: Settings },
-];
+import { Badge } from '@/components/ui/badge';
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
+  const menuItems = useRoleBasedNavigation();
+  const { userRole } = useUserRole();
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -56,6 +38,13 @@ export function AppSidebar() {
             <Crown className="h-8 w-8 text-primary" />
             {!isCollapsed && <span className="font-bold text-xl">BizWiz</span>}
           </div>
+          {!isCollapsed && userRole && (
+            <div className="mt-2">
+              <Badge variant="secondary" className="text-xs">
+                {userRole.replace('_', ' ').toUpperCase()}
+              </Badge>
+            </div>
+          )}
         </div>
         
         <SidebarGroup>
