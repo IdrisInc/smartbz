@@ -16,6 +16,7 @@ import Inventory from "@/pages/Inventory";
 import Finance from "@/pages/Finance";
 import Employees from "@/pages/Employees";
 import Reports from "@/pages/Reports";
+import Branches from "@/pages/Branches";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ function AppContent() {
             <Route path="finance" element={<Finance />} />
             <Route path="employees" element={<Employees />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="branches" element={<Branches />} />
             <Route path="settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<NotFound />} />
