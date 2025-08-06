@@ -35,7 +35,7 @@ export function RolesPermissionsTab() {
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'manager' | 'cashier' | 'staff'>('staff');
-  const [inviteBranch, setInviteBranch] = useState<string>('');
+  const [inviteBranch, setInviteBranch] = useState<string>('all');
 
   useEffect(() => {
     if (currentOrganization) {
@@ -91,7 +91,7 @@ export function RolesPermissionsTab() {
       
       setInviteEmail('');
       setInviteRole('staff');
-      setInviteBranch('');
+      setInviteBranch('all');
     } catch (error) {
       console.error('Error inviting member:', error);
       toast({
@@ -232,7 +232,7 @@ export function RolesPermissionsTab() {
                     <SelectValue placeholder="All branches" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All branches</SelectItem>
+                    <SelectItem value="all">All branches</SelectItem>
                     {branches.map((branch) => (
                       <SelectItem key={branch.id} value={branch.id}>
                         {branch.name}
