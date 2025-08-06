@@ -8,6 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Minus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ProductSelector } from '@/components/Products/ProductSelector';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface SaleFormProps {
   onClose: () => void;
@@ -15,7 +18,8 @@ interface SaleFormProps {
 
 interface SaleItem {
   id: string;
-  product: string;
+  productId: string;
+  productName: string;
   quantity: number;
   price: number;
   total: number;
@@ -25,15 +29,17 @@ export function SaleForm({ onClose }: SaleFormProps) {
   const [customer, setCustomer] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [items, setItems] = useState<SaleItem[]>([
-    { id: '1', product: '', quantity: 1, price: 0, total: 0 }
+    { id: '1', productId: '', productName: '', quantity: 1, price: 0, total: 0 }
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { currentOrganization } = useOrganization();
 
   const addItem = () => {
     const newItem: SaleItem = {
       id: Date.now().toString(),
-      product: '',
+      productId: '',
+      productName: '',
       quantity: 1,
       price: 0,
       total: 0
@@ -62,13 +68,62 @@ export function SaleForm({ onClose }: SaleFormProps) {
 
   const totalAmount = items.reduce((sum, item) => sum + item.total, 0);
 
+  const handleProductSelect = (itemId: string, product: any) => {
+    if (product) {
+      setItems(items.map(item => 
+        item.id === itemId 
+          ? { ...item, productId: product.id, productName: product.name, price: product.price, total: item.quantity * product.price }
+          : item
+      ));
+    } else {
+      setItems(items.map(item => 
+        item.id === itemId 
+          ? { ...item, productId: '', productName: '', price: 0, total: 0 }
+          : item
+      ));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentOrganization?.id) return;
+    
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Create sale record
+      const { data: sale, error: saleError } = await supabase
+        .from('sales')
+        .insert({
+          organization_id: currentOrganization.id,
+          total_amount: totalAmount,
+          payment_method: paymentMethod,
+          payment_status: 'completed',
+          notes: customer ? `Customer: ${customer}` : null
+        })
+        .select()
+        .single();
+
+      if (saleError) throw saleError;
+
+      // Create sale items
+      const saleItems = items
+        .filter(item => item.productId && item.quantity > 0)
+        .map(item => ({
+          sale_id: sale.id,
+          product_id: item.productId,
+          quantity: item.quantity,
+          unit_price: item.price,
+          total_amount: item.total
+        }));
+
+      if (saleItems.length > 0) {
+        const { error: itemsError } = await supabase
+          .from('sale_items')
+          .insert(saleItems);
+
+        if (itemsError) throw itemsError;
+      }
       
       toast({
         title: "Sale created",
@@ -139,10 +194,10 @@ export function SaleForm({ onClose }: SaleFormProps) {
                 <div key={item.id} className="grid grid-cols-12 gap-2 items-end">
                   <div className="col-span-5">
                     <Label>Product/Service</Label>
-                    <Input
-                      value={item.product}
-                      onChange={(e) => updateItem(item.id, 'product', e.target.value)}
-                      placeholder="Enter product name"
+                    <ProductSelector
+                      value={item.productId}
+                      onSelect={(product) => handleProductSelect(item.id, product)}
+                      placeholder="Select product"
                     />
                   </div>
                   <div className="col-span-2">

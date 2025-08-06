@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProductFormProps {
   onClose: () => void;
@@ -52,9 +53,47 @@ export function ProductForm({ onClose }: ProductFormProps) {
     setProduct({...product, variants: newVariants});
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Creating product:', product);
+    
+    try {
+      const { data: organization } = await supabase
+        .from('organizations')
+        .select('id')
+        .single();
+      
+      if (!organization) {
+        console.error('No organization found');
+        return;
+      }
+
+      const productData = {
+        organization_id: organization.id,
+        name: product.name,
+        sku: product.sku,
+        category: product.category,
+        price: parseFloat(product.price) || 0,
+        cost: parseFloat(product.cost) || 0,
+        unit: product.unit,
+        description: product.description,
+        stock_quantity: product.trackStock ? parseInt(product.minStock) || 0 : 0,
+        min_stock_level: product.trackStock ? parseInt(product.minStock) || 0 : 0,
+        is_active: true
+      };
+
+      const { error } = await supabase
+        .from('products')
+        .insert(productData);
+
+      if (error) {
+        console.error('Error creating product:', error);
+      } else {
+        console.log('Product created successfully');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+    
     onClose();
   };
 
