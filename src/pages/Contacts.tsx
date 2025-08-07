@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, User, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,49 +7,63 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContactForm } from '@/components/Contacts/ContactForm';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
-const mockCustomers = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john@example.com',
-    phone: '+1234567890',
-    type: 'customer',
-    loyaltyPoints: 150,
-    totalOrders: 12,
-    totalSpent: 2450.00,
-    address: '123 Main St, City, Country'
-  },
-  {
-    id: 2,
-    name: 'Acme Corp',
-    email: 'contact@acme.com',
-    phone: '+1987654321',
-    type: 'customer',
-    loyaltyPoints: 500,
-    totalOrders: 25,
-    totalSpent: 15000.00,
-    address: '456 Business Ave, City, Country'
-  }
-];
-
-const mockSuppliers = [
-  {
-    id: 1,
-    name: 'Tech Supplies Ltd',
-    email: 'sales@techsupplies.com',
-    phone: '+1122334455',
-    type: 'supplier',
-    creditTerms: '30 days',
-    totalPurchases: 25000.00,
-    address: '789 Industrial St, City, Country'
-  }
-];
+interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  contact_type: string;
+  address: string;
+  city: string;
+  country: string;
+  notes: string;
+}
 
 export default function Contacts() {
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState('customers');
   const [searchTerm, setSearchTerm] = useState('');
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { currentOrganization } = useOrganization();
+
+  useEffect(() => {
+    if (currentOrganization?.id) {
+      fetchContacts();
+    }
+  }, [currentOrganization]);
+
+  const fetchContacts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('organization_id', currentOrganization?.id);
+
+      if (error) throw error;
+      setContacts(data || []);
+    } catch (error) {
+      console.error('Error fetching contacts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const customers = contacts.filter(contact => contact.contact_type === 'customer');
+  const suppliers = contacts.filter(contact => contact.contact_type === 'supplier');
+
+  const filteredCustomers = customers.filter(customer =>
+    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredSuppliers = suppliers.filter(supplier =>
+    supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    supplier.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -90,85 +104,107 @@ export default function Contacts() {
 
         <TabsContent value="customers" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {mockCustomers.map((customer) => (
-              <Card key={customer.id}>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-2">
-                      <User className="h-5 w-5" />
-                      <div>
-                        <CardTitle className="text-lg">{customer.name}</CardTitle>
-                        <CardDescription>{customer.email}</CardDescription>
+            {loading ? (
+              <div className="col-span-3 text-center py-8">Loading customers...</div>
+            ) : filteredCustomers.length === 0 ? (
+              <div className="col-span-3 text-center py-8 text-muted-foreground">No customers found</div>
+            ) : (
+              filteredCustomers.map((customer) => (
+                <Card key={customer.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        <div>
+                          <CardTitle className="text-lg">{customer.name}</CardTitle>
+                          <CardDescription>{customer.email}</CardDescription>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">Customer</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Phone:</span>
+                        <span className="text-sm">{customer.phone || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Address:</span>
+                        <span className="text-sm">{customer.address || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">City:</span>
+                        <span className="text-sm">{customer.city || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Country:</span>
+                        <span className="text-sm">{customer.country || 'N/A'}</span>
                       </div>
                     </div>
-                    <Badge variant="secondary">Customer</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Phone:</span>
-                      <span className="text-sm">{customer.phone}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Loyalty Points:</span>
-                      <span className="text-sm font-medium">{customer.loyaltyPoints}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Total Orders:</span>
-                      <span className="text-sm">{customer.totalOrders}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Total Spent:</span>
-                      <span className="text-sm font-medium">${customer.totalSpent}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="suppliers" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {mockSuppliers.map((supplier) => (
-              <Card key={supplier.id}>
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-2">
-                      <Building className="h-5 w-5" />
-                      <div>
-                        <CardTitle className="text-lg">{supplier.name}</CardTitle>
-                        <CardDescription>{supplier.email}</CardDescription>
+            {loading ? (
+              <div className="col-span-3 text-center py-8">Loading suppliers...</div>
+            ) : filteredSuppliers.length === 0 ? (
+              <div className="col-span-3 text-center py-8 text-muted-foreground">No suppliers found</div>
+            ) : (
+              filteredSuppliers.map((supplier) => (
+                <Card key={supplier.id}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <Building className="h-5 w-5" />
+                        <div>
+                          <CardTitle className="text-lg">{supplier.name}</CardTitle>
+                          <CardDescription>{supplier.email}</CardDescription>
+                        </div>
+                      </div>
+                      <Badge variant="outline">Supplier</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Phone:</span>
+                        <span className="text-sm">{supplier.phone || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Address:</span>
+                        <span className="text-sm">{supplier.address || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">City:</span>
+                        <span className="text-sm">{supplier.city || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Country:</span>
+                        <span className="text-sm">{supplier.country || 'N/A'}</span>
                       </div>
                     </div>
-                    <Badge variant="outline">Supplier</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Phone:</span>
-                      <span className="text-sm">{supplier.phone}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Credit Terms:</span>
-                      <span className="text-sm">{supplier.creditTerms}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Total Purchases:</span>
-                      <span className="text-sm font-medium">${supplier.totalPurchases}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </TabsContent>
       </Tabs>
 
       {showForm && (
-        <ContactForm onClose={() => setShowForm(false)} />
+        <ContactForm 
+          onClose={() => setShowForm(false)} 
+          onSave={() => {
+            setShowForm(false);
+            fetchContacts();
+          }}
+        />
       )}
     </div>
   );

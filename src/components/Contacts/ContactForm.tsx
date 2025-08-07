@@ -7,40 +7,73 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface ContactFormProps {
   onClose: () => void;
+  onSave?: () => void;
   contact?: any;
 }
 
-export function ContactForm({ onClose, contact }: ContactFormProps) {
+export function ContactForm({ onClose, onSave, contact }: ContactFormProps) {
   const [formData, setFormData] = useState({
     name: contact?.name || '',
     email: contact?.email || '',
     phone: contact?.phone || '',
-    company: contact?.company || '',
-    type: contact?.type || 'customer',
+    city: contact?.city || '',
+    country: contact?.country || '',
+    contact_type: contact?.contact_type || 'customer',
     address: contact?.address || '',
     notes: contact?.notes || ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { currentOrganization } = useOrganization();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentOrganization?.id || !formData.name) return;
+
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const contactData = {
+        name: formData.name,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        city: formData.city || null,
+        country: formData.country || null,
+        contact_type: formData.contact_type,
+        address: formData.address || null,
+        notes: formData.notes || null,
+        organization_id: currentOrganization.id
+      };
+
+      if (contact) {
+        const { error } = await supabase
+          .from('contacts')
+          .update(contactData)
+          .eq('id', contact.id);
+        
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('contacts')
+          .insert(contactData);
+        
+        if (error) throw error;
+      }
       
       toast({
         title: contact ? "Contact updated" : "Contact created",
         description: "Contact has been saved successfully.",
       });
       
+      onSave?.();
       onClose();
     } catch (error) {
+      console.error('Error saving contact:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -97,18 +130,27 @@ export function ContactForm({ onClose, contact }: ContactFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="company">Company</Label>
+              <Label htmlFor="city">City</Label>
               <Input
-                id="company"
-                value={formData.company}
-                onChange={(e) => handleChange('company', e.target.value)}
+                id="city"
+                value={formData.city}
+                onChange={(e) => handleChange('city', e.target.value)}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="type">Contact Type</Label>
-            <Select value={formData.type} onValueChange={(value) => handleChange('type', value)}>
+            <Label htmlFor="country">Country</Label>
+            <Input
+              id="country"
+              value={formData.country}
+              onChange={(e) => handleChange('country', e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contact_type">Contact Type</Label>
+            <Select value={formData.contact_type} onValueChange={(value) => handleChange('contact_type', value)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

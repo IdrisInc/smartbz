@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,20 +8,23 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Search, ShoppingCart, CreditCard, Banknote } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface POSInterfaceProps {
   onClose: () => void;
 }
 
-const mockProducts = [
-  { id: 1, name: 'iPhone 15', price: 999.99, category: 'Electronics' },
-  { id: 2, name: 'Coffee Mug', price: 12.99, category: 'Accessories' },
-  { id: 3, name: 'Notebook', price: 5.99, category: 'Stationery' },
-  { id: 4, name: 'Wireless Headphones', price: 199.99, category: 'Electronics' },
-];
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  stock_quantity: number;
+}
 
 interface CartItem {
-  id: number;
+  id: string;
   name: string;
   price: number;
   quantity: number;
@@ -31,13 +34,45 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { currentOrganization } = useOrganization();
 
-  const filteredProducts = mockProducts.filter(product =>
+  useEffect(() => {
+    if (currentOrganization?.id) {
+      fetchProducts();
+    }
+  }, [currentOrganization]);
+
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, price, category, stock_quantity')
+        .eq('organization_id', currentOrganization?.id)
+        .eq('is_active', true)
+        .gt('stock_quantity', 0);
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load products",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const addToCart = (product: typeof mockProducts[0]) => {
+  const addToCart = (product: Product) => {
     const existingItem = cart.find(item => item.id === product.id);
     if (existingItem) {
       setCart(cart.map(item =>
@@ -50,7 +85,7 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
     }
   };
 
-  const updateQuantity = (id: number, quantity: number) => {
+  const updateQuantity = (id: string, quantity: number) => {
     if (quantity <= 0) {
       setCart(cart.filter(item => item.id !== id));
     } else {
@@ -76,9 +111,20 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
 
     setIsProcessing(true);
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      // Create sale record
+      const { error: saleError } = await supabase
+        .from('sales')
+        .insert({
+          organization_id: currentOrganization?.id,
+          total_amount: total,
+          tax_amount: tax,
+          payment_method: method.toLowerCase(),
+          payment_status: 'completed',
+          sale_date: new Date().toISOString(),
+        });
+
+      if (saleError) throw saleError;
+
       toast({
         title: "Payment Successful",
         description: `Payment of $${total.toFixed(2)} processed via ${method}.`,
@@ -118,15 +164,22 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
             </div>
             
             <div className="grid grid-cols-3 gap-3 max-h-96 overflow-y-auto">
-              {filteredProducts.map((product) => (
-                <Card key={product.id} className="cursor-pointer hover:bg-gray-50" onClick={() => addToCart(product)}>
-                  <CardContent className="p-4">
-                    <div className="text-sm font-medium">{product.name}</div>
-                    <div className="text-xs text-muted-foreground">{product.category}</div>
-                    <div className="text-lg font-bold mt-2">${product.price}</div>
-                  </CardContent>
-                </Card>
-              ))}
+              {loading ? (
+                <div className="col-span-3 text-center py-8">Loading products...</div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="col-span-3 text-center py-8 text-muted-foreground">No products found</div>
+              ) : (
+                filteredProducts.map((product) => (
+                  <Card key={product.id} className="cursor-pointer hover:bg-gray-50" onClick={() => addToCart(product)}>
+                    <CardContent className="p-4">
+                      <div className="text-sm font-medium">{product.name}</div>
+                      <div className="text-xs text-muted-foreground">{product.category}</div>
+                      <div className="text-lg font-bold mt-2">${product.price}</div>
+                      <div className="text-xs text-muted-foreground">Stock: {product.stock_quantity}</div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </div>
 

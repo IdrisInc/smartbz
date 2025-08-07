@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { RolePermissionEditor } from './RolePermissionEditor';
 import { RoleManagementGuide } from './RoleManagementGuide';
+import { RoleSystemGuide } from './RoleSystemGuide';
 
 interface OrganizationMember {
   id: string;
@@ -138,10 +139,11 @@ export function RolesPermissionsTab() {
 
   return (
     <Tabs defaultValue="members" className="space-y-4">
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="members">Team Members</TabsTrigger>
         <TabsTrigger value="permissions">Custom Permissions</TabsTrigger>
         <TabsTrigger value="guide">Role Guide</TabsTrigger>
+        <TabsTrigger value="workflow">System Workflow</TabsTrigger>
         <TabsTrigger value="contacts">Contact Management</TabsTrigger>
       </TabsList>
 
@@ -224,6 +226,10 @@ export function RolesPermissionsTab() {
 
       <TabsContent value="guide">
         <RoleManagementGuide />
+      </TabsContent>
+
+      <TabsContent value="workflow">
+        <RoleSystemGuide />
       </TabsContent>
 
       <TabsContent value="contacts">

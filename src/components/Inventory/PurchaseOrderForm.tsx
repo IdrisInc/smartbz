@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { ProductSelector } from '@/components/Products/ProductSelector';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface PurchaseOrderFormProps {
   onClose: () => void;
@@ -14,23 +17,53 @@ interface PurchaseOrderFormProps {
 
 interface OrderItem {
   id: string;
-  product: string;
+  product_id: string;
+  product_name: string;
   quantity: number;
   price: number;
   total: number;
 }
 
+interface Supplier {
+  id: string;
+  name: string;
+}
+
 export function PurchaseOrderForm({ onClose }: PurchaseOrderFormProps) {
   const { toast } = useToast();
+  const { currentOrganization } = useOrganization();
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [supplier, setSupplier] = useState('');
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [expectedDate, setExpectedDate] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (currentOrganization?.id) {
+      fetchSuppliers();
+    }
+  }, [currentOrganization]);
+
+  const fetchSuppliers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('id, name')
+        .eq('organization_id', currentOrganization?.id)
+        .eq('contact_type', 'supplier');
+
+      if (error) throw error;
+      setSuppliers(data || []);
+    } catch (error) {
+      console.error('Error fetching suppliers:', error);
+    }
+  };
 
   const addItem = () => {
     const newItem: OrderItem = {
       id: Date.now().toString(),
-      product: 'New Product',
+      product_id: '',
+      product_name: '',
       quantity: 1,
       price: 0,
       total: 0
@@ -55,6 +88,14 @@ export function PurchaseOrderForm({ onClose }: PurchaseOrderFormProps) {
     }));
   };
 
+  const handleProductSelect = (id: string, product: any) => {
+    if (product) {
+      updateItem(id, 'product_id', product.id);
+      updateItem(id, 'product_name', product.name);
+      updateItem(id, 'price', product.price || 0);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!supplier) {
       toast({
@@ -76,8 +117,18 @@ export function PurchaseOrderForm({ onClose }: PurchaseOrderFormProps) {
 
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = await supabase
+        .from('purchase_orders')
+        .insert({
+          organization_id: currentOrganization?.id,
+          supplier_id: supplier,
+          total_amount: totalAmount,
+          expected_date: expectedDate || null,
+          po_number: `PO-${Date.now()}`,
+          status: 'draft'
+        });
+
+      if (error) throw error;
       
       toast({
         title: "Success",
@@ -115,8 +166,13 @@ export function PurchaseOrderForm({ onClose }: PurchaseOrderFormProps) {
                   <SelectValue placeholder="Select supplier" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="tech-supplies">Tech Supplies Ltd</SelectItem>
-                  <SelectItem value="office-depot">Office Depot</SelectItem>
+                  {suppliers.length === 0 ? (
+                    <SelectItem value="" disabled>No suppliers found</SelectItem>
+                  ) : (
+                    suppliers.map((sup) => (
+                      <SelectItem key={sup.id} value={sup.id}>{sup.name}</SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -149,11 +205,10 @@ export function PurchaseOrderForm({ onClose }: PurchaseOrderFormProps) {
                 {orderItems.map((item) => (
                   <div key={item.id} className="flex items-center gap-2 p-3 border rounded">
                     <div className="flex-1">
-                      <Input 
-                        value={item.product}
-                        onChange={(e) => updateItem(item.id, 'product', e.target.value)}
-                        placeholder="Product name"
-                        className="font-medium"
+                      <ProductSelector
+                        value={item.product_id}
+                        onSelect={(product) => handleProductSelect(item.id, product)}
+                        placeholder="Select product..."
                       />
                     </div>
                     <Input 
