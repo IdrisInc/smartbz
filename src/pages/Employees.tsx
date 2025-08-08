@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Plus, Search, UserCheck, UserX, Calendar, DollarSign } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, UserCheck, UserX, Calendar, DollarSign, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,50 +11,69 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PayrollTab } from '@/components/Employees/PayrollTab';
 import { AttendanceTab } from '@/components/Employees/AttendanceTab';
 import { PerformanceTab } from '@/components/Employees/PerformanceTab';
-
-const mockEmployees = [
-  {
-    id: 1,
-    name: 'John Smith',
-    email: 'john.smith@bizwiz.com',
-    position: 'Store Manager',
-    department: 'Operations',
-    status: 'active',
-    startDate: '2023-01-15',
-    salary: 55000,
-    avatar: null
-  },
-  {
-    id: 2,
-    name: 'Sarah Johnson',
-    email: 'sarah.johnson@bizwiz.com',
-    position: 'Sales Associate',
-    department: 'Sales',
-    status: 'active',
-    startDate: '2023-03-20',
-    salary: 35000,
-    avatar: null
-  },
-  {
-    id: 3,
-    name: 'Mike Wilson',
-    email: 'mike.wilson@bizwiz.com',
-    position: 'Accountant',
-    department: 'Finance',
-    status: 'inactive',
-    startDate: '2022-11-10',
-    salary: 48000,
-    avatar: null
-  }
-];
+import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Employees() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    onLeave: 0,
+    totalPayroll: 0
+  });
+  
+  const { currentOrganization } = useOrganization();
+  const { toast } = useToast();
 
-  const filteredEmployees = mockEmployees.filter(employee =>
-    employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.position.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    if (currentOrganization) {
+      fetchEmployees();
+    }
+  }, [currentOrganization]);
+
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('organization_id', currentOrganization?.id);
+
+      if (error) throw error;
+
+      setEmployees(data || []);
+      
+      // Calculate stats
+      const activeEmployees = data?.filter(emp => emp.status === 'active') || [];
+      const totalSalary = data?.reduce((sum, emp) => sum + (emp.salary || 0), 0) || 0;
+      
+      setStats({
+        total: data?.length || 0,
+        active: activeEmployees.length,
+        onLeave: data?.filter(emp => emp.status === 'on_leave')?.length || 0,
+        totalPayroll: totalSalary
+      });
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load employees",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredEmployees = employees.filter(employee =>
+    employee.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    employee.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    employee.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    employee.position?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -79,8 +98,8 @@ export default function Employees() {
             <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24</div>
-            <p className="text-xs text-muted-foreground">+2 from last month</p>
+            <div className="text-2xl font-bold">{stats.total}</div>
+            <p className="text-xs text-muted-foreground">Total workforce</p>
           </CardContent>
         </Card>
         <Card>
@@ -89,8 +108,10 @@ export default function Employees() {
             <UserCheck className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">22</div>
-            <p className="text-xs text-muted-foreground">91.7% of total</p>
+            <div className="text-2xl font-bold">{stats.active}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.total > 0 ? ((stats.active / stats.total) * 100).toFixed(1) : 0}% of total
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -99,7 +120,7 @@ export default function Employees() {
             <Calendar className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2</div>
+            <div className="text-2xl font-bold">{stats.onLeave}</div>
             <p className="text-xs text-muted-foreground">Temporary absence</p>
           </CardContent>
         </Card>
@@ -109,8 +130,8 @@ export default function Employees() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$95,400</div>
-            <p className="text-xs text-muted-foreground">Next payout: Jan 31</p>
+            <div className="text-2xl font-bold">${stats.totalPayroll.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Total monthly cost</p>
           </CardContent>
         </Card>
       </div>
@@ -142,51 +163,69 @@ export default function Employees() {
               <CardDescription>Manage your team members and their details</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Start Date</TableHead>
-                    <TableHead>Salary</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEmployees.map((employee) => (
-                    <TableRow key={employee.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={employee.avatar || ''} />
-                            <AvatarFallback>
-                              {employee.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{employee.name}</div>
-                            <div className="text-sm text-muted-foreground">{employee.email}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{employee.position}</TableCell>
-                      <TableCell>{employee.department}</TableCell>
-                      <TableCell>
-                        <Badge variant={employee.status === 'active' ? 'default' : 'secondary'}>
-                          {employee.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{employee.startDate}</TableCell>
-                      <TableCell>${employee.salary.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <Button variant="outline" size="sm">Edit</Button>
-                      </TableCell>
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Employee</TableHead>
+                      <TableHead>Position</TableHead>
+                      <TableHead>Department</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Start Date</TableHead>
+                      <TableHead>Salary</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredEmployees.length > 0 ? (
+                      filteredEmployees.map((employee) => (
+                        <TableRow key={employee.id}>
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src="" />
+                                <AvatarFallback>
+                                  {`${employee.first_name?.[0] || ''}${employee.last_name?.[0] || ''}`.toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="font-medium">{`${employee.first_name} ${employee.last_name}`}</div>
+                                <div className="text-sm text-muted-foreground">{employee.email}</div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{employee.position || '-'}</TableCell>
+                          <TableCell>{employee.department || '-'}</TableCell>
+                          <TableCell>
+                            <Badge variant={employee.status === 'active' ? 'default' : 'secondary'}>
+                              {employee.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {employee.hire_date ? new Date(employee.hire_date).toLocaleDateString() : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {employee.salary ? `$${employee.salary.toLocaleString()}` : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="outline" size="sm">Edit</Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          {employees.length === 0 ? 'No employees found' : 'No employees match your search'}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

@@ -1,13 +1,83 @@
 
-import React from 'react';
-import { DollarSign, TrendingUp, TrendingDown, Receipt } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { DollarSign, TrendingUp, TrendingDown, Receipt, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InvoicesTab } from '@/components/Finance/InvoicesTab';
 import { ExpensesTab } from '@/components/Finance/ExpensesTab';
 import { ReportsTab } from '@/components/Finance/ReportsTab';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Finance() {
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    totalExpenses: 0,
+    profit: 0,
+    outstanding: 0
+  });
+  const [loading, setLoading] = useState(true);
+  
+  const { currentOrganization } = useOrganization();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (currentOrganization) {
+      fetchFinanceStats();
+    }
+  }, [currentOrganization]);
+
+  const fetchFinanceStats = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch sales data for revenue
+      const { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select('total_amount')
+        .eq('organization_id', currentOrganization?.id);
+
+      if (salesError) throw salesError;
+
+      // Fetch expenses data
+      const { data: expensesData, error: expensesError } = await supabase
+        .from('expenses')
+        .select('amount')
+        .eq('organization_id', currentOrganization?.id);
+
+      if (expensesError) throw expensesError;
+
+      // Fetch outstanding invoices
+      const { data: invoicesData, error: invoicesError } = await supabase
+        .from('invoices')
+        .select('total_amount')
+        .eq('organization_id', currentOrganization?.id)
+        .eq('status', 'pending');
+
+      if (invoicesError) throw invoicesError;
+
+      const totalRevenue = salesData?.reduce((sum, sale) => sum + (sale.total_amount || 0), 0) || 0;
+      const totalExpenses = expensesData?.reduce((sum, expense) => sum + (expense.amount || 0), 0) || 0;
+      const outstanding = invoicesData?.reduce((sum, invoice) => sum + (invoice.total_amount || 0), 0) || 0;
+
+      setStats({
+        totalRevenue,
+        totalExpenses,
+        profit: totalRevenue - totalExpenses,
+        outstanding
+      });
+    } catch (error) {
+      console.error('Error fetching finance stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load finance data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="space-y-6">
       <div>
@@ -17,48 +87,56 @@ export default function Finance() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$45,231.89</div>
-            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expenses</CardTitle>
-            <TrendingDown className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$12,234.00</div>
-            <p className="text-xs text-muted-foreground">+5% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Profit</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">$32,997.89</div>
-            <p className="text-xs text-muted-foreground">+15% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Outstanding</CardTitle>
-            <Receipt className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$5,432.10</div>
-            <p className="text-xs text-muted-foreground">Pending payments</p>
-          </CardContent>
-        </Card>
-      </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${stats.totalRevenue.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">From sales transactions</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Expenses</CardTitle>
+              <TrendingDown className="h-4 w-4 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${stats.totalExpenses.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Total business expenses</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Profit</CardTitle>
+              <TrendingUp className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${stats.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ${stats.profit.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground">Revenue minus expenses</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Outstanding</CardTitle>
+              <Receipt className="h-4 w-4 text-yellow-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${stats.outstanding.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Pending invoice payments</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
