@@ -167,7 +167,7 @@ export function PurchaseOrderForm({ onClose }: PurchaseOrderFormProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {suppliers.length === 0 ? (
-                    <SelectItem value="" disabled>No suppliers found</SelectItem>
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">No suppliers found</div>
                   ) : (
                     suppliers.map((sup) => (
                       <SelectItem key={sup.id} value={sup.id}>{sup.name}</SelectItem>
