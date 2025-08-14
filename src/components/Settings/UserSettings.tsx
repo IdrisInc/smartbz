@@ -97,46 +97,28 @@ export function UserSettings() {
     try {
       setAdding(true);
 
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUser.email,
-        password: newUser.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            first_name: newUser.firstName,
-            last_name: newUser.lastName,
-            display_name: `${newUser.firstName} ${newUser.lastName}`
-          }
+      // Use edge function to create user and membership in one transaction
+      // This avoids the session issue when using signUp directly
+      const { data: result, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: newUser.email,
+          password: newUser.password,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          role: newUser.role,
+          organizationId: currentOrganization?.id
         }
       });
 
-      if (authError) throw authError;
+      if (error) throw error;
 
-      if (authData.user) {
-        // Wait a moment for the profile trigger to complete
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Create organization membership
-        const { error: membershipError } = await supabase
-          .from('organization_memberships')
-          .insert({
-            user_id: authData.user.id,
-            organization_id: currentOrganization?.id,
-            role: newUser.role as 'admin' | 'business_owner' | 'manager' | 'cashier' | 'staff',
-            is_owner: false
-          });
+      toast({
+        title: "Success", 
+        description: "User created successfully",
+      });
 
-        if (membershipError) throw membershipError;
-
-        toast({
-          title: "Success",
-          description: "User created successfully",
-        });
-
-        setNewUser({ firstName: '', lastName: '', email: '', password: '', role: 'staff' });
-        fetchUsers();
-      }
+      setNewUser({ firstName: '', lastName: '', email: '', password: '', role: 'staff' });
+      fetchUsers();
     } catch (error) {
       console.error('Error creating user:', error);
       toast({
