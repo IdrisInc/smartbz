@@ -94,6 +94,15 @@ export function UserSettings() {
       return;
     }
 
+    if (!currentOrganization?.id) {
+      toast({
+        title: "Error",
+        description: "No organization selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setAdding(true);
 
@@ -106,7 +115,7 @@ export function UserSettings() {
           firstName: newUser.firstName,
           lastName: newUser.lastName,
           role: newUser.role,
-          organizationId: currentOrganization?.id
+          organizationId: currentOrganization.id
         }
       });
 
