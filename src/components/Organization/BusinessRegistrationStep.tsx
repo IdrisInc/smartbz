@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Building2, Loader2 } from 'lucide-react';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 
 const businessSectors = [
   { value: 'retail', label: 'Retail' },
@@ -47,6 +48,7 @@ export function BusinessRegistrationStep({ onComplete }: BusinessRegistrationSte
   const [loading, setLoading] = useState(false);
   const { createOrganization } = useOrganization();
   const { toast } = useToast();
+  const { checkOnboardingStatus } = useOnboarding();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +74,8 @@ export function BusinessRegistrationStep({ onComplete }: BusinessRegistrationSte
           title: "Success!",
           description: "Business details saved successfully",
         });
+        // Refresh onboarding status
+        await checkOnboardingStatus();
         onComplete();
       }
     } catch (error) {

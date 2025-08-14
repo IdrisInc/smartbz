@@ -9,6 +9,7 @@ import { MapPin, Loader2 } from 'lucide-react';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 
 interface BranchRegistrationStepProps {
   onComplete: () => void;
@@ -25,6 +26,7 @@ export function BranchRegistrationStep({ onComplete }: BranchRegistrationStepPro
   const [loading, setLoading] = useState(false);
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+  const { checkOnboardingStatus } = useOnboarding();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +58,8 @@ export function BranchRegistrationStep({ onComplete }: BranchRegistrationStepPro
         title: "Success!",
         description: "Branch created successfully",
       });
+      // Refresh onboarding status
+      await checkOnboardingStatus();
       onComplete();
     } catch (error) {
       console.error('Error creating branch:', error);

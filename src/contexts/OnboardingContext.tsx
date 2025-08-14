@@ -21,7 +21,35 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     
     // If user has no organizations, they need onboarding
     const hasOrganizations = organizations && organizations.length > 0;
-    setNeedsOnboarding(!hasOrganizations);
+    
+    if (!hasOrganizations) {
+      setNeedsOnboarding(true);
+      return;
+    }
+
+    // If user has organizations, check if onboarding is complete
+    // We'll check if they have at least one branch (indicates completed onboarding)
+    const currentOrg = organizations[0];
+    if (currentOrg) {
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data: branches, error } = await supabase
+          .from('branches')
+          .select('id')
+          .eq('organization_id', currentOrg.id)
+          .limit(1);
+        
+        // If no branches exist, user needs to complete onboarding
+        const needsOnboarding = !branches || branches.length === 0;
+        setNeedsOnboarding(needsOnboarding);
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        // Default to not needing onboarding if there's an error
+        setNeedsOnboarding(false);
+      }
+    } else {
+      setNeedsOnboarding(false);
+    }
   };
 
   useEffect(() => {

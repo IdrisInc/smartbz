@@ -10,25 +10,25 @@ export function OnboardingComplete() {
 
   const nextSteps = [
     {
-      icon: Users,
-      title: 'Add Team Members',
-      description: 'Invite staff and assign roles',
-      action: () => navigate('/settings'),
-      buttonText: 'Manage Users'
-    },
-    {
-      icon: Settings,
-      title: 'Configure Settings',
-      description: 'Set up taxes, currencies, and features',
-      action: () => navigate('/settings'),
-      buttonText: 'Go to Settings'
-    },
-    {
       icon: BarChart3,
       title: 'Start Managing',
       description: 'Begin tracking sales, inventory, and more',
       action: () => navigate('/'),
       buttonText: 'Go to Dashboard'
+    },
+    {
+      icon: Users,
+      title: 'Explore Features',
+      description: 'Discover sales, inventory, and reporting tools',
+      action: () => navigate('/sales'),
+      buttonText: 'Explore Sales'
+    },
+    {
+      icon: Settings,
+      title: 'Learn More',
+      description: 'Get familiar with the system',
+      action: () => navigate('/products'),
+      buttonText: 'View Products'
     }
   ];
 

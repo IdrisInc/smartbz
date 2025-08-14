@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -7,6 +7,7 @@ import { BusinessRegistrationStep } from './BusinessRegistrationStep';
 import { BranchRegistrationStep } from './BranchRegistrationStep';
 import { OnboardingComplete } from './OnboardingComplete';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const steps = [
   {
@@ -33,6 +34,51 @@ export function OnboardingFlow() {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const { currentOrganization } = useOrganization();
+
+  // Check onboarding progress when component mounts
+  useEffect(() => {
+    checkOnboardingProgress();
+  }, [currentOrganization]);
+
+  const checkOnboardingProgress = async () => {
+    if (!currentOrganization) return;
+
+    const progressCheck = [
+      // Step 1: Business details (organization exists)
+      currentOrganization ? 1 : null,
+      
+      // Step 2: Branch created
+      await checkBranchExists() ? 2 : null,
+    ].filter(Boolean) as number[];
+
+    setCompletedSteps(progressCheck);
+    
+    // Set current step to the next incomplete step
+    if (progressCheck.length === 0) {
+      setCurrentStep(1);
+    } else if (progressCheck.length === 1) {
+      setCurrentStep(2);
+    } else if (progressCheck.length === 2) {
+      setCurrentStep(3);
+    }
+  };
+
+  const checkBranchExists = async () => {
+    if (!currentOrganization) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .from('branches')
+        .select('id')
+        .eq('organization_id', currentOrganization.id)
+        .limit(1);
+      
+      return !error && data && data.length > 0;
+    } catch (error) {
+      console.error('Error checking branches:', error);
+      return false;
+    }
+  };
 
   const handleStepComplete = (stepId: number) => {
     if (!completedSteps.includes(stepId)) {
