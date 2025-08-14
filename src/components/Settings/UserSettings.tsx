@@ -85,6 +85,7 @@ export function UserSettings() {
         email: newUser.email,
         password: newUser.password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             first_name: newUser.firstName,
             last_name: newUser.lastName,
@@ -96,6 +97,9 @@ export function UserSettings() {
       if (authError) throw authError;
 
       if (authData.user) {
+        // Wait a moment for the profile trigger to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         // Create organization membership
         const { error: membershipError } = await supabase
           .from('organization_memberships')
