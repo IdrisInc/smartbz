@@ -47,31 +47,36 @@ export function OnboardingFlow() {
   const progress = (completedSteps.length / steps.length) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-4">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen gradient-bg p-4 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+      <div className="absolute top-20 left-20 w-32 h-32 bg-primary/20 rounded-full blur-3xl animate-bounce-in"></div>
+      <div className="absolute bottom-20 right-20 w-48 h-48 bg-accent/20 rounded-full blur-3xl animate-bounce-in" style={{ animationDelay: '0.5s' }}></div>
+      
+      <div className="max-w-4xl mx-auto space-y-8 relative z-10">
         {/* Header */}
         <div className="text-center space-y-4 animate-fade-in">
-          <h1 className="text-4xl font-bold tracking-tight">Welcome to BizWiz</h1>
-          <p className="text-xl text-muted-foreground">
-            Let's set up your business in just a few steps
+          <h1 className="text-5xl font-bold tracking-tight text-white drop-shadow-lg">Welcome to BizWiz</h1>
+          <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
+            Let's set up your business in just a few steps and get you ready to manage everything efficiently
           </p>
         </div>
 
         {/* Progress */}
-        <Card className="animate-scale-in">
+        <Card className="animate-scale-in glass-effect border-white/20 shadow-2xl">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Setup Progress</CardTitle>
-              <span className="text-sm text-muted-foreground">
+              <CardTitle className="text-white">Setup Progress</CardTitle>
+              <span className="text-sm text-white/80">
                 {completedSteps.length} of {steps.length} completed
               </span>
             </div>
-            <Progress value={progress} className="h-2" />
+            <Progress value={progress} className="h-3 bg-white/20" />
           </CardHeader>
         </Card>
 
         {/* Steps Navigation */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {steps.map((step, index) => {
             const isCompleted = completedSteps.includes(step.id);
             const isCurrent = currentStep === step.id;
@@ -80,31 +85,37 @@ export function OnboardingFlow() {
             return (
               <Card
                 key={step.id}
-                className={`cursor-pointer transition-all duration-300 transform hover:scale-105 ${
+                className={`cursor-pointer transition-all duration-500 transform hover:scale-105 glass-effect border-white/30 shadow-xl ${
                   isCurrent
-                    ? 'ring-2 ring-primary shadow-lg animate-pulse'
+                    ? 'ring-2 ring-white/50 shadow-2xl animate-pulse scale-105'
                     : isCompleted
-                    ? 'bg-green-50 border-green-200 dark:bg-green-950/20'
+                    ? 'bg-green-500/20 border-green-300/50 text-white'
                     : !isAccessible
                     ? 'opacity-50 cursor-not-allowed'
-                    : ''
+                    : 'hover:bg-white/20'
                 }`}
                 onClick={() => isAccessible && setCurrentStep(step.id)}
+                style={{ animationDelay: `${index * 0.2}s` }}
               >
                 <CardHeader className="text-center pb-2">
-                  <div className="mx-auto mb-2">
+                  <div className="mx-auto mb-3">
                     {isCompleted ? (
-                      <CheckCircle2 className="h-8 w-8 text-green-600" />
+                      <div className="relative">
+                        <CheckCircle2 className="h-10 w-10 text-green-300 animate-bounce-in" />
+                        <div className="absolute inset-0 h-10 w-10 rounded-full bg-green-300/30 animate-ping"></div>
+                      </div>
                     ) : (
                       <step.icon 
-                        className={`h-8 w-8 ${
-                          isCurrent ? 'text-primary animate-bounce' : 'text-muted-foreground'
+                        className={`h-10 w-10 ${
+                          isCurrent 
+                            ? 'text-white animate-bounce drop-shadow-lg' 
+                            : 'text-white/70'
                         }`} 
                       />
                     )}
                   </div>
-                  <CardTitle className="text-lg">{step.title}</CardTitle>
-                  <CardDescription className="text-sm">
+                  <CardTitle className="text-lg text-white font-semibold">{step.title}</CardTitle>
+                  <CardDescription className="text-sm text-white/80">
                     {step.description}
                   </CardDescription>
                 </CardHeader>

@@ -87,14 +87,14 @@ export function BusinessRegistrationStep({ onComplete }: BusinessRegistrationSte
   };
 
   return (
-    <Card className="animate-slide-in-right">
+    <Card className="animate-slide-in-right glass-effect border-white/30 shadow-2xl">
       <CardHeader className="text-center">
-        <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full">
-          <Building2 className="h-6 w-6 text-primary" />
+        <div className="mx-auto mb-4 p-4 bg-white/20 rounded-full backdrop-blur-sm">
+          <Building2 className="h-8 w-8 text-white" />
         </div>
-        <CardTitle className="text-2xl">Business Information</CardTitle>
-        <CardDescription>
-          Tell us about your business to get started
+        <CardTitle className="text-3xl text-white font-bold">Business Information</CardTitle>
+        <CardDescription className="text-white/80 text-lg">
+          Tell us about your business to get started with BizWiz
         </CardDescription>
       </CardHeader>
       <CardContent>
