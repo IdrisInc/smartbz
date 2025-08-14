@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,36 +46,50 @@ export function OnboardingFlow() {
   const progress = (completedSteps.length / steps.length) * 100;
 
   return (
-    <div className="min-h-screen gradient-bg p-4 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
-      <div className="absolute top-20 left-20 w-32 h-32 bg-primary/20 rounded-full blur-3xl animate-bounce-in"></div>
-      <div className="absolute bottom-20 right-20 w-48 h-48 bg-accent/20 rounded-full blur-3xl animate-bounce-in" style={{ animationDelay: '0.5s' }}></div>
+    <div className="min-h-screen bg-gradient-hero p-4 overflow-hidden relative">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-32 h-32 bg-primary/10 rounded-full animate-float"></div>
+        <div className="absolute bottom-20 right-20 w-24 h-24 bg-primary-glow/10 rounded-full animate-float" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-1/2 right-1/4 w-16 h-16 bg-primary/5 rounded-full animate-float" style={{animationDelay: '2s'}}></div>
+      </div>
       
       <div className="max-w-4xl mx-auto space-y-8 relative z-10">
-        {/* Header */}
-        <div className="text-center space-y-4 animate-fade-in">
-          <h1 className="text-5xl font-bold tracking-tight text-white drop-shadow-lg">Welcome to BizWiz</h1>
-          <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
-            Let's set up your business in just a few steps and get you ready to manage everything efficiently
+        {/* Enhanced Header */}
+        <div className="text-center space-y-6 animate-fade-in">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-primary rounded-full mb-4 animate-glow">
+            <Building2 className="h-10 w-10 text-white" />
+          </div>
+          <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+            Welcome to BizWiz
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Transform your business management with our comprehensive platform. Let's set up your organization in just a few simple steps.
           </p>
         </div>
 
-        {/* Progress */}
-        <Card className="animate-scale-in glass-effect border-white/20 shadow-2xl">
+        {/* Enhanced Progress */}
+        <Card className="animate-scale-in glass shadow-card border-0">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-white">Setup Progress</CardTitle>
-              <span className="text-sm text-white/80">
+              <CardTitle className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-gradient-primary rounded-full animate-pulse"></div>
+                Setup Progress
+              </CardTitle>
+              <span className="text-sm text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
                 {completedSteps.length} of {steps.length} completed
               </span>
             </div>
-            <Progress value={progress} className="h-3 bg-white/20" />
+            <div className="relative">
+              <Progress value={progress} className="h-3 bg-muted/30" />
+              <div className="absolute inset-0 bg-gradient-primary rounded-full opacity-20 animate-pulse" 
+                   style={{ width: `${progress}%` }}></div>
+            </div>
           </CardHeader>
         </Card>
 
         {/* Steps Navigation */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {steps.map((step, index) => {
             const isCompleted = completedSteps.includes(step.id);
             const isCurrent = currentStep === step.id;
@@ -85,37 +98,48 @@ export function OnboardingFlow() {
             return (
               <Card
                 key={step.id}
-                className={`cursor-pointer transition-all duration-500 transform hover:scale-105 glass-effect border-white/30 shadow-xl ${
+                className={`cursor-pointer transition-all duration-500 transform hover-lift ${
                   isCurrent
-                    ? 'ring-2 ring-white/50 shadow-2xl animate-pulse scale-105'
+                    ? 'ring-2 ring-primary shadow-elegant bg-gradient-accent animate-glow border-primary/30'
                     : isCompleted
-                    ? 'bg-green-500/20 border-green-300/50 text-white'
+                    ? 'bg-gradient-to-br from-success/10 to-success/5 border-success/30 shadow-soft'
                     : !isAccessible
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-white/20'
+                    ? 'opacity-50 cursor-not-allowed grayscale'
+                    : 'hover-scale shadow-card glass'
                 }`}
                 onClick={() => isAccessible && setCurrentStep(step.id)}
-                style={{ animationDelay: `${index * 0.2}s` }}
               >
                 <CardHeader className="text-center pb-2">
-                  <div className="mx-auto mb-3">
-                    {isCompleted ? (
-                      <div className="relative">
-                        <CheckCircle2 className="h-10 w-10 text-green-300 animate-bounce-in" />
-                        <div className="absolute inset-0 h-10 w-10 rounded-full bg-green-300/30 animate-ping"></div>
-                      </div>
-                    ) : (
-                      <step.icon 
-                        className={`h-10 w-10 ${
-                          isCurrent 
-                            ? 'text-white animate-bounce drop-shadow-lg' 
-                            : 'text-white/70'
-                        }`} 
-                      />
+                  <div className="mx-auto mb-4 relative">
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-2 ${
+                      isCurrent 
+                        ? 'bg-gradient-primary shadow-glow' 
+                        : isCompleted
+                        ? 'bg-gradient-to-r from-success to-success/80 shadow-soft'
+                        : 'bg-muted/30'
+                    }`}>
+                      {isCompleted ? (
+                        <CheckCircle2 className="h-8 w-8 text-white animate-scale-in" />
+                      ) : (
+                        <step.icon 
+                          className={`h-8 w-8 ${
+                            isCurrent 
+                              ? 'text-white animate-bounce' 
+                              : 'text-muted-foreground'
+                          }`} 
+                        />
+                      )}
+                    </div>
+                    {isCurrent && (
+                      <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping"></div>
                     )}
                   </div>
-                  <CardTitle className="text-lg text-white font-semibold">{step.title}</CardTitle>
-                  <CardDescription className="text-sm text-white/80">
+                  <CardTitle className={`text-lg font-semibold ${
+                    isCurrent ? 'text-primary' : isCompleted ? 'text-success' : ''
+                  }`}>
+                    {step.title}
+                  </CardTitle>
+                  <CardDescription className="text-sm leading-relaxed">
                     {step.description}
                   </CardDescription>
                 </CardHeader>
@@ -124,8 +148,8 @@ export function OnboardingFlow() {
           })}
         </div>
 
-        {/* Step Content */}
-        <div className="animate-fade-in">
+        {/* Enhanced Step Content */}
+        <div className="animate-slide-in-right">
           {currentStep === 1 && (
             <BusinessRegistrationStep onComplete={() => handleStepComplete(1)} />
           )}
