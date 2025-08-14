@@ -43,18 +43,35 @@ export function UserSettings() {
           id,
           role,
           joined_at,
-          profiles!inner(
-            id,
-            first_name,
-            last_name,
-            display_name,
-            user_id
-          )
+          user_id
         `)
         .eq('organization_id', currentOrganization?.id);
 
       if (error) throw error;
-      setUsers(data || []);
+
+      // Fetch profiles separately for each user
+      const usersWithProfiles = await Promise.all(
+        (data || []).map(async (membership) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, display_name, user_id')
+            .eq('user_id', membership.user_id)
+            .single();
+
+          return {
+            ...membership,
+            profiles: profile || {
+              id: membership.user_id,
+              first_name: 'Unknown',
+              last_name: 'User',
+              display_name: 'Unknown User',
+              user_id: membership.user_id
+            }
+          };
+        })
+      );
+
+      setUsers(usersWithProfiles);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
