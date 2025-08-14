@@ -119,7 +119,18 @@ export function UserSettings() {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle FunctionsHttpError specifically
+        if (error.message && error.message.includes('Edge Function returned a non-2xx status code')) {
+          throw new Error('Failed to create user. The email may already be in use or there was a server error.');
+        }
+        throw error;
+      }
+
+      // Check if the function returned an error in the response data
+      if (result?.error) {
+        throw new Error(result.error);
+      }
 
       toast({
         title: "Success", 

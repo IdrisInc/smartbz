@@ -77,6 +77,31 @@ serve(async (req) => {
       throw new Error('Insufficient permissions to create users')
     }
 
+    // Check if user already exists
+    const { data: existingUsers, error: checkError } = await supabaseAdmin.auth.admin.listUsers()
+    if (checkError) {
+      console.error('Error checking existing users:', checkError)
+    }
+    
+    const userExists = existingUsers?.users?.some(u => u.email === email)
+    if (userExists) {
+      // If user exists, check if they're already a member of this organization
+      const { data: existingMembership } = await supabaseAdmin
+        .from('organization_memberships')
+        .select('id')
+        .eq('organization_id', organizationId)
+        .eq('user_id', existingUsers.users.find(u => u.email === email)?.id)
+        .single()
+
+      if (existingMembership) {
+        throw new Error('User is already a member of this organization')
+      } else {
+        // User exists but not in this organization - we could add them here
+        // For now, return a clear error message
+        throw new Error('A user with this email already exists. Please invite them to join the organization instead.')
+      }
+    }
+
     // Create the new user using admin client
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
