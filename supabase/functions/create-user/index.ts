@@ -80,14 +80,13 @@ serve(async (req) => {
       }
     } else {
       // For admin registration, verify the requesting user is an admin
-      const { data: adminMembership } = await supabaseAdmin
+      const { data: adminMemberships } = await supabaseAdmin
         .from('organization_memberships')
         .select('role')
         .eq('user_id', requestingUser.id)
         .eq('role', 'admin')
-        .single()
 
-      if (!adminMembership) {
+      if (!adminMemberships || adminMemberships.length === 0) {
         throw new Error('Only admins can perform admin registration')
       }
     }
