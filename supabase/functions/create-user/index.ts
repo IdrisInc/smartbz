@@ -79,7 +79,7 @@ serve(async (req) => {
         throw new Error('Insufficient permissions to create users')
       }
     } else {
-      // For admin registration, verify the requesting user is an admin
+      // For admin registration, verify the requesting user is an admin using service role
       const { data: adminMemberships } = await supabaseAdmin
         .from('organization_memberships')
         .select('role')
