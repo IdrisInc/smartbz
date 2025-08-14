@@ -5,15 +5,18 @@ import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/components/Auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { OrganizationSelector } from '@/components/Organization/OrganizationSelector';
 
 export function DashboardHeader() {
   const { signOut, user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     try {
       await signOut();
+      navigate('/auth');
       toast({
         title: "Signed out",
         description: "You have been successfully signed out.",
