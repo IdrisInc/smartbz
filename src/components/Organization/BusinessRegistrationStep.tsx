@@ -10,6 +10,7 @@ import { Building2, Loader2 } from 'lucide-react';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { SubscriptionModal } from './SubscriptionModal';
 
 const businessSectors = [
   { value: 'retail', label: 'Retail' },
@@ -46,6 +47,8 @@ export function BusinessRegistrationStep({ onComplete }: BusinessRegistrationSte
     country: ''
   });
   const [loading, setLoading] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [createdOrgId, setCreatedOrgId] = useState<string | null>(null);
   const { createOrganization } = useOrganization();
   const { toast } = useToast();
   const { checkOnboardingStatus } = useOnboarding();
@@ -70,13 +73,8 @@ export function BusinessRegistrationStep({ onComplete }: BusinessRegistrationSte
       );
       
       if (newOrg) {
-        toast({
-          title: "Success!",
-          description: "Business details saved successfully",
-        });
-        // Refresh onboarding status
-        await checkOnboardingStatus();
-        onComplete();
+        setCreatedOrgId(newOrg.id);
+        setShowSubscriptionModal(true);
       }
     } catch (error) {
       console.error('Error creating organization:', error);
@@ -90,8 +88,19 @@ export function BusinessRegistrationStep({ onComplete }: BusinessRegistrationSte
     }
   };
 
+  const handleSubscriptionSuccess = async () => {
+    toast({
+      title: "Success!",
+      description: "Business details saved successfully",
+    });
+    // Refresh onboarding status
+    await checkOnboardingStatus();
+    onComplete();
+  };
+
   return (
-    <Card className="animate-slide-in-right glass-effect border-white/30 shadow-2xl">
+    <>
+      <Card className="animate-slide-in-right glass-effect border-white/30 shadow-2xl">
       <CardHeader className="text-center">
         <div className="mx-auto mb-4 p-4 bg-white/20 rounded-full backdrop-blur-sm">
           <Building2 className="h-8 w-8 text-white" />
@@ -223,5 +232,15 @@ export function BusinessRegistrationStep({ onComplete }: BusinessRegistrationSte
         </form>
       </CardContent>
     </Card>
+    
+    {createdOrgId && (
+      <SubscriptionModal
+        open={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        organizationId={createdOrgId}
+        onSuccess={handleSubscriptionSuccess}
+      />
+    )}
+  </>
   );
 }

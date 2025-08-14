@@ -54,27 +54,42 @@ serve(async (req) => {
       throw new Error('Unauthorized: Invalid user session')
     }
 
-    const { email, password, firstName, lastName, role, organizationId } = await req.json()
+    const { email, password, firstName, lastName, role, organizationId, isAdminRegistration } = await req.json()
 
     // Validate required fields
     if (!email || !password || !firstName || !lastName || !role || !organizationId) {
       throw new Error('Missing required fields')
     }
 
-    // Verify the requesting user has permission to create users in this organization
-    const { data: membership, error: membershipError } = await supabaseUser
-      .from('organization_memberships')
-      .select('role, is_owner')
-      .eq('user_id', requestingUser.id)
-      .eq('organization_id', organizationId)
-      .single()
+    // For admin registration, skip organization membership check
+    if (!isAdminRegistration) {
+      // Verify the requesting user has permission to create users in this organization
+      const { data: membership, error: membershipError } = await supabaseUser
+        .from('organization_memberships')
+        .select('role, is_owner')
+        .eq('user_id', requestingUser.id)
+        .eq('organization_id', organizationId)
+        .single()
 
-    if (membershipError || !membership) {
-      throw new Error('User is not a member of this organization')
-    }
+      if (membershipError || !membership) {
+        throw new Error('User is not a member of this organization')
+      }
 
-    if (!membership.is_owner && !['business_owner', 'manager'].includes(membership.role)) {
-      throw new Error('Insufficient permissions to create users')
+      if (!membership.is_owner && !['business_owner', 'manager'].includes(membership.role)) {
+        throw new Error('Insufficient permissions to create users')
+      }
+    } else {
+      // For admin registration, verify the requesting user is an admin
+      const { data: adminMembership } = await supabaseAdmin
+        .from('organization_memberships')
+        .select('role')
+        .eq('user_id', requestingUser.id)
+        .eq('role', 'admin')
+        .single()
+
+      if (!adminMembership) {
+        throw new Error('Only admins can perform admin registration')
+      }
     }
 
     // Check if user already exists
@@ -83,23 +98,52 @@ serve(async (req) => {
       console.error('Error checking existing users:', checkError)
     }
     
-    const userExists = existingUsers?.users?.some(u => u.email === email)
-    if (userExists) {
-      // If user exists, check if they're already a member of this organization
+    const existingUser = existingUsers?.users?.find(u => u.email === email)
+    
+    if (!isAdminRegistration && existingUser) {
+      // For regular registration, check if they're already a member of this organization
       const { data: existingMembership } = await supabaseAdmin
         .from('organization_memberships')
         .select('id')
         .eq('organization_id', organizationId)
-        .eq('user_id', existingUsers.users.find(u => u.email === email)?.id)
+        .eq('user_id', existingUser.id)
         .single()
 
       if (existingMembership) {
         throw new Error('User is already a member of this organization')
       } else {
-        // User exists but not in this organization - we could add them here
-        // For now, return a clear error message
-        throw new Error('A user with this email already exists. Please invite them to join the organization instead.')
+        // Add existing user to the organization
+        const { error: membershipError } = await supabaseAdmin
+          .from('organization_memberships')
+          .insert({
+            user_id: existingUser.id,
+            organization_id: organizationId,
+            role: role,
+            is_owner: false
+          })
+
+        if (membershipError) {
+          throw membershipError
+        }
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            userId: existingUser.id,
+            message: 'Existing user added to organization'
+          }),
+          {
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            },
+            status: 200,
+          },
+        )
       }
+    } else if (isAdminRegistration && existingUser) {
+      // For admin registration, don't allow duplicate emails
+      throw new Error('A user with this email already exists')
     }
 
     // Create the new user using admin client
@@ -145,7 +189,7 @@ serve(async (req) => {
         user_id: newUser.user.id,
         organization_id: organizationId,
         role: role,
-        is_owner: false
+        is_owner: isAdminRegistration && role === 'business_owner'
       })
 
     if (membershipInsertError) {

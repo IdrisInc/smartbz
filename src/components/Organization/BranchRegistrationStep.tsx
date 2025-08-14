@@ -10,6 +10,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { SubscriptionModal } from './SubscriptionModal';
 
 interface BranchRegistrationStepProps {
   onComplete: () => void;
@@ -24,6 +25,7 @@ export function BranchRegistrationStep({ onComplete }: BranchRegistrationStepPro
     email: ''
   });
   const [loading, setLoading] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
   const { checkOnboardingStatus } = useOnboarding();
@@ -54,13 +56,18 @@ export function BranchRegistrationStep({ onComplete }: BranchRegistrationStepPro
 
       if (error) throw error;
 
-      toast({
-        title: "Success!",
-        description: "Branch created successfully",
-      });
-      // Refresh onboarding status
-      await checkOnboardingStatus();
-      onComplete();
+      // Check if organization is on free plan and show subscription modal
+      if (currentOrganization.subscription_plan === 'free') {
+        setShowSubscriptionModal(true);
+      } else {
+        toast({
+          title: "Success!",
+          description: "Branch created successfully",
+        });
+        // Refresh onboarding status
+        await checkOnboardingStatus();
+        onComplete();
+      }
     } catch (error) {
       console.error('Error creating branch:', error);
       toast({
@@ -73,8 +80,19 @@ export function BranchRegistrationStep({ onComplete }: BranchRegistrationStepPro
     }
   };
 
+  const handleSubscriptionSuccess = async () => {
+    toast({
+      title: "Success!",
+      description: "Branch created successfully",
+    });
+    // Refresh onboarding status
+    await checkOnboardingStatus();
+    onComplete();
+  };
+
   return (
-    <Card className="animate-slide-in-right">
+    <>
+      <Card className="animate-slide-in-right">
       <CardHeader className="text-center">
         <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full">
           <MapPin className="h-6 w-6 text-primary" />
@@ -170,5 +188,15 @@ export function BranchRegistrationStep({ onComplete }: BranchRegistrationStepPro
         </form>
       </CardContent>
     </Card>
+    
+    {currentOrganization && (
+      <SubscriptionModal
+        open={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        organizationId={currentOrganization.id}
+        onSuccess={handleSubscriptionSuccess}
+      />
+    )}
+  </>
   );
 }

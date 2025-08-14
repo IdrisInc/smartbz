@@ -10,8 +10,12 @@ import { LogsSettings } from '@/components/Settings/LogsSettings';
 import { SubscriptionSettings } from '@/components/Settings/SubscriptionSettings';
 import { RolesPermissionsTab } from '@/components/Settings/RolesPermissionsTab';
 import { BranchManagement } from '@/components/Organization/BranchManagement';
+import { AdminUserRegistration } from '@/components/Admin/AdminUserRegistration';
+import { useUserRole } from '@/hooks/useUserRole';
 
 export default function Settings() {
+  const { userRole } = useUserRole();
+  
   return (
     <div className="space-y-6">
       <div>
@@ -21,17 +25,20 @@ export default function Settings() {
         </p>
       </div>
 
-      <Tabs defaultValue="business" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-8">
-          <TabsTrigger value="business">Business</TabsTrigger>
-          <TabsTrigger value="subscription">Subscription</TabsTrigger>
-          <TabsTrigger value="tax">Tax & Currency</TabsTrigger>
-          <TabsTrigger value="features">Features</TabsTrigger>
-          <TabsTrigger value="users">Users & Roles</TabsTrigger>
-          <TabsTrigger value="branches">Branches</TabsTrigger>
-          <TabsTrigger value="permissions">Permissions</TabsTrigger>
-          <TabsTrigger value="logs">System Logs</TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="business" className="space-y-4">
+          <TabsList className={`grid w-full ${userRole === 'admin' ? 'grid-cols-9' : 'grid-cols-8'}`}>
+            <TabsTrigger value="business">Business</TabsTrigger>
+            <TabsTrigger value="subscription">Subscription</TabsTrigger>
+            <TabsTrigger value="tax">Tax & Currency</TabsTrigger>
+            <TabsTrigger value="features">Features</TabsTrigger>
+            <TabsTrigger value="users">Users & Roles</TabsTrigger>
+            <TabsTrigger value="branches">Branches</TabsTrigger>
+            <TabsTrigger value="permissions">Permissions</TabsTrigger>
+            <TabsTrigger value="logs">System Logs</TabsTrigger>
+            {userRole === 'admin' && (
+              <TabsTrigger value="admin">Admin</TabsTrigger>
+            )}
+          </TabsList>
 
         <TabsContent value="business">
           <BusinessSettings />
@@ -61,10 +68,16 @@ export default function Settings() {
           <RolesPermissionsTab />
         </TabsContent>
 
-        <TabsContent value="logs">
-          <LogsSettings />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="logs">
+            <LogsSettings />
+          </TabsContent>
+          
+          {userRole === 'admin' && (
+            <TabsContent value="admin">
+              <AdminUserRegistration />
+            </TabsContent>
+          )}
+        </Tabs>
     </div>
   );
 }
