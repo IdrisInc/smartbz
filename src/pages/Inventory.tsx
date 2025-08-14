@@ -1,42 +1,96 @@
 
-import React, { useState } from 'react';
-import { Plus, Search, Package, TrendingDown, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Package, TrendingDown, AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PurchaseOrderForm } from '@/components/Inventory/PurchaseOrderForm';
-
-const mockInventory = [
-  {
-    id: 1,
-    name: 'iPhone 15 Pro',
-    sku: 'IPH15P-001',
-    currentStock: 15,
-    minStock: 10,
-    maxStock: 50,
-    location: 'A1-B2',
-    lastPurchase: '2024-01-10',
-    avgCost: 850.00,
-    serialNumbers: ['IPH001', 'IPH002', 'IPH003']
-  },
-  {
-    id: 2,
-    name: 'Office Bundle',
-    sku: 'BUNDLE-001',
-    currentStock: 5,
-    minStock: 10,
-    maxStock: 30,
-    location: 'B2-C1',
-    lastPurchase: '2024-01-12',
-    avgCost: 250.00,
-    serialNumbers: []
-  }
-];
+import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Inventory() {
   const [showPOForm, setShowPOForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [products, setProducts] = useState([]);
+  const [stats, setStats] = useState({
+    totalItems: 0,
+    lowStockItems: 0,
+    inventoryValue: 0,
+    pendingOrders: 0
+  });
+  const [loading, setLoading] = useState(true);
+  
+  const { currentOrganization } = useOrganization();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (currentOrganization) {
+      fetchProducts();
+      fetchStats();
+    }
+  }, [currentOrganization]);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('organization_id', currentOrganization?.id)
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load products",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      // Fetch products for stats
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('stock_quantity, min_stock_level, price, cost')
+        .eq('organization_id', currentOrganization?.id)
+        .eq('is_active', true);
+
+      if (productsError) throw productsError;
+
+      // Fetch purchase orders
+      const { data: poData, error: poError } = await supabase
+        .from('purchase_orders')
+        .select('status')
+        .eq('organization_id', currentOrganization?.id)
+        .eq('status', 'pending');
+
+      if (poError) throw poError;
+
+      const totalItems = productsData?.length || 0;
+      const lowStockItems = productsData?.filter(p => (p.stock_quantity || 0) <= (p.min_stock_level || 0)).length || 0;
+      const inventoryValue = productsData?.reduce((sum, p) => sum + ((p.stock_quantity || 0) * (p.cost || p.price || 0)), 0) || 0;
+      const pendingOrders = poData?.length || 0;
+
+      setStats({ totalItems, lowStockItems, inventoryValue, pendingOrders });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  const filteredProducts = products.filter(product =>
+    product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -60,7 +114,7 @@ export default function Inventory() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,234</div>
+            <div className="text-2xl font-bold">{stats.totalItems.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Active inventory items</p>
           </CardContent>
         </Card>
@@ -70,7 +124,7 @@ export default function Inventory() {
             <TrendingDown className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">12</div>
+            <div className="text-2xl font-bold text-destructive">{stats.lowStockItems}</div>
             <p className="text-xs text-muted-foreground">Need reordering</p>
           </CardContent>
         </Card>
@@ -80,7 +134,7 @@ export default function Inventory() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$125,430</div>
+            <div className="text-2xl font-bold">${stats.inventoryValue.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Total stock value</p>
           </CardContent>
         </Card>
@@ -90,7 +144,7 @@ export default function Inventory() {
             <AlertTriangle className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8</div>
+            <div className="text-2xl font-bold">{stats.pendingOrders}</div>
             <p className="text-xs text-muted-foreground">Purchase orders</p>
           </CardContent>
         </Card>
@@ -108,57 +162,69 @@ export default function Inventory() {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {mockInventory.map((item) => (
-          <Card key={item.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{item.name}</CardTitle>
-                  <CardDescription>SKU: {item.sku} | Location: {item.location}</CardDescription>
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredProducts.length === 0 ? (
+            <Card>
+              <CardContent className="py-8">
+                <div className="text-center text-muted-foreground">
+                  {searchTerm ? 'No products found matching your search.' : 'No products in inventory yet.'}
                 </div>
-                <Badge 
-                  variant={item.currentStock <= item.minStock ? 'destructive' : 'default'}
-                >
-                  {item.currentStock <= item.minStock ? 'Low Stock' : 'In Stock'}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-4 gap-4">
-                <div>
-                  <div className="text-sm text-muted-foreground">Current Stock</div>
-                  <div className="text-lg font-semibold">{item.currentStock}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Min/Max Stock</div>
-                  <div className="text-lg">{item.minStock}/{item.maxStock}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Avg Cost</div>
-                  <div className="text-lg font-semibold">${item.avgCost}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Last Purchase</div>
-                  <div className="text-lg">{item.lastPurchase}</div>
-                </div>
-              </div>
-              {item.serialNumbers.length > 0 && (
-                <div className="mt-4">
-                  <div className="text-sm text-muted-foreground mb-2">Serial Numbers:</div>
-                  <div className="flex flex-wrap gap-1">
-                    {item.serialNumbers.map((serial) => (
-                      <Badge key={serial} variant="outline" className="text-xs">
-                        {serial}
-                      </Badge>
-                    ))}
+              </CardContent>
+            </Card>
+          ) : (
+            filteredProducts.map((item) => (
+              <Card key={item.id}>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg">{item.name}</CardTitle>
+                      <CardDescription>
+                        SKU: {item.sku || 'N/A'} | Category: {item.category || 'Uncategorized'}
+                      </CardDescription>
+                    </div>
+                    <Badge 
+                      variant={(item.stock_quantity || 0) <= (item.min_stock_level || 0) ? 'destructive' : 'default'}
+                    >
+                      {(item.stock_quantity || 0) <= (item.min_stock_level || 0) ? 'Low Stock' : 'In Stock'}
+                    </Badge>
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-4 gap-4">
+                    <div>
+                      <div className="text-sm text-muted-foreground">Current Stock</div>
+                      <div className="text-lg font-semibold">{item.stock_quantity || 0}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground">Min Stock Level</div>
+                      <div className="text-lg">{item.min_stock_level || 0}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground">Price</div>
+                      <div className="text-lg font-semibold">${item.price?.toLocaleString() || '0'}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground">Cost</div>
+                      <div className="text-lg">${item.cost?.toLocaleString() || '0'}</div>
+                    </div>
+                  </div>
+                  {item.description && (
+                    <div className="mt-4">
+                      <div className="text-sm text-muted-foreground mb-1">Description:</div>
+                      <div className="text-sm">{item.description}</div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
 
       {showPOForm && (
         <PurchaseOrderForm onClose={() => setShowPOForm(false)} />

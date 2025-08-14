@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Plus, Search, Receipt, CreditCard } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Receipt, CreditCard, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,34 +8,88 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SaleForm } from '@/components/Sales/SaleForm';
 import { POSInterface } from '@/components/Sales/POSInterface';
-
-const mockSales = [
-  {
-    id: 1,
-    orderNumber: 'ORD-001',
-    customer: 'John Doe',
-    total: 150.00,
-    status: 'completed',
-    paymentMethod: 'card',
-    date: '2024-01-15',
-    items: 3
-  },
-  {
-    id: 2,
-    orderNumber: 'ORD-002',
-    customer: 'Walk-in Customer',
-    total: 75.50,
-    status: 'pending',
-    paymentMethod: 'cash',
-    date: '2024-01-15',
-    items: 2
-  }
-];
+import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Sales() {
   const [showForm, setShowForm] = useState(false);
   const [showPOS, setShowPOS] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sales, setSales] = useState([]);
+  const [stats, setStats] = useState({
+    todaysSales: 0,
+    ordersToday: 0
+  });
+  const [loading, setLoading] = useState(true);
+  
+  const { currentOrganization } = useOrganization();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (currentOrganization) {
+      fetchSales();
+      fetchStats();
+    }
+  }, [currentOrganization]);
+
+  const fetchSales = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('sales')
+        .select(`
+          id,
+          sale_number,
+          total_amount,
+          payment_status,
+          payment_method,
+          sale_date,
+          created_at,
+          contacts(name)
+        `)
+        .eq('organization_id', currentOrganization?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSales(data || []);
+    } catch (error) {
+      console.error('Error fetching sales:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load sales data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const today = new Date().toDateString();
+      
+      const { data: todaySales, error: salesError } = await supabase
+        .from('sales')
+        .select('total_amount')
+        .eq('organization_id', currentOrganization?.id)
+        .gte('sale_date', new Date(today).toISOString());
+
+      if (salesError) throw salesError;
+
+      const todaysSales = todaySales?.reduce((sum, sale) => sum + (sale.total_amount || 0), 0) || 0;
+      const ordersToday = todaySales?.length || 0;
+
+      setStats({ todaysSales, ordersToday });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  const filteredSales = sales.filter(sale =>
+    sale.sale_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    sale.contacts?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -65,8 +119,8 @@ export default function Sales() {
             <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$1,234</div>
-            <p className="text-xs text-muted-foreground">+12% from yesterday</p>
+            <div className="text-2xl font-bold">${stats.todaysSales.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Sales for today</p>
           </CardContent>
         </Card>
         <Card>
@@ -75,8 +129,8 @@ export default function Sales() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24</div>
-            <p className="text-xs text-muted-foreground">+8% from yesterday</p>
+            <div className="text-2xl font-bold">{stats.ordersToday}</div>
+            <p className="text-xs text-muted-foreground">Transactions today</p>
           </CardContent>
         </Card>
       </div>
@@ -93,33 +147,48 @@ export default function Sales() {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {mockSales.map((sale) => (
-          <Card key={sale.id}>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle className="text-lg">{sale.orderNumber}</CardTitle>
-                  <CardDescription>Customer: {sale.customer}</CardDescription>
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredSales.length === 0 ? (
+            <Card>
+              <CardContent className="py-8">
+                <div className="text-center text-muted-foreground">
+                  {searchTerm ? 'No sales found matching your search.' : 'No sales recorded yet.'}
                 </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold">${sale.total}</div>
-                  <Badge variant={sale.status === 'completed' ? 'default' : 'secondary'}>
-                    {sale.status}
-                  </Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Items: {sale.items}</span>
-                <span>Payment: {sale.paymentMethod}</span>
-                <span>Date: {sale.date}</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ) : (
+            filteredSales.map((sale) => (
+              <Card key={sale.id}>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle className="text-lg">{sale.sale_number || `Sale #${sale.id.slice(0, 8)}`}</CardTitle>
+                      <CardDescription>Customer: {sale.contacts?.name || 'Walk-in Customer'}</CardDescription>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold">${sale.total_amount?.toLocaleString() || '0'}</div>
+                      <Badge variant={sale.payment_status === 'paid' ? 'default' : 'secondary'}>
+                        {sale.payment_status || 'pending'}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Payment: {sale.payment_method || 'Not specified'}</span>
+                    <span>Date: {new Date(sale.sale_date || sale.created_at).toLocaleDateString()}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
 
       {showForm && (
         <SaleForm onClose={() => setShowForm(false)} />

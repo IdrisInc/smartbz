@@ -196,17 +196,9 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">Product A</span>
-                    <span className="text-green-600">$12,450</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">Product B</span>
-                    <span className="text-green-600">$8,920</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">Product C</span>
-                    <span className="text-green-600">$7,340</span>
+                  {/* Real data will be fetched from products table */}
+                  <div className="text-center text-muted-foreground py-4">
+                    Real product performance data will be displayed here based on sales data
                   </div>
                 </div>
               </CardContent>
@@ -237,13 +229,9 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center p-2 bg-yellow-50 rounded">
-                    <span>Widget Pro</span>
-                    <Badge variant="secondary">5 left</Badge>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-red-50 rounded">
-                    <span>Gadget Max</span>
-                    <Badge variant="destructive">2 left</Badge>
+                  {/* Real low stock data will be fetched from products table */}
+                  <div className="text-center text-muted-foreground py-4">
+                    Real low stock alerts will be displayed here based on inventory data
                   </div>
                 </div>
               </CardContent>
@@ -262,16 +250,16 @@ export default function Reports() {
                 <div className="space-y-4">
                   <div className="flex justify-between">
                     <span>Total Revenue</span>
-                    <span className="font-bold text-green-600">$142,350</span>
+                    <span className="font-bold text-green-600">${stats.totalRevenue.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Total Expenses</span>
-                    <span className="font-bold text-red-600">$95,240</span>
+                    <span>Total Orders</span>
+                    <span className="font-bold text-blue-600">{stats.totalOrders.toLocaleString()}</span>
                   </div>
                   <div className="border-t pt-2">
                     <div className="flex justify-between">
-                      <span className="font-medium">Net Profit</span>
-                      <span className="font-bold text-green-600">$47,110</span>
+                      <span className="font-medium">Avg Order Value</span>
+                      <span className="font-bold text-green-600">${stats.avgOrderValue.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -317,17 +305,9 @@ export default function Reports() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span>High Value ($1000+)</span>
-                    <Badge>245 customers</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Medium Value ($500-1000)</span>
-                    <Badge variant="secondary">486 customers</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Low Value ($500-)</span>
-                    <Badge variant="outline">892 customers</Badge>
+                  {/* Real customer segment data will be calculated from sales and contacts */}
+                  <div className="text-center text-muted-foreground py-4">
+                    Real customer segmentation will be displayed here based on purchase history
                   </div>
                 </div>
               </CardContent>
