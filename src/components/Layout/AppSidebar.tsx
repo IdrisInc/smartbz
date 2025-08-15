@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Crown } from 'lucide-react';
+import { Crown, AlertTriangle } from 'lucide-react';
 import { useRoleBasedNavigation } from './RoleBasedNavigation';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { SubscriptionUpgradeInterface } from '@/components/Organization/SubscriptionUpgradeInterface';
 import {
   Sidebar,
   SidebarContent,
@@ -16,12 +18,16 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const menuItems = useRoleBasedNavigation();
   const { userRole } = useUserRole();
+  const { currentPlan, limits, currentUsage, getNextPlan } = useSubscriptionLimits();
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -30,9 +36,42 @@ export function AppSidebar() {
 
   const isCollapsed = state === 'collapsed';
 
+  const getRoleDisplayName = (role: string) => {
+    const roleMap: Record<string, string> = {
+      'super_admin': 'Super Admin',
+      'business_owner': 'Business Owner',
+      'admin_staff': 'Admin Staff',
+      'sales_staff': 'Sales Staff',
+      'inventory_staff': 'Inventory Staff',
+      'finance_staff': 'Finance Staff',
+    };
+    return roleMap[role] || role;
+  };
+
+  const isLimitReached = () => {
+    if (!limits || !currentUsage) return false;
+    return (
+      (limits.businesses !== -1 && currentUsage.businesses >= limits.businesses) ||
+      (limits.branchesPerBusiness !== -1 && currentUsage.branches >= limits.branchesPerBusiness) ||
+      (limits.staffPerBranch !== -1 && currentUsage.staff >= limits.staffPerBranch)
+    );
+  };
+
+  const getSidebarGroupLabel = () => {
+    switch (userRole) {
+      case 'super_admin':
+        return 'Platform Management';
+      case 'business_owner':
+        return 'Business Management';
+      default:
+        return 'Staff Dashboard';
+    }
+  };
+
   return (
     <Sidebar className={isCollapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarContent>
+        {/* Header */}
         <div className="p-4">
           <div className="flex items-center gap-2">
             <Crown className="h-8 w-8 text-primary" />
@@ -40,15 +79,51 @@ export function AppSidebar() {
           </div>
           {!isCollapsed && userRole && (
             <div className="mt-2">
-              <Badge variant="secondary" className="text-xs">
-                {userRole.replace('_', ' ').toUpperCase()}
+              <Badge 
+                variant={userRole === 'super_admin' ? 'default' : 'secondary'} 
+                className="text-xs"
+              >
+                {getRoleDisplayName(userRole)}
               </Badge>
             </div>
           )}
         </div>
+
+        {/* Subscription Banner for Business Owners */}
+        {!isCollapsed && userRole === 'business_owner' && (
+          <div className="px-4 pb-4">
+            <Card className={`border ${isLimitReached() ? 'border-destructive' : 'border-border'}`}>
+              <CardContent className="p-3">
+                <div className="text-xs font-medium text-muted-foreground mb-1">
+                  Current Plan
+                </div>
+                <div className="text-sm font-semibold capitalize mb-2">
+                  {currentPlan} Plan
+                </div>
+                <div className="text-xs space-y-1 text-muted-foreground">
+                  <div>Businesses: {currentUsage.businesses}/{limits.businesses === -1 ? '∞' : limits.businesses}</div>
+                  <div>Branches: {currentUsage.branches}/{limits.branchesPerBusiness === -1 ? '∞' : limits.branchesPerBusiness}</div>
+                  <div>Staff: {currentUsage.staff}/{limits.staffPerBranch === -1 ? '∞' : limits.staffPerBranch}</div>
+                </div>
+                {isLimitReached() && getNextPlan() && (
+                  <div className="mt-2">
+                    <div className="flex items-center gap-1 text-xs text-destructive mb-2">
+                      <AlertTriangle className="h-3 w-3" />
+                      Limit reached
+                    </div>
+                    <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => setShowUpgradeDialog(true)}>
+                      Upgrade to {getNextPlan()}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
         
+        {/* Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel>Business Management</SidebarGroupLabel>
+          <SidebarGroupLabel>{getSidebarGroupLabel()}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -74,6 +149,12 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SubscriptionUpgradeInterface 
+        open={showUpgradeDialog}
+        onClose={() => setShowUpgradeDialog(false)}
+        limitReached={isLimitReached()}
+      />
     </Sidebar>
   );
 }
