@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Bell, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -7,11 +7,14 @@ import { useAuth } from '@/components/Auth/AuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { OrganizationSelector } from '@/components/Organization/OrganizationSelector';
+import { NotificationCenter } from '@/components/Notifications/NotificationCenter';
+import { UserProfileModal } from '@/components/UserProfile/UserProfileModal';
 
 export function DashboardHeader() {
   const { signOut, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [showProfile, setShowProfile] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -41,10 +44,8 @@ export function DashboardHeader() {
           <OrganizationSelector />
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">{user?.email}</span>
-            <Button variant="ghost" size="icon">
-              <Bell className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon">
+            <NotificationCenter />
+            <Button variant="ghost" size="icon" onClick={() => setShowProfile(true)}>
               <User className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="icon" onClick={handleSignOut}>
@@ -53,6 +54,11 @@ export function DashboardHeader() {
           </div>
         </div>
       </div>
+      
+      <UserProfileModal 
+        open={showProfile} 
+        onClose={() => setShowProfile(false)} 
+      />
     </header>
   );
 }

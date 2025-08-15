@@ -8,11 +8,13 @@ import { CreditCard, Search, MoreHorizontal, Eye, Edit, DollarSign, Calendar } f
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { SubscriptionEditor } from '@/components/SuperAdmin/SubscriptionEditor';
 
 interface Subscription {
   id: string;
   business_name: string;
   owner_email: string;
+  owner_name: string;
   plan: string;
   status: string;
   billing_cycle: string;
@@ -28,6 +30,7 @@ export default function SuperAdminSubscriptions() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingSubscription, setEditingSubscription] = useState<Subscription | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -36,31 +39,72 @@ export default function SuperAdminSubscriptions() {
 
   const loadSubscriptions = async () => {
     try {
-      const { data, error } = await supabase
+      // Get organizations with owner data
+      const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select(`
           id,
           name,
-          created_at,
-          profiles!inner(display_name)
+          subscription_plan,
+          status,
+          created_at
         `);
 
-      if (error) throw error;
+      if (orgError) throw orgError;
 
-      const formattedData = data?.map(org => ({
-        id: org.id,
-        business_name: org.name,
-        owner_email: Array.isArray(org.profiles) ? (org.profiles[0]?.display_name + '@example.com' || 'user@example.com') : 'user@example.com',
-        plan: 'basic',
-        status: 'active',
-        billing_cycle: 'monthly',
-        amount: 29,
-        next_billing_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        created_at: org.created_at,
-        businesses_count: 1,
-        branches_count: 0,
-        staff_count: 0
-      })) || [];
+      // Get organization memberships with profiles
+      const { data: membershipData, error: membershipError } = await supabase
+        .from('organization_memberships')
+        .select(`
+          organization_id,
+          user_id,
+          profiles!inner(
+            display_name,
+            first_name,
+            last_name
+          )
+        `)
+        .eq('is_owner', true);
+
+      if (membershipError) throw membershipError;
+
+      // Get actual usage data
+      const orgIds = orgData?.map(org => org.id) || [];
+      
+      const [branchesData, staffData] = await Promise.all([
+        supabase.from('branches').select('id, organization_id').in('organization_id', orgIds),
+        supabase.from('employees').select('id, organization_id').in('organization_id', orgIds)
+      ]);
+
+      const formattedData = orgData?.map(org => {
+        const membership = membershipData?.find(m => m.organization_id === org.id);
+        const owner = membership?.profiles;
+        const branchCount = branchesData.data?.filter(b => b.organization_id === org.id).length || 0;
+        const staffCount = staffData.data?.filter(s => s.organization_id === org.id).length || 0;
+        
+        const planPricing = {
+          free: 0,
+          base: 29,
+          pro: 99,
+          enterprise: 299
+        };
+
+        return {
+          id: org.id,
+          business_name: org.name,
+          owner_email: (owner as any)?.display_name || 'No email',
+          owner_name: `${(owner as any)?.first_name || ''} ${(owner as any)?.last_name || ''}`.trim(),
+          plan: org.subscription_plan || 'free',
+          status: org.status || 'active',
+          billing_cycle: 'monthly',
+          amount: planPricing[org.subscription_plan as keyof typeof planPricing] || 0,
+          next_billing_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          created_at: org.created_at,
+          businesses_count: 1,
+          branches_count: branchCount,
+          staff_count: staffCount
+        };
+      }) || [];
 
       setSubscriptions(formattedData);
     } catch (error) {
@@ -211,11 +255,11 @@ export default function SuperAdminSubscriptions() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setEditingSubscription(subscription)}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setEditingSubscription(subscription)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Subscription
                           </DropdownMenuItem>
@@ -229,6 +273,13 @@ export default function SuperAdminSubscriptions() {
           )}
         </CardContent>
       </Card>
+
+      <SubscriptionEditor
+        subscription={editingSubscription}
+        open={!!editingSubscription}
+        onClose={() => setEditingSubscription(null)}
+        onUpdate={loadSubscriptions}
+      />
     </div>
   );
 }
