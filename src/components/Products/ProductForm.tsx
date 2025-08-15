@@ -9,12 +9,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProductFormProps {
   onClose: () => void;
 }
 
 export function ProductForm({ onClose }: ProductFormProps) {
+  const { currentOrganization } = useOrganization();
+  const { toast } = useToast();
   const [product, setProduct] = useState({
     name: '',
     sku: '',
@@ -56,19 +60,18 @@ export function ProductForm({ onClose }: ProductFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    try {
-      const { data: organization } = await supabase
-        .from('organizations')
-        .select('id')
-        .single();
-      
-      if (!organization) {
-        console.error('No organization found');
-        return;
-      }
+    if (!currentOrganization?.id) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No organization selected",
+      });
+      return;
+    }
 
+    try {
       const productData = {
-        organization_id: organization.id,
+        organization_id: currentOrganization.id,
         name: product.name,
         sku: product.sku,
         category: product.category,
@@ -86,15 +89,27 @@ export function ProductForm({ onClose }: ProductFormProps) {
         .insert(productData);
 
       if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to create product",
+        });
         console.error('Error creating product:', error);
       } else {
-        console.log('Product created successfully');
+        toast({
+          title: "Success",
+          description: "Product created successfully",
+        });
+        onClose();
       }
     } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred",
+      });
       console.error('Error:', error);
     }
-    
-    onClose();
   };
 
   return (
