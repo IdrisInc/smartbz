@@ -52,6 +52,10 @@ export function TaxSettings() {
                   <SelectItem value="EUR">Euro (EUR)</SelectItem>
                   <SelectItem value="GBP">British Pound (GBP)</SelectItem>
                   <SelectItem value="CAD">Canadian Dollar (CAD)</SelectItem>
+                  <SelectItem value="TZS">Tanzanian Shilling (TZS)</SelectItem>
+                  <SelectItem value="KES">Kenyan Shilling (KES)</SelectItem>
+                  <SelectItem value="UGX">Ugandan Shilling (UGX)</SelectItem>
+                  <SelectItem value="RWF">Rwandan Franc (RWF)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
