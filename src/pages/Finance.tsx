@@ -9,6 +9,8 @@ import { ReportsTab } from '@/components/Finance/ReportsTab';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { UpgradePrompt } from '@/components/Organization/UpgradePrompt';
 
 export default function Finance() {
   const [stats, setStats] = useState({
@@ -18,9 +20,18 @@ export default function Finance() {
     outstanding: 0
   });
   const [loading, setLoading] = useState(true);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+  const { hasFinanceAccess } = useSubscriptionLimits();
+
+  // Check if user has access to finance module
+  useEffect(() => {
+    if (!hasFinanceAccess()) {
+      setShowUpgradePrompt(true);
+    }
+  }, [hasFinanceAccess]);
 
   useEffect(() => {
     if (currentOrganization) {
@@ -185,6 +196,13 @@ export default function Finance() {
           <ReportsTab />
         </TabsContent>
       </Tabs>
+
+      <UpgradePrompt
+        feature="finance"
+        action="access finance features"
+        open={showUpgradePrompt}
+        onClose={() => setShowUpgradePrompt(false)}
+      />
     </div>
   );
 }

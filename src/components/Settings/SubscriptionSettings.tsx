@@ -1,12 +1,15 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { SubscriptionUpgrade } from '@/components/Organization/SubscriptionUpgrade';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { format } from 'date-fns';
 
 export function SubscriptionSettings() {
   const { currentOrganization } = useOrganization();
+  const { limits, currentUsage, currentPlan, loading } = useSubscriptionLimits();
 
   if (!currentOrganization) {
     return (
@@ -20,6 +23,11 @@ export function SubscriptionSettings() {
       </Card>
     );
   }
+
+  const getUsagePercentage = (current: number, limit: number) => {
+    if (limit === -1) return 0; // unlimited
+    return Math.min((current / limit) * 100, 100);
+  };
 
   return (
     <div className="space-y-6">
@@ -50,6 +58,48 @@ export function SubscriptionSettings() {
           )}
         </CardContent>
       </Card>
+
+      {!loading && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Usage Overview</CardTitle>
+            <CardDescription>
+              Current usage against your plan limits
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Businesses</span>
+                <span>{currentUsage.businesses} / {limits.businesses === -1 ? '∞' : limits.businesses}</span>
+              </div>
+              {limits.businesses !== -1 && (
+                <Progress value={getUsagePercentage(currentUsage.businesses, limits.businesses)} />
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Branches</span>
+                <span>{currentUsage.branches} / {limits.branchesPerBusiness === -1 ? '∞' : limits.branchesPerBusiness}</span>
+              </div>
+              {limits.branchesPerBusiness !== -1 && (
+                <Progress value={getUsagePercentage(currentUsage.branches, limits.branchesPerBusiness)} />
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Staff Members</span>
+                <span>{currentUsage.staff} / {limits.staffPerBranch === -1 ? '∞' : limits.staffPerBranch}</span>
+              </div>
+              {limits.staffPerBranch !== -1 && (
+                <Progress value={getUsagePercentage(currentUsage.staff, limits.staffPerBranch)} />
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

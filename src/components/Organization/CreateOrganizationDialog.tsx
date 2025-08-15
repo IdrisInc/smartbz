@@ -19,6 +19,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { UpgradePrompt } from './UpgradePrompt';
 
 const businessSectors = [
   { value: 'retail', label: 'Retail' },
@@ -48,11 +50,19 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
   const [sector, setSector] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const { createOrganization } = useOrganization();
+  const { canAddBusiness } = useSubscriptionLimits();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !sector) return;
+
+    // Check if user can add another business
+    if (!canAddBusiness()) {
+      setShowUpgradePrompt(true);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -69,62 +79,71 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Create New Organization</DialogTitle>
-          <DialogDescription>
-            Set up a new organization to manage your business operations.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Organization Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter organization name"
-                required
-              />
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create New Organization</DialogTitle>
+            <DialogDescription>
+              Set up a new organization to manage your business operations.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Organization Name</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter organization name"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="sector">Business Sector</Label>
+                <Select value={sector} onValueChange={setSector} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select business sector" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {businessSectors.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description (Optional)</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Brief description of your organization"
+                  rows={3}
+                />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="sector">Business Sector</Label>
-              <Select value={sector} onValueChange={setSector} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select business sector" />
-                </SelectTrigger>
-                <SelectContent>
-                  {businessSectors.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description (Optional)</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Brief description of your organization"
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading || !name.trim() || !sector}>
-              {loading ? 'Creating...' : 'Create Organization'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading || !name.trim() || !sector}>
+                {loading ? 'Creating...' : 'Create Organization'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <UpgradePrompt
+        feature="business"
+        action="create a new business"
+        open={showUpgradePrompt}
+        onClose={() => setShowUpgradePrompt(false)}
+      />
+    </>
   );
 }

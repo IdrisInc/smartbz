@@ -11,6 +11,8 @@ import { Plus, Edit, Trash2, MapPin } from 'lucide-react';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { UpgradePrompt } from './UpgradePrompt';
 
 interface Branch {
   id: string;
@@ -26,10 +28,12 @@ interface Branch {
 export function BranchManagement() {
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+  const { canAddBranch } = useSubscriptionLimits();
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -69,6 +73,13 @@ export function BranchManagement() {
 
   const handleCreateBranch = async () => {
     if (!formData.name || !currentOrganization) return;
+
+    // Check if user can add another branch
+    if (!canAddBranch()) {
+      setShowUpgradePrompt(true);
+      setShowCreateDialog(false);
+      return;
+    }
 
     try {
       const { error } = await supabase
@@ -394,6 +405,13 @@ export function BranchManagement() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <UpgradePrompt
+        feature="branch"
+        action="add more branches"
+        open={showUpgradePrompt}
+        onClose={() => setShowUpgradePrompt(false)}
+      />
     </div>
   );
 }

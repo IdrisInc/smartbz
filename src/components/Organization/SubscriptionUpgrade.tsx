@@ -16,52 +16,67 @@ import { useToast } from '@/hooks/use-toast';
 
 const plans = [
   {
-    id: 'basic',
-    name: 'Basic',
+    id: 'base',
+    name: 'Base Plan',
     price: 29,
     period: 'month',
     description: 'Perfect for small businesses',
     features: [
-      'Up to 5 users',
-      'Basic reporting',
-      'Email support',
-      '10GB storage',
-      'Basic integrations'
+      '1 Business',
+      '1-2 Branches per Business',
+      'Up to 5 Staff',
+      'Dashboard & Sales',
+      'Products & Inventory',
+      'Contacts & Basic Reports'
     ],
     popular: false,
+    limits: {
+      businesses: 1,
+      branchesPerBusiness: 2,
+      staffPerBranch: 5
+    }
   },
   {
-    id: 'premium',
-    name: 'Premium',
+    id: 'pro',
+    name: 'Pro Plan',
     price: 79,
     period: 'month',
     description: 'Best for growing companies',
     features: [
-      'Up to 25 users',
-      'Advanced reporting',
-      'Priority support',
-      '100GB storage',
-      'All integrations',
-      'Custom workflows'
+      'Multiple Businesses',
+      'More Branches per Business',
+      'More Staff per Branch',
+      'Finance Module',
+      'Advanced Reports & Analytics',
+      'Integrations & Priority Support'
     ],
     popular: true,
+    limits: {
+      businesses: 10,
+      branchesPerBusiness: 10,
+      staffPerBranch: 25
+    }
   },
   {
     id: 'enterprise',
-    name: 'Enterprise',
-    price: 199,
+    name: 'Enterprise Plan',
+    price: 299,
     period: 'month',
     description: 'For large organizations',
     features: [
-      'Unlimited users',
-      'Custom reporting',
-      '24/7 phone support',
-      'Unlimited storage',
-      'API access',
-      'Custom development',
-      'Dedicated manager'
+      'Unlimited Businesses',
+      'Unlimited Branches & Staff',
+      'Custom Branding / White-label',
+      'Bulk Import/Export',
+      'Advanced Integrations',
+      'Dedicated Account Manager'
     ],
     popular: false,
+    limits: {
+      businesses: -1, // unlimited
+      branchesPerBusiness: -1,
+      staffPerBranch: -1
+    }
   },
 ];
 
@@ -111,8 +126,8 @@ export function SubscriptionUpgrade() {
           )}
           <CardHeader className="text-center">
             <div className="mx-auto mb-4">
-              {plan.id === 'basic' && <Zap className="h-8 w-8 text-blue-500" />}
-              {plan.id === 'premium' && <Crown className="h-8 w-8 text-yellow-500" />}
+              {plan.id === 'base' && <Zap className="h-8 w-8 text-blue-500" />}
+              {plan.id === 'pro' && <Crown className="h-8 w-8 text-yellow-500" />}
               {plan.id === 'enterprise' && <Crown className="h-8 w-8 text-purple-500" />}
             </div>
             <CardTitle>{plan.name}</CardTitle>
