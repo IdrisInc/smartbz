@@ -39,43 +39,72 @@ export function BusinessOwnersManagement() {
 
   const loadBusinessOwners = async () => {
     try {
-      const { data, error } = await supabase
+      // Get organization memberships for business owners
+      const { data: membershipData, error: membershipError } = await supabase
         .from('organization_memberships')
         .select(`
           user_id,
           organization_id,
           role,
-          joined_at,
-          organizations!inner(
-            id,
-            name,
-            status,
-            subscription_plan
-          ),
-          profiles!inner(
+          joined_at
+        `)
+        .eq('role', 'business_owner');
+
+      if (membershipError) throw membershipError;
+
+      // Get organizations for those memberships
+      const orgIds = membershipData?.map(m => m.organization_id) || [];
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select(`
+          id,
+          name,
+          status,
+          subscription_plan
+        `)
+        .in('id', orgIds);
+
+      if (orgError) throw orgError;
+
+      // Get profiles for the users
+      const userIds = membershipData?.map(m => m.user_id) || [];
+      let profileData = [];
+      if (userIds.length > 0) {
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select(`
             id,
             user_id,
             first_name,
             last_name,
             display_name
-          )
-        `)
-        .eq('role', 'business_owner');
+          `)
+          .in('user_id', userIds);
 
-      if (error) throw error;
+        if (profileError) {
+          console.warn('Error loading profiles:', profileError);
+        } else {
+          profileData = profiles || [];
+        }
+      }
 
       // Transform the data to match our interface
-      const owners = data?.map((item: any) => ({
-        id: item.profiles.id,
-        email: item.profiles.display_name, // This should be email from auth.users
-        first_name: item.profiles.first_name,
-        last_name: item.profiles.last_name,
-        organization_name: item.organizations.name,
-        organization_id: item.organization_id,
-        organization_status: item.organizations.status,
-        subscription_plan: item.organizations.subscription_plan,
-        joined_at: item.joined_at,
-      })) || [];
+      const owners = membershipData?.map((membership: any) => {
+        const organization = orgData?.find(org => org.id === membership.organization_id);
+        const profile = profileData?.find((p: any) => p.user_id === membership.user_id);
+        
+        return {
+          id: profile?.id || membership.user_id,
+          email: profile?.display_name || 'No email',
+          first_name: profile?.first_name,
+          last_name: profile?.last_name,
+          organization_name: organization?.name,
+          organization_id: membership.organization_id,
+          organization_status: organization?.status,
+          subscription_plan: organization?.subscription_plan,
+          joined_at: membership.joined_at,
+        };
+      }) || [];
 
       setBusinessOwners(owners);
     } catch (error) {

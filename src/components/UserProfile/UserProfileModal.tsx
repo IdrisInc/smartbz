@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -128,6 +128,9 @@ export function UserProfileModal({ open, onClose }: UserProfileModalProps) {
             <User className="h-5 w-5" />
             User Profile
           </DialogTitle>
+          <DialogDescription>
+            Manage your profile information and settings.
+          </DialogDescription>
         </DialogHeader>
 
         {loading ? (

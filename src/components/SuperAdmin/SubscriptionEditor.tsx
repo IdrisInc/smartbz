@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -84,6 +84,9 @@ export function SubscriptionEditor({ subscription, open, onClose, onUpdate }: Su
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Subscription</DialogTitle>
+          <DialogDescription>
+            Modify subscription plan and settings for this organization.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
