@@ -33,28 +33,103 @@ export default function SuperAdminBusinesses() {
 
   const loadBusinesses = async () => {
     try {
-      const { data, error } = await supabase
+      // Get all organizations
+      const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select(`
           id,
           name,
-          created_at,
-          profiles!inner(display_name)
+          status,
+          subscription_plan,
+          created_at
         `);
 
-      if (error) throw error;
+      if (orgError) throw orgError;
 
-      const formattedData = data?.map(org => ({
-        id: org.id,
-        name: org.name,
-        industry: 'Various',
-        status: 'active',
-        subscription_plan: 'basic',
-        created_at: org.created_at,
-        owner_name: Array.isArray(org.profiles) ? (org.profiles[0]?.display_name || 'Unknown') : 'Unknown',
-        branches_count: 0,
-        staff_count: 0
-      })) || [];
+      // Get organization memberships for business owners
+      const { data: membershipData, error: membershipError } = await supabase
+        .from('organization_memberships')
+        .select(`
+          user_id,
+          organization_id,
+          role
+        `)
+        .eq('role', 'business_owner');
+
+      if (membershipError) throw membershipError;
+
+      // Get profiles for the business owners
+      const userIds = membershipData?.map(m => m.user_id) || [];
+      let profileData = [];
+      if (userIds.length > 0) {
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select(`
+            user_id,
+            first_name,
+            last_name,
+            display_name
+          `)
+          .in('user_id', userIds);
+
+        if (profileError) {
+          console.warn('Error loading profiles:', profileError);
+        } else {
+          profileData = profiles || [];
+        }
+      }
+
+      // Get branch counts for each organization
+      const orgIds = orgData?.map(org => org.id) || [];
+      let branchCounts = {};
+      if (orgIds.length > 0) {
+        const { data: branchData, error: branchError } = await supabase
+          .from('branches')
+          .select('organization_id')
+          .in('organization_id', orgIds);
+
+        if (!branchError && branchData) {
+          branchCounts = branchData.reduce((acc, branch) => {
+            acc[branch.organization_id] = (acc[branch.organization_id] || 0) + 1;
+            return acc;
+          }, {});
+        }
+      }
+
+      // Get staff counts for each organization
+      let staffCounts = {};
+      if (orgIds.length > 0) {
+        const { data: staffData, error: staffError } = await supabase
+          .from('organization_memberships')
+          .select('organization_id')
+          .in('organization_id', orgIds)
+          .neq('role', 'business_owner');
+
+        if (!staffError && staffData) {
+          staffCounts = staffData.reduce((acc, staff) => {
+            acc[staff.organization_id] = (acc[staff.organization_id] || 0) + 1;
+            return acc;
+          }, {});
+        }
+      }
+
+      // Combine the data
+      const formattedData = orgData?.map(org => {
+        const membership = membershipData?.find(m => m.organization_id === org.id);
+        const profile = membership ? profileData?.find(p => p.user_id === membership.user_id) : null;
+        
+        return {
+          id: org.id,
+          name: org.name,
+          industry: 'Various',
+          status: org.status || 'active',
+          subscription_plan: org.subscription_plan || 'free',
+          created_at: org.created_at,
+          owner_name: profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.display_name || 'Unknown' : 'Unknown',
+          branches_count: branchCounts[org.id] || 0,
+          staff_count: staffCounts[org.id] || 0
+        };
+      }) || [];
 
       setBusinesses(formattedData);
     } catch (error) {
