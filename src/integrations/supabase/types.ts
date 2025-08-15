@@ -384,6 +384,7 @@ export type Database = {
           is_owner: boolean
           joined_at: string
           organization_id: string
+          permissions: Json | null
           role: Database["public"]["Enums"]["user_role"]
           user_id: string
         }
@@ -393,6 +394,7 @@ export type Database = {
           is_owner?: boolean
           joined_at?: string
           organization_id: string
+          permissions?: Json | null
           role: Database["public"]["Enums"]["user_role"]
           user_id: string
         }
@@ -402,6 +404,7 @@ export type Database = {
           is_owner?: boolean
           joined_at?: string
           organization_id?: string
+          permissions?: Json | null
           role?: Database["public"]["Enums"]["user_role"]
           user_id?: string
         }
@@ -475,6 +478,8 @@ export type Database = {
       organizations: {
         Row: {
           address: string | null
+          approved_at: string | null
+          approved_by: string | null
           business_sector: Database["public"]["Enums"]["business_sector"]
           city: string | null
           country: string | null
@@ -486,6 +491,7 @@ export type Database = {
           logo_url: string | null
           name: string
           phone: string | null
+          status: string | null
           subscription_end: string | null
           subscription_plan: Database["public"]["Enums"]["subscription_plan"]
           timezone: string | null
@@ -494,6 +500,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           business_sector?: Database["public"]["Enums"]["business_sector"]
           city?: string | null
           country?: string | null
@@ -505,6 +513,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           phone?: string | null
+          status?: string | null
           subscription_end?: string | null
           subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
           timezone?: string | null
@@ -513,6 +522,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           business_sector?: Database["public"]["Enums"]["business_sector"]
           city?: string | null
           country?: string | null
@@ -524,6 +535,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           phone?: string | null
+          status?: string | null
           subscription_end?: string | null
           subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
           timezone?: string | null
@@ -832,6 +844,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      super_admin_actions: {
+        Row: {
+          action_details: Json | null
+          action_type: string
+          created_at: string
+          id: string
+          super_admin_id: string
+          target_organization_id: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_details?: Json | null
+          action_type: string
+          created_at?: string
+          id?: string
+          super_admin_id: string
+          target_organization_id?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_details?: Json | null
+          action_type?: string
+          created_at?: string
+          id?: string
+          super_admin_id?: string
+          target_organization_id?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {

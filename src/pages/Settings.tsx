@@ -26,7 +26,7 @@ export default function Settings() {
       </div>
 
         <Tabs defaultValue="business" className="space-y-4">
-          <TabsList className={`grid w-full ${userRole === 'admin' ? 'grid-cols-9' : 'grid-cols-8'}`}>
+          <TabsList className={`grid w-full ${userRole === 'super_admin' ? 'grid-cols-9' : 'grid-cols-8'}`}>
             <TabsTrigger value="business">Business</TabsTrigger>
             <TabsTrigger value="subscription">Subscription</TabsTrigger>
             <TabsTrigger value="tax">Tax & Currency</TabsTrigger>
@@ -35,7 +35,7 @@ export default function Settings() {
             <TabsTrigger value="branches">Branches</TabsTrigger>
             <TabsTrigger value="permissions">Permissions</TabsTrigger>
             <TabsTrigger value="logs">System Logs</TabsTrigger>
-            {userRole === 'admin' && (
+            {userRole === 'super_admin' && (
               <TabsTrigger value="admin">Admin</TabsTrigger>
             )}
           </TabsList>
@@ -72,7 +72,7 @@ export default function Settings() {
             <LogsSettings />
           </TabsContent>
           
-          {userRole === 'admin' && (
+        {userRole === 'super_admin' && (
             <TabsContent value="admin">
               <AdminUserRegistration />
             </TabsContent>

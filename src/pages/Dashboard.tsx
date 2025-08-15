@@ -2,6 +2,7 @@
 import React from 'react';
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { useUserRole } from '@/hooks/useUserRole';
+import { SuperAdminDashboard } from '@/components/SuperAdmin/SuperAdminDashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -264,13 +265,13 @@ export default function Dashboard() {
 
   const renderRoleDashboard = () => {
     switch (userRole) {
-      case 'admin':
-        return <AdminDashboard />;
+      case 'super_admin':
+        return <SuperAdminDashboard />;
       case 'business_owner':
         return <BusinessOwnerDashboard />;
       case 'manager':
         return <ManagerDashboard />;
-      case 'staff':
+      case 'admin_staff':
         return <StaffDashboard />;
       case 'cashier':
         return <CashierDashboard />;

@@ -42,7 +42,7 @@ export function AdminUserRegistration() {
   const { userRole } = useUserRole();
 
   // Only admins can access this component
-  if (userRole !== 'admin') {
+  if (userRole !== 'super_admin') {
     return (
       <Card>
         <CardHeader>

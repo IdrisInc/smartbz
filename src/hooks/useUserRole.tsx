@@ -3,7 +3,7 @@ import { useAuth } from '@/components/Auth/AuthProvider';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 
-export type UserRole = 'admin' | 'business_owner' | 'manager' | 'staff' | 'cashier';
+export type UserRole = 'super_admin' | 'business_owner' | 'manager' | 'admin_staff' | 'sales_staff' | 'inventory_staff' | 'finance_staff' | 'cashier';
 
 export interface UserPermissions {
   canManageOrganizations: boolean;
@@ -15,6 +15,9 @@ export interface UserPermissions {
   canManageInventory: boolean;
   canManageEmployees: boolean;
   canViewAllBranches: boolean;
+  canManageBusinessOwners: boolean;
+  canApproveOrganizations: boolean;
+  canManageContacts: boolean;
 }
 
 export function useUserRole() {
@@ -34,17 +37,17 @@ export function useUserRole() {
       }
 
       try {
-        // Check if user is admin (system-wide)
-        const { data: adminCheck } = await supabase
+        // Check if user is super admin (system-wide)
+        const { data: superAdminCheck } = await supabase
           .from('organization_memberships')
           .select('role')
           .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .single();
+          .eq('role', 'super_admin')
+          .maybeSingle();
 
-        if (adminCheck) {
-          setUserRole('admin');
-          setPermissions(getPermissionsForRole('admin'));
+        if (superAdminCheck) {
+          setUserRole('super_admin');
+          setPermissions(getPermissionsForRole('super_admin'));
           setLoading(false);
           return;
         }
@@ -91,10 +94,13 @@ function getPermissionsForRole(role: UserRole): UserPermissions {
     canManageInventory: false,
     canManageEmployees: false,
     canViewAllBranches: false,
+    canManageBusinessOwners: false,
+    canApproveOrganizations: false,
+    canManageContacts: false,
   };
 
   switch (role) {
-    case 'admin':
+    case 'super_admin':
       return {
         canManageOrganizations: true,
         canManageUsers: true,
@@ -105,10 +111,14 @@ function getPermissionsForRole(role: UserRole): UserPermissions {
         canManageInventory: true,
         canManageEmployees: true,
         canViewAllBranches: true,
+        canManageBusinessOwners: true,
+        canApproveOrganizations: true,
+        canManageContacts: true,
       };
 
     case 'business_owner':
       return {
+        ...basePermissions,
         canManageOrganizations: true,
         canManageUsers: true,
         canManageFinances: true,
@@ -118,6 +128,7 @@ function getPermissionsForRole(role: UserRole): UserPermissions {
         canManageInventory: true,
         canManageEmployees: true,
         canViewAllBranches: true,
+        canManageContacts: true,
       };
 
     case 'manager':
@@ -131,15 +142,41 @@ function getPermissionsForRole(role: UserRole): UserPermissions {
         canManageInventory: true,
         canManageEmployees: true,
         canViewAllBranches: true,
+        canManageContacts: true,
       };
 
-    case 'staff':
+    case 'admin_staff':
       return {
         ...basePermissions,
+        canManageUsers: true,
+        canManageFinances: true,
         canViewReports: true,
         canManageProducts: true,
         canProcessSales: true,
         canManageInventory: true,
+        canManageEmployees: true,
+        canManageContacts: true,
+      };
+
+    case 'sales_staff':
+      return {
+        ...basePermissions,
+        canProcessSales: true,
+        canManageContacts: true,
+      };
+
+    case 'inventory_staff':
+      return {
+        ...basePermissions,
+        canManageProducts: true,
+        canManageInventory: true,
+      };
+
+    case 'finance_staff':
+      return {
+        ...basePermissions,
+        canManageFinances: true,
+        canViewReports: true,
       };
 
     case 'cashier':

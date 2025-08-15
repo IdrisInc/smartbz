@@ -19,7 +19,7 @@ import { RoleSystemGuide } from './RoleSystemGuide';
 interface OrganizationMember {
   id: string;
   user_id: string;
-  role: 'admin' | 'business_owner' | 'manager' | 'cashier' | 'staff';
+  role: 'super_admin' | 'business_owner' | 'manager' | 'admin_staff' | 'sales_staff' | 'inventory_staff' | 'finance_staff' | 'cashier';
   is_owner: boolean;
   joined_at: string;
   branch_id?: string;
@@ -38,7 +38,7 @@ export function RolesPermissionsTab() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'manager' | 'cashier' | 'staff'>('staff');
+  const [inviteRole, setInviteRole] = useState<'manager' | 'admin_staff' | 'sales_staff' | 'inventory_staff' | 'finance_staff' | 'cashier'>('admin_staff');
   const [inviteBranch, setInviteBranch] = useState<string>('all');
 
   useEffect(() => {
@@ -94,7 +94,7 @@ export function RolesPermissionsTab() {
       });
       
       setInviteEmail('');
-      setInviteRole('staff');
+      setInviteRole('admin_staff');
       setInviteBranch('all');
     } catch (error) {
       console.error('Error inviting member:', error);
@@ -108,9 +108,13 @@ export function RolesPermissionsTab() {
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case 'admin': return 'destructive';
+      case 'super_admin': return 'destructive';
       case 'business_owner': return 'default';
       case 'manager': return 'secondary';
+      case 'admin_staff': return 'outline';
+      case 'sales_staff': return 'outline';
+      case 'inventory_staff': return 'outline';
+      case 'finance_staff': return 'outline';
       case 'cashier': return 'outline';
       default: return 'outline';
     }
@@ -118,16 +122,22 @@ export function RolesPermissionsTab() {
 
   const getRolePermissions = (role: string) => {
     switch (role) {
-      case 'admin':
-        return 'Full system access, manage all organizations';
+      case 'super_admin':
+        return 'Full platform control and business owner management';
       case 'business_owner':
         return 'Full organization access, manage all branches';
       case 'manager':
         return 'Branch management, view reports, manage staff';
+      case 'admin_staff':
+        return 'Full branch access - all features and operations';
+      case 'sales_staff':
+        return 'Sales processing and customer management only';
+      case 'inventory_staff':
+        return 'Product and inventory management only';
+      case 'finance_staff':
+        return 'Financial records and reporting only';
       case 'cashier':
-        return 'Process sales, view products';
-      case 'staff':
-        return 'Basic access, assigned tasks only';
+        return 'Basic point of sale operations only';
       default:
         return 'Limited access';
     }
@@ -207,7 +217,10 @@ export function RolesPermissionsTab() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="admin_staff">Admin Staff</SelectItem>
+                  <SelectItem value="sales_staff">Sales Staff</SelectItem>
+                  <SelectItem value="inventory_staff">Inventory Staff</SelectItem>
+                  <SelectItem value="finance_staff">Finance Staff</SelectItem>
                   <SelectItem value="cashier">Cashier</SelectItem>
                 </SelectContent>
               </Select>
