@@ -2,7 +2,9 @@
 import React from 'react';
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { useUserRole } from '@/hooks/useUserRole';
-import { SuperAdminDashboard } from '@/components/SuperAdmin/SuperAdminDashboard';
+import { SuperAdminDashboard } from '@/components/SuperAdmin/EnhancedSuperAdminDashboard';
+import { BusinessOwnerDashboard as BODashboard } from '@/components/BusinessOwner/BusinessOwnerDashboard';
+import { StaffDashboard as StaffDash } from '@/components/Staff/StaffDashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -268,13 +270,15 @@ export default function Dashboard() {
       case 'super_admin':
         return <SuperAdminDashboard />;
       case 'business_owner':
-        return <BusinessOwnerDashboard />;
+        return <BODashboard />;
       case 'manager':
-        return <ManagerDashboard />;
+        return <StaffDash />;
       case 'admin_staff':
-        return <StaffDashboard />;
+      case 'sales_staff':
+      case 'inventory_staff':
+      case 'finance_staff':
       case 'cashier':
-        return <CashierDashboard />;
+        return <StaffDash />;
       default:
         return (
           <div className="flex items-center justify-center h-64">
@@ -282,7 +286,7 @@ export default function Dashboard() {
               <CardContent className="pt-6">
                 <div className="flex items-center space-x-2">
                   <AlertCircle className="h-5 w-5 text-muted-foreground" />
-                  <p className="text-muted-foreground">No role assigned</p>
+                  <p className="text-muted-foreground">No role assigned or unauthorized access</p>
                 </div>
               </CardContent>
             </Card>

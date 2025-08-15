@@ -6,7 +6,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from '@/components/ui/alert';
-import { SubscriptionModal } from './SubscriptionModal';
+import { SubscriptionModal } from './EnhancedSubscriptionModal';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 
 interface UpgradePromptProps {
@@ -78,6 +78,7 @@ export function UpgradePrompt({ feature, action, open, onClose, onUpgrade }: Upg
           onClose();
         }}
         organizationId={''} // Will be handled by the component
+        highlightFeature={feature}
         onSuccess={() => {
           setShowSubscription(false);
           onClose();
