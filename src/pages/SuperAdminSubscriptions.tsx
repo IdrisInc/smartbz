@@ -39,7 +39,7 @@ export default function SuperAdminSubscriptions() {
 
   const loadSubscriptions = async () => {
     try {
-      // Get organizations with owner data
+      // First get all organizations
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select(`
@@ -52,33 +52,41 @@ export default function SuperAdminSubscriptions() {
 
       if (orgError) throw orgError;
 
-      // Get organization memberships with profiles
+      // Get organization memberships for owners
       const { data: membershipData, error: membershipError } = await supabase
         .from('organization_memberships')
-        .select(`
-          organization_id,
-          user_id,
-          profiles!inner(
-            display_name,
-            first_name,
-            last_name
-          )
-        `)
+        .select('organization_id, user_id')
         .eq('is_owner', true);
 
       if (membershipError) throw membershipError;
+
+      // Get profiles for the owner users
+      const ownerUserIds = membershipData?.map(m => m.user_id) || [];
+      let profileData = [];
+      if (ownerUserIds.length > 0) {
+        const { data: profiles, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id, display_name, first_name, last_name')
+          .in('user_id', ownerUserIds);
+
+        if (profileError) {
+          console.warn('Error loading profiles:', profileError);
+        } else {
+          profileData = profiles || [];
+        }
+      }
 
       // Get actual usage data
       const orgIds = orgData?.map(org => org.id) || [];
       
       const [branchesData, staffData] = await Promise.all([
-        supabase.from('branches').select('id, organization_id').in('organization_id', orgIds),
-        supabase.from('employees').select('id, organization_id').in('organization_id', orgIds)
+        orgIds.length > 0 ? supabase.from('branches').select('id, organization_id').in('organization_id', orgIds) : Promise.resolve({ data: [] }),
+        orgIds.length > 0 ? supabase.from('employees').select('id, organization_id').in('organization_id', orgIds) : Promise.resolve({ data: [] })
       ]);
 
       const formattedData = orgData?.map(org => {
         const membership = membershipData?.find(m => m.organization_id === org.id);
-        const owner = membership?.profiles;
+        const profile = profileData?.find((p: any) => p.user_id === membership?.user_id);
         const branchCount = branchesData.data?.filter(b => b.organization_id === org.id).length || 0;
         const staffCount = staffData.data?.filter(s => s.organization_id === org.id).length || 0;
         
@@ -92,8 +100,8 @@ export default function SuperAdminSubscriptions() {
         return {
           id: org.id,
           business_name: org.name,
-          owner_email: (owner as any)?.display_name || 'No email',
-          owner_name: `${(owner as any)?.first_name || ''} ${(owner as any)?.last_name || ''}`.trim(),
+          owner_email: (profile as any)?.display_name || 'No email',
+          owner_name: `${(profile as any)?.first_name || ''} ${(profile as any)?.last_name || ''}`.trim() || 'Unknown Owner',
           plan: org.subscription_plan || 'free',
           status: org.status || 'active',
           billing_cycle: 'monthly',
@@ -225,7 +233,12 @@ export default function SuperAdminSubscriptions() {
                 {filteredSubscriptions.map((subscription) => (
                   <TableRow key={subscription.id}>
                     <TableCell className="font-medium">{subscription.business_name}</TableCell>
-                    <TableCell>{subscription.owner_email}</TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{subscription.owner_name}</div>
+                        <div className="text-sm text-muted-foreground">{subscription.owner_email}</div>
+                      </div>
+                    </TableCell>
                     <TableCell>{getPlanBadge(subscription.plan)}</TableCell>
                     <TableCell>{getStatusBadge(subscription.status)}</TableCell>
                     <TableCell>{subscription.billing_cycle}</TableCell>
