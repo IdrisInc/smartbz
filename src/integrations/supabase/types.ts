@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      activation_codes: {
+        Row: {
+          code: string
+          created_at: string
+          duration_days: number
+          expires_at: string
+          id: string
+          payment_proof_id: string | null
+          payment_type: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          status: string
+          updated_at: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          duration_days: number
+          expires_at: string
+          id?: string
+          payment_proof_id?: string | null
+          payment_type?: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          status?: string
+          updated_at?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          duration_days?: number
+          expires_at?: string
+          id?: string
+          payment_proof_id?: string | null
+          payment_type?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          status?: string
+          updated_at?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
       attendance: {
         Row: {
           branch_id: string | null
@@ -121,6 +166,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      code_redemption_logs: {
+        Row: {
+          code_id: string
+          created_at: string
+          failure_reason: string | null
+          id: string
+          ip_address: unknown | null
+          organization_id: string | null
+          success: boolean
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          code_id: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          ip_address?: unknown | null
+          organization_id?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          code_id?: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          ip_address?: unknown | null
+          organization_id?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       contacts: {
         Row: {
@@ -544,6 +625,66 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_proofs: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          organization_id: string
+          payment_method: string
+          payment_type: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          proof_image_url: string | null
+          status: string
+          transaction_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          payment_method: string
+          payment_type?: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          proof_image_url?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          payment_method?: string
+          payment_type?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          proof_image_url?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: string | null
@@ -886,6 +1027,10 @@ export type Database = {
           org_name: string
           org_sector?: Database["public"]["Enums"]["business_sector"]
         }
+        Returns: string
+      }
+      generate_activation_code: {
+        Args: Record<PropertyKey, never>
         Returns: string
       }
       is_organization_owner: {
