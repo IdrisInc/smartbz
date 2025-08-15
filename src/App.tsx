@@ -27,6 +27,14 @@ import Branches from "./pages/Branches";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 
+// Super Admin Pages
+import SuperAdminOwners from "./pages/SuperAdminOwners";
+import SuperAdminBusinesses from "./pages/SuperAdminBusinesses";
+import SuperAdminBranches from "./pages/SuperAdminBranches";
+import SuperAdminStaff from "./pages/SuperAdminStaff";
+import SuperAdminSubscriptions from "./pages/SuperAdminSubscriptions";
+import SuperAdminReports from "./pages/SuperAdminReports";
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -63,6 +71,14 @@ function App() {
                     <Route path="reports" element={<Reports />} />
                     <Route path="settings" element={<Settings />} />
                     <Route path="branches" element={<Branches />} />
+                    
+                    {/* Super Admin Routes */}
+                    <Route path="super-admin/owners" element={<SuperAdminOwners />} />
+                    <Route path="super-admin/businesses" element={<SuperAdminBusinesses />} />
+                    <Route path="super-admin/branches" element={<SuperAdminBranches />} />
+                    <Route path="super-admin/staff" element={<SuperAdminStaff />} />
+                    <Route path="super-admin/subscriptions" element={<SuperAdminSubscriptions />} />
+                    <Route path="super-admin/reports" element={<SuperAdminReports />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
