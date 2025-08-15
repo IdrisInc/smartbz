@@ -846,10 +846,6 @@ export type Database = {
         }
         Returns: string
       }
-      get_user_role_in_organization: {
-        Args: { org_id: string; user_id: string }
-        Returns: Database["public"]["Enums"]["user_role"]
-      }
       is_organization_owner: {
         Args: { org_id: string; user_id: string }
         Returns: boolean
@@ -877,7 +873,15 @@ export type Database = {
         | "non_profit"
         | "other"
       subscription_plan: "free" | "basic" | "premium" | "enterprise"
-      user_role: "admin" | "business_owner" | "manager" | "cashier" | "staff"
+      user_role:
+        | "super_admin"
+        | "business_owner"
+        | "manager"
+        | "admin_staff"
+        | "sales_staff"
+        | "inventory_staff"
+        | "finance_staff"
+        | "cashier"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1023,7 +1027,16 @@ export const Constants = {
         "other",
       ],
       subscription_plan: ["free", "basic", "premium", "enterprise"],
-      user_role: ["admin", "business_owner", "manager", "cashier", "staff"],
+      user_role: [
+        "super_admin",
+        "business_owner",
+        "manager",
+        "admin_staff",
+        "sales_staff",
+        "inventory_staff",
+        "finance_staff",
+        "cashier",
+      ],
     },
   },
 } as const
