@@ -21,6 +21,7 @@ import {
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { UpgradePrompt } from './UpgradePrompt';
+import { useNavigate } from 'react-router-dom';
 
 const businessSectors = [
   { value: 'retail', label: 'Retail' },
@@ -53,6 +54,7 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const { createOrganization } = useOrganization();
   const { canAddBusiness } = useSubscriptionLimits();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +74,9 @@ export function CreateOrganizationDialog({ open, onOpenChange }: CreateOrganizat
         setSector('');
         setDescription('');
         onOpenChange(false);
+        
+        // Navigate to settings with manual payment tab for subscription setup
+        navigate('/settings?tab=subscription&subtab=manual-payment');
       }
     } finally {
       setLoading(false);

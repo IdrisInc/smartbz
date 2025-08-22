@@ -11,9 +11,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { ImageUpload } from './ImageUpload';
 
 const paymentProofSchema = z.object({
-  plan: z.enum(['free', 'basic', 'premium', 'enterprise']),
+  plan: z.enum(['basic', 'premium', 'enterprise']),
   payment_type: z.enum(['monthly', 'yearly']),
   amount: z.string().min(1, 'Amount is required'),
   currency: z.string().default('USD'),
@@ -41,6 +42,14 @@ export function PaymentProofSubmission({ onSuccess }: PaymentProofSubmissionProp
       payment_type: 'monthly',
     },
   });
+
+  const handleImageUpload = (url: string) => {
+    form.setValue('proof_image_url', url);
+  };
+
+  const handleRemoveImage = () => {
+    form.setValue('proof_image_url', '');
+  };
 
   const handleSubmit = async (data: PaymentProofForm) => {
     if (!currentOrganization) {
@@ -231,9 +240,19 @@ export function PaymentProofSubmission({ onSuccess }: PaymentProofSubmissionProp
               name="proof_image_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Proof Image URL (Optional)</FormLabel>
+                  <FormLabel>Proof Image</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://example.com/receipt.jpg" {...field} />
+                    <div className="space-y-4">
+                      <ImageUpload
+                        onImageUploaded={handleImageUpload}
+                        currentImageUrl={field.value}
+                        onRemoveImage={handleRemoveImage}
+                      />
+                      <div className="text-sm text-muted-foreground">
+                        <strong>Alternative:</strong> You can also provide a URL to your payment proof image
+                      </div>
+                      <Input placeholder="https://example.com/receipt.jpg" {...field} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

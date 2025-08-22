@@ -9,11 +9,13 @@ import { SubscriptionPlanEditor } from '@/components/Settings/SubscriptionPlanEd
 import { PaymentProofSubmission } from '@/components/Payment/PaymentProofSubmission';
 import { ActivationCodeRedemption } from '@/components/Payment/ActivationCodeRedemption';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { useUserRole } from '@/hooks/useUserRole';
 import { format } from 'date-fns';
 
 export function SubscriptionSettings() {
   const { currentOrganization } = useOrganization();
   const { limits, currentUsage, currentPlan, loading } = useSubscriptionLimits();
+  const { userRole } = useUserRole();
 
   if (!currentOrganization) {
     return (
@@ -38,7 +40,9 @@ export function SubscriptionSettings() {
       <Tabs defaultValue="overview" className="w-full">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="plans">Plan Management</TabsTrigger>
+          {userRole === 'super_admin' && (
+            <TabsTrigger value="plans">Plan Management</TabsTrigger>
+          )}
           <TabsTrigger value="manual-payment">Manual Payment</TabsTrigger>
         </TabsList>
 
@@ -126,9 +130,11 @@ export function SubscriptionSettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="plans">
-          <SubscriptionPlanEditor />
-        </TabsContent>
+        {userRole === 'super_admin' && (
+          <TabsContent value="plans">
+            <SubscriptionPlanEditor />
+          </TabsContent>
+        )}
 
         <TabsContent value="manual-payment">
           <div className="space-y-6">
