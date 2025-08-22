@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Crown, Check, Zap } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 const plans = [
@@ -74,32 +74,18 @@ interface SubscriptionModalProps {
 export function SubscriptionModal({ open, onClose, organizationId, onSuccess }: SubscriptionModalProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleUpgrade = async (planId: string) => {
     setLoading(planId);
     try {
-      const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: {
-          organizationId,
-          plan: planId,
-          paymentType: 'subscription'
-        }
-      });
-
-      if (error) throw error;
-
-      if (data.url) {
-        window.open(data.url, '_blank');
-        onSuccess?.();
-        onClose();
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
       toast({
-        title: "Error",
-        description: "Failed to initiate payment. Please try again.",
-        variant: "destructive",
+        title: "Manual upgrade required",
+        description: "Please submit a payment proof in Settings → Manual Payment.",
       });
+      navigate('/settings');
+      onSuccess?.();
+      onClose();
     } finally {
       setLoading(null);
     }

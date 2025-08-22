@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 const plans = [
@@ -84,32 +84,17 @@ export function SubscriptionUpgrade() {
   const [loading, setLoading] = useState<string | null>(null);
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleUpgrade = async (planId: string) => {
     if (!currentOrganization) return;
-    
     setLoading(planId);
     try {
-      const { data, error } = await supabase.functions.invoke('create-payment', {
-        body: {
-          organizationId: currentOrganization.id,
-          plan: planId,
-          paymentType: 'subscription'
-        }
-      });
-
-      if (error) throw error;
-
-      if (data.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
       toast({
-        title: "Error",
-        description: "Failed to initiate payment. Please try again.",
-        variant: "destructive",
+        title: "Manual upgrade required",
+        description: "Please submit a payment proof in Settings → Manual Payment.",
       });
+      navigate('/settings');
     } finally {
       setLoading(null);
     }
