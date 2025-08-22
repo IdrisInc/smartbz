@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { SubscriptionUpgrade } from '@/components/Organization/SubscriptionUpgrade';
 import { SubscriptionPlanEditor } from '@/components/Settings/SubscriptionPlanEditor';
+import { PaymentProofSubmission } from '@/components/Payment/PaymentProofSubmission';
+import { ActivationCodeRedemption } from '@/components/Payment/ActivationCodeRedemption';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { format } from 'date-fns';
 
@@ -37,6 +39,7 @@ export function SubscriptionSettings() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="plans">Plan Management</TabsTrigger>
+          <TabsTrigger value="manual-payment">Manual Payment</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -125,6 +128,13 @@ export function SubscriptionSettings() {
 
         <TabsContent value="plans">
           <SubscriptionPlanEditor />
+        </TabsContent>
+
+        <TabsContent value="manual-payment">
+          <div className="space-y-6">
+            <PaymentProofSubmission />
+            <ActivationCodeRedemption />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
