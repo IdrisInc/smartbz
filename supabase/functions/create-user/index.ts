@@ -75,9 +75,9 @@ serve(async (req) => {
         throw new Error('User is not a member of this organization')
       }
 
-      if (!membership.is_owner && !['business_owner', 'manager'].includes(membership.role)) {
-        throw new Error('Insufficient permissions to create users')
-      }
+    if (!membership.is_owner && !['business_owner', 'manager', 'admin_staff'].includes(membership.role)) {
+      throw new Error('Insufficient permissions to create users')
+    }
     } else {
       // For admin registration, verify the requesting user is an admin using service role
       const { data: adminMemberships } = await supabaseAdmin

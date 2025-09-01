@@ -262,12 +262,27 @@ export function NotificationCenter() {
                               </Button>
                             </div>
                           </div>
-                          <p className="text-sm text-muted-foreground">
+                           <p className="text-sm text-muted-foreground">
                             {notification.message}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatTimeAgo(notification.created_at)}
-                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-muted-foreground">
+                              {formatTimeAgo(notification.created_at)}
+                            </p>
+                            {notification.action_url && (
+                              <Button
+                                variant="link"
+                                size="sm"
+                                className="h-6 text-xs p-0"
+                                onClick={() => {
+                                  markAsRead(notification.id);
+                                  window.location.href = notification.action_url!;
+                                }}
+                              >
+                                View Request
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
