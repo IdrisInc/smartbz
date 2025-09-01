@@ -300,7 +300,14 @@ export default function SuperAdminSubscriptions() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditingSubscription(subscription)}>
+                          <DropdownMenuItem onClick={() => {
+                            // View details without editing mode
+                            console.log('Viewing subscription details:', subscription);
+                            toast({
+                              title: "Subscription Details",
+                              description: `${subscription.business_name} - ${subscription.plan} plan`
+                            });
+                          }}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>

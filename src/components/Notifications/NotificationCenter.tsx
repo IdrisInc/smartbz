@@ -49,10 +49,14 @@ export function NotificationCenter() {
     try {
       setLoading(true);
       
-      // Fetch real notifications from the database
+      // Fetch notifications for the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Get notifications for super admins or user-specific notifications
       const { data: notificationsData, error } = await supabase
         .from('notifications')
         .select('*')
+        .or(`user_id.is.null,user_id.eq.${user?.id}`)
         .order('created_at', { ascending: false })
         .limit(50);
 

@@ -25,8 +25,8 @@ export function SubscriptionEditor({ subscription, open, onClose, onUpdate }: Su
 
   const planPricing = {
     free: 0,
-    base: 29,
-    pro: 99,
+    basic: 29,
+    premium: 99,
     enterprise: 299
   };
 
@@ -133,14 +133,14 @@ export function SubscriptionEditor({ subscription, open, onClose, onUpdate }: Su
                       Free <Badge variant="outline">${planPricing.free}/mo</Badge>
                     </div>
                   </SelectItem>
-                  <SelectItem value="base">
+                  <SelectItem value="basic">
                     <div className="flex items-center gap-2">
-                      Base <Badge variant="secondary">${planPricing.base}/mo</Badge>
+                      Basic <Badge variant="secondary">${planPricing.basic}/mo</Badge>
                     </div>
                   </SelectItem>
-                  <SelectItem value="pro">
+                  <SelectItem value="premium">
                     <div className="flex items-center gap-2">
-                      Pro <Badge variant="default">${planPricing.pro}/mo</Badge>
+                      Premium <Badge variant="default">${planPricing.premium}/mo</Badge>
                     </div>
                   </SelectItem>
                   <SelectItem value="enterprise">
