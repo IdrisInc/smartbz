@@ -47,52 +47,50 @@ export function NotificationCenter() {
 
   const loadNotifications = async () => {
     try {
-      // For demo purposes, we'll create mock notifications
-      // In real implementation, you'd fetch from a notifications table
-      const mockNotifications: Notification[] = [
-        {
-          id: '1',
-          title: 'Subscription Update',
-          message: 'Your subscription has been upgraded to Pro plan',
-          type: 'success',
-          read: false,
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          title: 'Low Stock Alert',
-          message: 'Product "Widget A" is running low in inventory',
-          type: 'warning',
-          read: false,
-          created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: '3',
-          title: 'New Sale',
-          message: 'Sale #12345 has been completed for $150.00',
-          type: 'info',
-          read: true,
-          created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: '4',
-          title: 'Payment Failed',
-          message: 'Monthly subscription payment failed. Please update your payment method.',
-          type: 'error',
-          read: false,
-          created_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-        }
-      ];
+      setLoading(true);
+      
+      // Fetch real notifications from the database
+      const { data: notificationsData, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-      setNotifications(mockNotifications);
-      setUnreadCount(mockNotifications.filter(n => !n.read).length);
+      if (error) throw error;
+
+      const formattedNotifications: Notification[] = (notificationsData || []).map(notification => ({
+        id: notification.id,
+        title: notification.title,
+        message: notification.message,
+        type: notification.type as 'info' | 'warning' | 'success' | 'error',
+        read: notification.read,
+        created_at: notification.created_at,
+        action_url: notification.action_url || undefined
+      }));
+
+      setNotifications(formattedNotifications);
+      setUnreadCount(formattedNotifications.filter(n => !n.read).length);
     } catch (error) {
       console.error('Error loading notifications:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load notifications",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const markAsRead = async (notificationId: string) => {
     try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId);
+
+      if (error) throw error;
+
       setNotifications(prev => 
         prev.map(n => 
           n.id === notificationId ? { ...n, read: true } : n
@@ -101,11 +99,27 @@ export function NotificationCenter() {
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error marking notification as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark notification as read",
+        variant: "destructive"
+      });
     }
   };
 
   const markAllAsRead = async () => {
     try {
+      const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
+      
+      if (unreadIds.length > 0) {
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read: true })
+          .in('id', unreadIds);
+
+        if (error) throw error;
+      }
+
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
       toast({
@@ -114,11 +128,23 @@ export function NotificationCenter() {
       });
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark all notifications as read",
+        variant: "destructive"
+      });
     }
   };
 
   const deleteNotification = async (notificationId: string) => {
     try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId);
+
+      if (error) throw error;
+
       const notification = notifications.find(n => n.id === notificationId);
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
       if (notification && !notification.read) {
@@ -126,6 +152,11 @@ export function NotificationCenter() {
       }
     } catch (error) {
       console.error('Error deleting notification:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete notification",
+        variant: "destructive"
+      });
     }
   };
 

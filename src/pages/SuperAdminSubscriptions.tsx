@@ -24,6 +24,7 @@ interface Subscription {
   businesses_count: number;
   branches_count: number;
   staff_count: number;
+  pending_payment?: any;
 }
 
 export default function SuperAdminSubscriptions() {
@@ -39,7 +40,7 @@ export default function SuperAdminSubscriptions() {
 
   const loadSubscriptions = async () => {
     try {
-      // First get all organizations
+      // Get all organizations with subscription and payment data
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .select(`
@@ -47,6 +48,7 @@ export default function SuperAdminSubscriptions() {
           name,
           subscription_plan,
           status,
+          subscription_end,
           created_at
         `);
 
@@ -76,6 +78,15 @@ export default function SuperAdminSubscriptions() {
         }
       }
 
+      // Get payment proofs to see subscription upgrade requests
+      const { data: paymentProofs, error: paymentError } = await supabase
+        .from('payment_proofs')
+        .select('organization_id, plan, status, created_at, amount');
+      
+      if (paymentError) {
+        console.warn('Error loading payment proofs:', paymentError);
+      }
+
       // Get actual usage data
       const orgIds = orgData?.map(org => org.id) || [];
       
@@ -90,6 +101,9 @@ export default function SuperAdminSubscriptions() {
         const branchCount = branchesData.data?.filter(b => b.organization_id === org.id).length || 0;
         const staffCount = staffData.data?.filter(s => s.organization_id === org.id).length || 0;
         
+        // Check for pending payment proof
+        const pendingPayment = paymentProofs?.find(pp => pp.organization_id === org.id && pp.status === 'pending');
+        
         const planPricing = {
           free: 0,
           base: 29,
@@ -97,20 +111,30 @@ export default function SuperAdminSubscriptions() {
           enterprise: 299
         };
 
+        // Determine actual status - if there's a pending payment, show that instead
+        let displayStatus = org.status || 'active';
+        let displayPlan: string = org.subscription_plan || 'free';
+        
+        if (pendingPayment) {
+          displayStatus = 'upgrade_pending';
+          displayPlan = `${org.subscription_plan} → ${pendingPayment.plan}`;
+        }
+
         return {
           id: org.id,
           business_name: org.name,
           owner_email: (profile as any)?.display_name || 'No email',
           owner_name: `${(profile as any)?.first_name || ''} ${(profile as any)?.last_name || ''}`.trim() || 'Unknown Owner',
-          plan: org.subscription_plan || 'free',
-          status: org.status || 'active',
+          plan: displayPlan,
+          status: displayStatus,
           billing_cycle: 'monthly',
-          amount: planPricing[org.subscription_plan as keyof typeof planPricing] || 0,
-          next_billing_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          amount: pendingPayment?.amount || planPricing[org.subscription_plan as keyof typeof planPricing] || 0,
+          next_billing_date: org.subscription_end || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           created_at: org.created_at,
           businesses_count: 1,
           branches_count: branchCount,
-          staff_count: staffCount
+          staff_count: staffCount,
+          pending_payment: pendingPayment
         };
       }) || [];
 
@@ -135,12 +159,20 @@ export default function SuperAdminSubscriptions() {
 
   const getStatusBadge = (status: string) => {
     const variant = status === 'active' ? 'default' : 
+                   status === 'upgrade_pending' ? 'secondary' :
                    status === 'canceled' ? 'destructive' : 
                    status === 'past_due' ? 'destructive' : 'secondary';
-    return <Badge variant={variant}>{status}</Badge>;
+    
+    const displayStatus = status === 'upgrade_pending' ? 'Upgrade Pending' : status;
+    return <Badge variant={variant}>{displayStatus}</Badge>;
   };
 
   const getPlanBadge = (plan: string) => {
+    // Handle upgrade arrows in plan display
+    if (plan.includes('→')) {
+      return <Badge variant="secondary">{plan}</Badge>;
+    }
+    
     const variant = plan === 'enterprise' ? 'default' : 
                    plan === 'pro' ? 'secondary' : 'outline';
     return <Badge variant={variant}>{plan}</Badge>;
