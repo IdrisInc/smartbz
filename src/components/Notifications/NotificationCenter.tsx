@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, X, Check, AlertCircle, Info, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,7 @@ export function NotificationCenter() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadNotifications();
@@ -280,7 +282,8 @@ export function NotificationCenter() {
                                 className="h-6 text-xs p-0"
                                 onClick={() => {
                                   markAsRead(notification.id);
-                                  window.location.href = notification.action_url!;
+                                  setOpen(false);
+                                  navigate(notification.action_url!);
                                 }}
                               >
                                 View Request
