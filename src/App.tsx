@@ -34,6 +34,7 @@ import SuperAdminBranches from "./pages/SuperAdminBranches";
 import SuperAdminStaff from "./pages/SuperAdminStaff";
 import SuperAdminSubscriptions from "./pages/SuperAdminSubscriptions";
 import SuperAdminReports from "./pages/SuperAdminReports";
+import SuperAdminPayments from "./pages/SuperAdminPayments";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,7 @@ function App() {
                     <Route path="super-admin/staff" element={<SuperAdminStaff />} />
                     <Route path="super-admin/subscriptions" element={<SuperAdminSubscriptions />} />
                     <Route path="super-admin/reports" element={<SuperAdminReports />} />
+                    <Route path="super-admin/payments" element={<SuperAdminPayments />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
