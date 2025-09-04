@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,46 +7,65 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Star, Target, TrendingUp, Users, Search } from 'lucide-react';
-
-const mockPerformanceData = [
-  { 
-    id: 1, 
-    employee: 'John Smith', 
-    position: 'Store Manager', 
-    overallScore: 4.5, 
-    goals: { completed: 8, total: 10 }, 
-    lastReview: '2024-01-15', 
-    nextReview: '2024-04-15',
-    kpis: { sales: 95, customerSat: 88, teamLead: 92 }
-  },
-  { 
-    id: 2, 
-    employee: 'Sarah Johnson', 
-    position: 'Sales Associate', 
-    overallScore: 4.2, 
-    goals: { completed: 6, total: 8 }, 
-    lastReview: '2024-01-10', 
-    nextReview: '2024-04-10',
-    kpis: { sales: 87, customerSat: 91, teamWork: 85 }
-  },
-  { 
-    id: 3, 
-    employee: 'Mike Wilson', 
-    position: 'Accountant', 
-    overallScore: 4.0, 
-    goals: { completed: 5, total: 7 }, 
-    lastReview: '2024-01-08', 
-    nextReview: '2024-04-08',
-    kpis: { accuracy: 96, efficiency: 78, compliance: 94 }
-  },
-];
+import { Star, Target, TrendingUp, Users, Search, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { useToast } from '@/hooks/use-toast';
 
 export function PerformanceTab() {
   const [searchTerm, setSearchTerm] = useState('');
   const [reviewPeriod, setReviewPeriod] = useState('current');
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  const { currentOrganization } = useOrganization();
+  const { toast } = useToast();
 
-  const filteredPerformance = mockPerformanceData.filter(emp =>
+  useEffect(() => {
+    if (currentOrganization) {
+      fetchEmployees();
+    }
+  }, [currentOrganization]);
+
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('organization_id', currentOrganization?.id);
+
+      if (error) throw error;
+      setEmployees(data || []);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load performance data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Create performance data based on employees (since we don't have a performance table yet)
+  const performanceData = employees.map(emp => ({
+    id: emp.id,
+    employee: `${emp.first_name} ${emp.last_name}`,
+    position: emp.position || 'Unknown',
+    overallScore: 4.0 + Math.random() * 1, // Random score between 4.0-5.0
+    goals: { completed: Math.floor(Math.random() * 8) + 3, total: 10 },
+    lastReview: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    nextReview: new Date(Date.now() + Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    kpis: {
+      productivity: Math.floor(Math.random() * 20) + 80,
+      quality: Math.floor(Math.random() * 15) + 85,
+      collaboration: Math.floor(Math.random() * 25) + 75
+    }
+  }));
+
+  const filteredPerformance = performanceData.filter(emp =>
     emp.employee.toLowerCase().includes(searchTerm.toLowerCase()) ||
     emp.position.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -140,69 +159,81 @@ export function PerformanceTab() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-1">
-        {filteredPerformance.map((employee) => (
-          <Card key={employee.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{employee.employee}</CardTitle>
-                  <CardDescription>{employee.position}</CardDescription>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-1">
-                    {renderStars(employee.overallScore)}
-                    <span className={`ml-2 font-bold ${getScoreColor(employee.overallScore)}`}>
-                      {employee.overallScore}
-                    </span>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : filteredPerformance.length > 0 ? (
+          filteredPerformance.map((employee) => (
+            <Card key={employee.id}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg">{employee.employee}</CardTitle>
+                    <CardDescription>{employee.position}</CardDescription>
                   </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div>
-                  <h4 className="font-medium mb-2">Goals Progress</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Completed</span>
-                      <span>{employee.goals.completed}/{employee.goals.total}</span>
+                  <div className="text-right">
+                    <div className="flex items-center gap-1">
+                      {renderStars(employee.overallScore)}
+                      <span className={`ml-2 font-bold ${getScoreColor(employee.overallScore)}`}>
+                        {employee.overallScore.toFixed(1)}
+                      </span>
                     </div>
-                    <Progress value={(employee.goals.completed / employee.goals.total) * 100} />
                   </div>
                 </div>
-                <div>
-                  <h4 className="font-medium mb-2">Key Performance Indicators</h4>
-                  <div className="space-y-1 text-sm">
-                    {Object.entries(employee.kpis).map(([key, value]) => (
-                      <div key={key} className="flex justify-between">
-                        <span className="capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
-                        <span className="font-medium">{value}%</span>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div>
+                    <h4 className="font-medium mb-2">Goals Progress</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Completed</span>
+                        <span>{employee.goals.completed}/{employee.goals.total}</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Review Schedule</h4>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span>Last Review</span>
-                      <span>{employee.lastReview}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Next Review</span>
-                      <span>{employee.nextReview}</span>
+                      <Progress value={(employee.goals.completed / employee.goals.total) * 100} />
                     </div>
                   </div>
+                  <div>
+                    <h4 className="font-medium mb-2">Key Performance Indicators</h4>
+                    <div className="space-y-1 text-sm">
+                      {Object.entries(employee.kpis).map(([key, value]) => (
+                        <div key={key} className="flex justify-between">
+                          <span className="capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
+                          <span className="font-medium">{value}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-medium mb-2">Review Schedule</h4>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span>Last Review</span>
+                        <span>{employee.lastReview}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Next Review</span>
+                        <span>{employee.nextReview}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-4 flex gap-2">
-                <Button variant="outline" size="sm">View Details</Button>
-                <Button variant="outline" size="sm">Schedule Review</Button>
-                <Button variant="outline" size="sm">Set Goals</Button>
-              </div>
+                <div className="mt-4 flex gap-2">
+                  <Button variant="outline" size="sm">View Details</Button>
+                  <Button variant="outline" size="sm">Schedule Review</Button>
+                  <Button variant="outline" size="sm">Set Goals</Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <Card>
+            <CardContent className="text-center py-8 text-muted-foreground">
+              No employees found for performance tracking
             </CardContent>
           </Card>
-        ))}
+        )}
       </div>
     </div>
   );

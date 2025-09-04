@@ -28,10 +28,10 @@ export default function Finance() {
 
   // Check if user has access to finance module
   useEffect(() => {
-    if (!hasFinanceAccess()) {
+    if (!hasFinanceAccess() && !showUpgradePrompt) {
       setShowUpgradePrompt(true);
     }
-  }, [hasFinanceAccess]);
+  }, [hasFinanceAccess, showUpgradePrompt]);
 
   useEffect(() => {
     if (currentOrganization) {
