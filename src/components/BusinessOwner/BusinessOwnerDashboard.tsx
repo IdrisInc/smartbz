@@ -249,24 +249,24 @@ export function BusinessOwnerDashboard() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold">{currentUsage.businesses}</div>
+              <div className="text-2xl font-bold">{currentUsage?.businesses || 0}</div>
               <div className="text-sm text-muted-foreground">
-                of {limits.businesses === -1 ? '∞' : limits.businesses} businesses
+                of {limits?.businesses === -1 ? '∞' : limits?.businesses || 0} businesses
               </div>
-              {limits.businesses !== -1 && currentUsage.businesses >= limits.businesses && (
+              {limits?.businesses !== -1 && (currentUsage?.businesses || 0) >= (limits?.businesses || 0) && (
                 <Badge variant="destructive" className="mt-1">Limit Reached</Badge>
               )}
             </div>
             <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold">{currentUsage.branches}</div>
+              <div className="text-2xl font-bold">{currentUsage?.branches || 0}</div>
               <div className="text-sm text-muted-foreground">
-                of {limits.branchesPerBusiness === -1 ? '∞' : limits.branchesPerBusiness} branches
+                of {limits?.branchesPerBusiness === -1 ? '∞' : limits?.branchesPerBusiness || 0} branches
               </div>
             </div>
             <div className="text-center p-4 border rounded-lg">
-              <div className="text-2xl font-bold">{currentUsage.staff}</div>
+              <div className="text-2xl font-bold">{currentUsage?.staff || 0}</div>
               <div className="text-sm text-muted-foreground">
-                of {limits.staffPerBranch === -1 ? '∞' : limits.staffPerBranch} staff
+                of {limits?.staffPerBranch === -1 ? '∞' : limits?.staffPerBranch || 0} staff
               </div>
             </div>
           </div>
