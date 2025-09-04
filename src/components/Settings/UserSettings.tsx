@@ -25,7 +25,7 @@ export function UserSettings() {
     lastName: '',
     email: '',
     password: '',
-    role: 'staff'
+    role: 'sales_staff'
   });
 
   useEffect(() => {
@@ -137,7 +137,7 @@ export function UserSettings() {
         description: "User created successfully",
       });
 
-      setNewUser({ firstName: '', lastName: '', email: '', password: '', role: 'staff' });
+      setNewUser({ firstName: '', lastName: '', email: '', password: '', role: 'sales_staff' });
       fetchUsers();
     } catch (error) {
       console.error('Error creating user:', error);
@@ -295,7 +295,10 @@ export function UserSettings() {
                 <SelectContent>
                   <SelectItem value="business_owner">Business Owner</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="staff">Staff</SelectItem>
+                  <SelectItem value="admin_staff">Admin Staff</SelectItem>
+                  <SelectItem value="sales_staff">Sales Staff</SelectItem>
+                  <SelectItem value="inventory_staff">Inventory Staff</SelectItem>
+                  <SelectItem value="finance_staff">Finance Staff</SelectItem>
                   <SelectItem value="cashier">Cashier</SelectItem>
                 </SelectContent>
               </Select>

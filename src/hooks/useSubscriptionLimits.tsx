@@ -91,15 +91,15 @@ export function useSubscriptionLimits() {
   }, [currentOrganization, organizations]);
 
   const canAddBusiness = () => {
-    return limits.businesses === -1 || currentUsage.businesses < limits.businesses;
+    return limits?.businesses === -1 || (currentUsage?.businesses || 0) < (limits?.businesses || 0);
   };
 
   const canAddBranch = () => {
-    return limits.branchesPerBusiness === -1 || currentUsage.branches < limits.branchesPerBusiness;
+    return limits?.branchesPerBusiness === -1 || (currentUsage?.branches || 0) < (limits?.branchesPerBusiness || 0);
   };
 
   const canAddStaff = () => {
-    return limits.staffPerBranch === -1 || currentUsage.staff < limits.staffPerBranch;
+    return limits?.staffPerBranch === -1 || (currentUsage?.staff || 0) < (limits?.staffPerBranch || 0);
   };
 
   const getNextPlan = () => {
