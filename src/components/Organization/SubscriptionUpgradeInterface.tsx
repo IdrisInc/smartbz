@@ -155,29 +155,29 @@ export function SubscriptionUpgradeInterface({
           <CardContent>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold">{currentUsage.businesses}</div>
+                <div className="text-2xl font-bold">{currentUsage?.businesses || 0}</div>
                 <div className="text-sm text-muted-foreground">
-                  of {formatLimit(limits.businesses)} businesses
+                  of {formatLimit(limits?.businesses || 0)} businesses
                 </div>
-                {limits.businesses !== -1 && currentUsage.businesses >= limits.businesses && (
+                {limits?.businesses !== -1 && (currentUsage?.businesses || 0) >= (limits?.businesses || 0) && (
                   <Badge variant="destructive" className="mt-1">Limit Reached</Badge>
                 )}
               </div>
               <div>
-                <div className="text-2xl font-bold">{currentUsage.branches}</div>
+                <div className="text-2xl font-bold">{currentUsage?.branches || 0}</div>
                 <div className="text-sm text-muted-foreground">
-                  of {formatLimit(limits.branchesPerBusiness)} branches
+                  of {formatLimit(limits?.branchesPerBusiness || 0)} branches
                 </div>
-                {limits.branchesPerBusiness !== -1 && currentUsage.branches >= limits.branchesPerBusiness && (
+                {limits?.branchesPerBusiness !== -1 && (currentUsage?.branches || 0) >= (limits?.branchesPerBusiness || 0) && (
                   <Badge variant="destructive" className="mt-1">Limit Reached</Badge>
                 )}
               </div>
               <div>
-                <div className="text-2xl font-bold">{currentUsage.staff}</div>
+                <div className="text-2xl font-bold">{currentUsage?.staff || 0}</div>
                 <div className="text-sm text-muted-foreground">
-                  of {formatLimit(limits.staffPerBranch)} staff
+                  of {formatLimit(limits?.staffPerBranch || 0)} staff
                 </div>
-                {limits.staffPerBranch !== -1 && currentUsage.staff >= limits.staffPerBranch && (
+                {limits?.staffPerBranch !== -1 && (currentUsage?.staff || 0) >= (limits?.staffPerBranch || 0) && (
                   <Badge variant="destructive" className="mt-1">Limit Reached</Badge>
                 )}
               </div>
