@@ -51,9 +51,9 @@ export function AppSidebar() {
   const isLimitReached = () => {
     if (!limits || !currentUsage) return false;
     return (
-      (limits.businesses !== -1 && currentUsage.businesses >= limits.businesses) ||
-      (limits.branchesPerBusiness !== -1 && currentUsage.branches >= limits.branchesPerBusiness) ||
-      (limits.staffPerBranch !== -1 && currentUsage.staff >= limits.staffPerBranch)
+      (limits.businesses !== -1 && (currentUsage.businesses || 0) >= limits.businesses) ||
+      (limits.branchesPerBusiness !== -1 && (currentUsage.branches || 0) >= limits.branchesPerBusiness) ||
+      (limits.staffPerBranch !== -1 && (currentUsage.staff || 0) >= limits.staffPerBranch)
     );
   };
 
@@ -101,9 +101,9 @@ export function AppSidebar() {
                   {currentPlan} Plan
                 </div>
                 <div className="text-xs space-y-1 text-muted-foreground">
-                  <div>Businesses: {currentUsage.businesses}/{limits.businesses === -1 ? '∞' : limits.businesses}</div>
-                  <div>Branches: {currentUsage.branches}/{limits.branchesPerBusiness === -1 ? '∞' : limits.branchesPerBusiness}</div>
-                  <div>Staff: {currentUsage.staff}/{limits.staffPerBranch === -1 ? '∞' : limits.staffPerBranch}</div>
+                  <div>Businesses: {currentUsage?.businesses || 0}/{limits?.businesses === -1 ? '∞' : limits?.businesses || 0}</div>
+                  <div>Branches: {currentUsage?.branches || 0}/{limits?.branchesPerBusiness === -1 ? '∞' : limits?.branchesPerBusiness || 0}</div>
+                  <div>Staff: {currentUsage?.staff || 0}/{limits?.staffPerBranch === -1 ? '∞' : limits?.staffPerBranch || 0}</div>
                 </div>
                 {isLimitReached() && getNextPlan() && (
                   <div className="mt-2">

@@ -87,30 +87,30 @@ export function SubscriptionSettings() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Businesses</span>
-                    <span>{currentUsage.businesses} / {limits.businesses === -1 ? '∞' : limits.businesses}</span>
+                    <span>{currentUsage?.businesses || 0} / {limits?.businesses === -1 ? '∞' : limits?.businesses || 0}</span>
                   </div>
-                  {limits.businesses !== -1 && (
-                    <Progress value={getUsagePercentage(currentUsage.businesses, limits.businesses)} />
+                  {limits?.businesses !== -1 && (
+                    <Progress value={getUsagePercentage(currentUsage?.businesses || 0, limits?.businesses || 0)} />
                   )}
                 </div>
                 
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Branches</span>
-                    <span>{currentUsage.branches} / {limits.branchesPerBusiness === -1 ? '∞' : limits.branchesPerBusiness}</span>
+                    <span>{currentUsage?.branches || 0} / {limits?.branchesPerBusiness === -1 ? '∞' : limits?.branchesPerBusiness || 0}</span>
                   </div>
-                  {limits.branchesPerBusiness !== -1 && (
-                    <Progress value={getUsagePercentage(currentUsage.branches, limits.branchesPerBusiness)} />
+                  {limits?.branchesPerBusiness !== -1 && (
+                    <Progress value={getUsagePercentage(currentUsage?.branches || 0, limits?.branchesPerBusiness || 0)} />
                   )}
                 </div>
                 
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Staff Members</span>
-                    <span>{currentUsage.staff} / {limits.staffPerBranch === -1 ? '∞' : limits.staffPerBranch}</span>
+                    <span>{currentUsage?.staff || 0} / {limits?.staffPerBranch === -1 ? '∞' : limits?.staffPerBranch || 0}</span>
                   </div>
-                  {limits.staffPerBranch !== -1 && (
-                    <Progress value={getUsagePercentage(currentUsage.staff, limits.staffPerBranch)} />
+                  {limits?.staffPerBranch !== -1 && (
+                    <Progress value={getUsagePercentage(currentUsage?.staff || 0, limits?.staffPerBranch || 0)} />
                   )}
                 </div>
               </CardContent>
