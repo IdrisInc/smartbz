@@ -27,6 +27,10 @@ interface PaymentProof {
   created_at: string;
   organizations?: any;
   profiles?: any;
+  // Enriched fields
+  activation_code?: string;
+  activation_status?: string;
+  activation_expires_at?: string;
 }
 
 export function PaymentProofManagement() {
@@ -53,7 +57,37 @@ export function PaymentProofManagement() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProofs(data || []);
+
+      const proofs = data || [];
+      if (proofs.length === 0) {
+        setProofs([]);
+        return;
+      }
+
+      // Fetch activation codes linked to these proofs
+      const proofIds = proofs.map((p) => p.id);
+      const { data: codes, error: codesError } = await supabase
+        .from('activation_codes')
+        .select('payment_proof_id, code, status, expires_at')
+        .in('payment_proof_id', proofIds);
+
+      if (codesError) {
+        // Non-fatal: still show proofs even if codes failed to load
+        console.error('Failed to load activation codes', codesError);
+      }
+
+      const codeMap = new Map(
+        (codes || []).map((c: any) => [c.payment_proof_id, c])
+      );
+
+      const enriched = proofs.map((p: any) => ({
+        ...p,
+        activation_code: codeMap.get(p.id)?.code,
+        activation_status: codeMap.get(p.id)?.status,
+        activation_expires_at: codeMap.get(p.id)?.expires_at,
+      }));
+
+      setProofs(enriched);
     } catch (error: any) {
       toast({
         title: 'Error loading payment proofs',
@@ -214,6 +248,7 @@ export function PaymentProofManagement() {
               <TableHead>Method</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Submitted</TableHead>
+              <TableHead>Activation Code</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -227,6 +262,7 @@ export function PaymentProofManagement() {
                 <TableCell className="capitalize">{proof.payment_method.replace('_', ' ')}</TableCell>
                 <TableCell>{getStatusBadge(proof.status)}</TableCell>
                 <TableCell>{new Date(proof.created_at).toLocaleDateString()}</TableCell>
+                <TableCell className="font-mono">{proof.activation_code || '—'}</TableCell>
                 <TableCell>
                   <Dialog>
                     <DialogTrigger asChild>
@@ -304,6 +340,22 @@ export function PaymentProofManagement() {
                               className="mt-1"
                             />
                           </div>
+
+                          {selectedProof.activation_code && (
+                            <div>
+                              <Label>Activation Code</Label>
+                              <div className="flex items-center gap-2 mt-1">
+                                <p className="text-sm font-mono">{selectedProof.activation_code}</p>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => selectedProof.activation_code && navigator.clipboard.writeText(selectedProof.activation_code)}
+                                >
+                                  Copy
+                                </Button>
+                              </div>
+                            </div>
+                          )}
 
                           {selectedProof.status === 'pending' && (
                             <div className="flex gap-2">
