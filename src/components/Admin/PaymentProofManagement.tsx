@@ -203,14 +203,56 @@ export function PaymentProofManagement() {
       setProcessing(false);
     }
   };
-
+ 
+  const generateCodeForProof = async (proof: PaymentProof) => {
+    setProcessing(true);
+    try {
+      const durationDays = proof.payment_type === 'yearly' ? 365 : 30;
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+ 
+      const { data: codeData, error: codeError } = await supabase.rpc('generate_activation_code');
+      if (codeError) throw codeError;
+ 
+      const { error: insertError } = await supabase
+        .from('activation_codes')
+        .insert({
+          code: codeData,
+          plan: proof.plan as 'free' | 'basic' | 'premium' | 'enterprise',
+          payment_type: proof.payment_type,
+          duration_days: durationDays,
+          payment_proof_id: proof.id,
+          expires_at: expiresAt.toISOString(),
+        });
+ 
+      if (insertError) throw insertError;
+ 
+      toast({
+        title: 'Activation code generated',
+        description: `Code: ${codeData}`,
+      });
+ 
+      setSelectedProof(null);
+      setAdminNotes('');
+      loadPaymentProofs();
+    } catch (error: any) {
+      toast({
+        title: 'Error generating code',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+ 
   const getStatusBadge = (status: string) => {
     const variants = {
       pending: 'secondary',
       approved: 'default',
       rejected: 'destructive',
     } as const;
-
+ 
     return (
       <Badge variant={variants[status as keyof typeof variants] || 'secondary'}>
         {status}
@@ -354,6 +396,19 @@ export function PaymentProofManagement() {
                                   Copy
                                 </Button>
                               </div>
+                            </div>
+                          )}
+
+                          {selectedProof.status === 'approved' && !selectedProof.activation_code && (
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => generateCodeForProof(selectedProof)}
+                                disabled={processing}
+                                className="flex-1"
+                              >
+                                <Check className="h-4 w-4 mr-2" />
+                                Generate Activation Code
+                              </Button>
                             </div>
                           )}
 
