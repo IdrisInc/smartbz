@@ -9,6 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
+import { TopProductsChart } from '@/components/Reports/TopProductsChart';
+import { LowStockAlerts } from '@/components/Reports/LowStockAlerts';
+import { CustomerSegments } from '@/components/Reports/CustomerSegments';
 
 export default function Reports() {
   const [dateRange, setDateRange] = useState('30d');
@@ -195,12 +198,7 @@ export default function Reports() {
                 <CardDescription>Best performing products by revenue</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {/* Real data will be fetched from products table */}
-                  <div className="text-center text-muted-foreground py-4">
-                    Real product performance data will be displayed here based on sales data
-                  </div>
-                </div>
+                <TopProductsChart organizationId={currentOrganization?.id} dateRange={dateRange} />
               </CardContent>
             </Card>
           </div>
@@ -228,12 +226,7 @@ export default function Reports() {
                 <CardDescription>Products requiring restock</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {/* Real low stock data will be fetched from products table */}
-                  <div className="text-center text-muted-foreground py-4">
-                    Real low stock alerts will be displayed here based on inventory data
-                  </div>
-                </div>
+                <LowStockAlerts organizationId={currentOrganization?.id} />
               </CardContent>
             </Card>
           </div>
@@ -304,12 +297,7 @@ export default function Reports() {
                 <CardDescription>Customer breakdown by value</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {/* Real customer segment data will be calculated from sales and contacts */}
-                  <div className="text-center text-muted-foreground py-4">
-                    Real customer segmentation will be displayed here based on purchase history
-                  </div>
-                </div>
+                <CustomerSegments organizationId={currentOrganization?.id} dateRange={dateRange} />
               </CardContent>
             </Card>
           </div>
