@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { Search, ShoppingCart, CreditCard, Banknote, Copy, CheckCircle } from 'lucide-react';
+import { Search, ShoppingCart, CreditCard, Banknote, Copy, CheckCircle, Mail, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -160,7 +160,7 @@ Please keep this code for your records.`;
           total_amount: total,
           tax_amount: tax,
           payment_method: method.toLowerCase(),
-          payment_status: 'completed',
+          payment_status: 'paid',
           sale_date: new Date().toISOString(),
           sale_number: saleNumber,
         })
@@ -233,6 +233,34 @@ Please keep this code for your records.`;
     });
   };
 
+  const sendEmail = () => {
+    if (!customerEmail) {
+      toast({
+        variant: "destructive",
+        title: "Email required",
+        description: "Please enter a customer email to send the code.",
+      });
+      return;
+    }
+    const subject = encodeURIComponent("Your Purchase Details");
+    const body = encodeURIComponent(paymentCode);
+    window.open(`mailto:${customerEmail}?subject=${subject}&body=${body}`, "_blank");
+  };
+
+  const sendSMS = () => {
+    if (!customerPhone) {
+      toast({
+        variant: "destructive",
+        title: "Phone required",
+        description: "Please enter a customer phone number to send the code.",
+      });
+      return;
+    }
+    const body = encodeURIComponent(paymentCode);
+    const smsUrl = `sms:${customerPhone}?&body=${body}`;
+    window.open(smsUrl, "_self");
+  };
+
   const handleNewSale = () => {
     setCart([]);
     setCustomerEmail('');
@@ -263,11 +291,21 @@ Please keep this code for your records.`;
                   <div className="mt-2 p-3 bg-white border rounded text-sm font-mono whitespace-pre-line">
                     {paymentCode}
                   </div>
-                  <div className="mt-2 flex space-x-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     <Button onClick={copyPaymentCode} size="sm">
                       <Copy className="h-4 w-4 mr-2" />
                       Copy Code
                     </Button>
+                    <Button onClick={sendEmail} size="sm" disabled={!customerEmail}>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Send via Email
+                    </Button>
+                    {customerPhone && (
+                      <Button onClick={sendSMS} size="sm" variant="outline">
+                        <Phone className="h-4 w-4 mr-2" />
+                        Send via SMS
+                      </Button>
+                    )}
                   </div>
                 </div>
                 <div className="text-sm text-muted-foreground">
