@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
+import { useSectorFeatures } from '@/hooks/useSectorFeatures';
 
 interface ProductFormProps {
   onClose: () => void;
@@ -19,6 +20,7 @@ interface ProductFormProps {
 export function ProductForm({ onClose }: ProductFormProps) {
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+  const { productCategories, getCustomFields, isSectorSpecific } = useSectorFeatures();
   const [product, setProduct] = useState({
     name: '',
     sku: '',
@@ -35,6 +37,9 @@ export function ProductForm({ onClose }: ProductFormProps) {
     variants: [''],
     hasSerialNumbers: false
   });
+  
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
+  const customFields = getCustomFields();
 
   const generateSKU = () => {
     const prefix = product.type.toUpperCase().substring(0, 3);
@@ -169,10 +174,20 @@ export function ProductForm({ onClose }: ProductFormProps) {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="electronics">Electronics</SelectItem>
-                    <SelectItem value="services">Services</SelectItem>
-                    <SelectItem value="packages">Packages</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    {isSectorSpecific ? (
+                      productCategories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="electronics">Electronics</SelectItem>
+                        <SelectItem value="services">Services</SelectItem>
+                        <SelectItem value="packages">Packages</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -304,6 +319,103 @@ export function ProductForm({ onClose }: ProductFormProps) {
                   <Plus className="mr-2 h-4 w-4" />
                   Add Variant
                 </Button>
+              </div>
+            )}
+
+            {/* Sector-specific custom fields */}
+            {isSectorSpecific && customFields.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Additional {productCategories.find(c => c.id === product.category)?.name || 'Product'} Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {customFields.map((field) => (
+                    <div key={field.name} className="space-y-2">
+                      <Label htmlFor={field.name}>
+                        {field.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </Label>
+                      {field.type === 'select' && field.options ? (
+                        <Select 
+                          value={customFieldValues[field.name] || ''}
+                          onValueChange={(value) => setCustomFieldValues(prev => ({ ...prev, [field.name]: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={`Select ${field.name.replace(/_/g, ' ')}`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {field.options.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          id={field.name}
+                          type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+                          value={customFieldValues[field.name] || ''}
+                          onChange={(e) => setCustomFieldValues(prev => ({ 
+                            ...prev, 
+                            [field.name]: field.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value 
+                          }))}
+                          placeholder={`Enter ${field.name.replace(/_/g, ' ')}`}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Category-specific fields */}
+            {isSectorSpecific && product.category && (
+              <div className="space-y-4">
+                {(() => {
+                  const selectedCategory = productCategories.find(c => c.id === product.category);
+                  if (!selectedCategory?.fields?.length) return null;
+                  
+                  return (
+                    <>
+                      <h3 className="text-lg font-semibold">{selectedCategory.name} Specific Fields</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {selectedCategory.fields.map((field) => (
+                          <div key={field.name} className="space-y-2">
+                            <Label htmlFor={`category_${field.name}`}>
+                              {field.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </Label>
+                            {field.type === 'select' && field.options ? (
+                              <Select 
+                                value={customFieldValues[`category_${field.name}`] || ''}
+                                onValueChange={(value) => setCustomFieldValues(prev => ({ ...prev, [`category_${field.name}`]: value }))}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder={`Select ${field.name.replace(/_/g, ' ')}`} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {field.options.map((option) => (
+                                    <SelectItem key={option} value={option}>
+                                      {option}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <Input
+                                id={`category_${field.name}`}
+                                type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+                                value={customFieldValues[`category_${field.name}`] || ''}
+                                onChange={(e) => setCustomFieldValues(prev => ({ 
+                                  ...prev, 
+                                  [`category_${field.name}`]: field.type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value 
+                                }))}
+                                placeholder={`Enter ${field.name.replace(/_/g, ' ')}`}
+                              />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             )}
 

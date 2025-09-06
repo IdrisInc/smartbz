@@ -5,6 +5,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { SuperAdminDashboard } from '@/components/SuperAdmin/EnhancedSuperAdminDashboard';
 import { BusinessOwnerDashboard as BODashboard } from '@/components/BusinessOwner/BusinessOwnerDashboard';
 import { StaffDashboard as StaffDash } from '@/components/Staff/StaffDashboard';
+import { SectorDashboard } from '@/components/Sectors/SectorDashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -270,15 +271,30 @@ export default function Dashboard() {
       case 'super_admin':
         return <SuperAdminDashboard />;
       case 'business_owner':
-        return <BODashboard />;
+        return (
+          <div className="space-y-6">
+            <SectorDashboard />
+            <BODashboard />
+          </div>
+        );
       case 'manager':
-        return <StaffDash />;
+        return (
+          <div className="space-y-6">
+            <SectorDashboard />
+            <StaffDash />
+          </div>
+        );
       case 'admin_staff':
       case 'sales_staff':
       case 'inventory_staff':
       case 'finance_staff':
       case 'cashier':
-        return <StaffDash />;
+        return (
+          <div className="space-y-6">
+            <SectorDashboard />
+            <StaffDash />
+          </div>
+        );
       default:
         return (
           <div className="flex items-center justify-center h-64">
