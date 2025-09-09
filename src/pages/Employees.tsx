@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PayrollTab } from '@/components/Employees/PayrollTab';
 import { AttendanceTab } from '@/components/Employees/AttendanceTab';
 import { PerformanceTab } from '@/components/Employees/PerformanceTab';
+import { AddEmployeeDialog } from '@/components/Employees/AddEmployeeDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
@@ -85,10 +86,14 @@ export default function Employees() {
             Manage your team members, roles, and payroll
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Employee
-        </Button>
+        <AddEmployeeDialog 
+          trigger={
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Employee
+            </Button>
+          }
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

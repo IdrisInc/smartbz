@@ -10,6 +10,7 @@ import { Calendar, Clock, Search, Download, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
+import { useExportUtils } from '@/hooks/useExportUtils';
 
 export function AttendanceTab() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,6 +21,35 @@ export function AttendanceTab() {
   
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+  const { exportToCSV } = useExportUtils();
+
+  const exportAttendanceReport = async () => {
+    if (!currentOrganization) return;
+    
+    try {
+      const { data: attendance } = await supabase
+        .from('attendance')
+        .select('*, employees(first_name, last_name)')
+        .eq('organization_id', currentOrganization.id);
+
+      if (attendance && attendance.length > 0) {
+        exportToCSV(attendance, 'attendance_report');
+      } else {
+        toast({
+          title: "No Data",
+          description: "No attendance data available to export",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error exporting attendance:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export attendance report",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     if (currentOrganization) {
@@ -129,7 +159,7 @@ export function AttendanceTab() {
             </SelectContent>
           </Select>
         </div>
-        <Button variant="outline">
+        <Button variant="outline" onClick={exportAttendanceReport}>
           <Download className="mr-2 h-4 w-4" />
           Export Report
         </Button>

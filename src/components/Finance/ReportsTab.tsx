@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Download, TrendingUp, TrendingDown, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useExportUtils } from '@/hooks/useExportUtils';
 import { useToast } from '@/hooks/use-toast';
 
 export function ReportsTab() {
@@ -22,7 +23,63 @@ export function ReportsTab() {
   });
 
   const { currentOrganization } = useOrganization();
+  const { exportToCSV } = useExportUtils();
   const { toast } = useToast();
+
+  const exportFinanceReport = async () => {
+    if (!currentOrganization) return;
+    
+    setLoading(true);
+    try {
+      // Get sales data
+      const { data: salesData } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('organization_id', currentOrganization.id);
+
+      // Get expenses data
+      const { data: expensesData } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('organization_id', currentOrganization.id);
+
+      // Get invoices data
+      const { data: invoicesData } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('organization_id', currentOrganization.id);
+
+      const reportData = {
+        sales: salesData || [],
+        expenses: expensesData || [],
+        invoices: invoicesData || []
+      };
+
+      // Export combined data
+      if (reportData.sales.length || reportData.expenses.length || reportData.invoices.length) {
+        exportToCSV([
+          ...reportData.sales.map(s => ({ type: 'sale', ...s })),
+          ...reportData.expenses.map(e => ({ type: 'expense', ...e })),
+          ...reportData.invoices.map(i => ({ type: 'invoice', ...i }))
+        ], 'finance_report');
+      } else {
+        toast({
+          title: "No Data",
+          description: "No financial data available to export",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export report",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (currentOrganization) {
@@ -121,7 +178,7 @@ export function ReportsTab() {
             </SelectContent>
           </Select>
         </div>
-        <Button>
+        <Button onClick={exportFinanceReport}>
           <Download className="mr-2 h-4 w-4" />
           Export Report
         </Button>

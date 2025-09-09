@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Search, Eye, Edit, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { CreateInvoiceDialog } from './CreateInvoiceDialog';
 import { useToast } from '@/hooks/use-toast';
 
 export function InvoicesTab() {
@@ -76,10 +77,14 @@ export function InvoicesTab() {
             className="pl-8"
           />
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Invoice
-        </Button>
+        <CreateInvoiceDialog 
+          trigger={
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Invoice
+            </Button>
+          }
+        />
       </div>
 
       <Card>

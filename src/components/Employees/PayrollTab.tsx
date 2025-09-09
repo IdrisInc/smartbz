@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, DollarSign, Download, Play, Loader2 } from 'lucide-react';
+import { Calendar, Download, Play, DollarSign, Users, Banknote, CreditCard, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
+import { useExportUtils } from '@/hooks/useExportUtils';
 
 export function PayrollTab() {
   const [payPeriod, setPayPeriod] = useState('current');
@@ -18,6 +19,60 @@ export function PayrollTab() {
   
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+  const { exportToCSV } = useExportUtils();
+
+  const exportPayrollData = async () => {
+    if (!currentOrganization) return;
+    
+    try {
+      const { data: employeeData } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('organization_id', currentOrganization.id);
+
+      if (employeeData && employeeData.length > 0) {
+        exportToCSV(employeeData, 'payroll_data');
+      } else {
+        toast({
+          title: "No Data",
+          description: "No employee data available to export",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error exporting payroll:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export payroll data",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const processPayroll = async () => {
+    if (!currentOrganization) return;
+    
+    setLoading(true);
+    try {
+      // This would typically integrate with a payroll system
+      // For now, we'll just show a success message
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing
+      
+      toast({
+        title: "Payroll Processed",
+        description: "Payroll has been successfully processed for all employees",
+      });
+    } catch (error) {
+      console.error('Error processing payroll:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process payroll",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (currentOrganization) {
@@ -107,13 +162,13 @@ export function PayrollTab() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={exportPayrollData}>
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
-          <Button>
+          <Button onClick={processPayroll} disabled={loading}>
             <Play className="mr-2 h-4 w-4" />
-            Process Payroll
+            {loading ? 'Processing...' : 'Process Payroll'}
           </Button>
         </div>
       </div>

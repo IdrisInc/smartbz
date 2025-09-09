@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Search, Receipt, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { AddExpenseDialog } from './AddExpenseDialog';
 import { useToast } from '@/hooks/use-toast';
 
 export function ExpensesTab() {
@@ -98,10 +99,14 @@ export function ExpensesTab() {
             </SelectContent>
           </Select>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Expense
-        </Button>
+        <AddExpenseDialog 
+          trigger={
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Expense
+            </Button>
+          }
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
