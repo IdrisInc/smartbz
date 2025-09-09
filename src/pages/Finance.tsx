@@ -21,6 +21,7 @@ export default function Finance() {
   });
   const [loading, setLoading] = useState(true);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [promptDismissed, setPromptDismissed] = useState(false);
   
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
@@ -28,10 +29,10 @@ export default function Finance() {
 
   // Check if user has access to finance module
   useEffect(() => {
-    if (!hasFinanceAccess() && !showUpgradePrompt) {
+    if (!hasFinanceAccess() && !promptDismissed) {
       setShowUpgradePrompt(true);
     }
-  }, [hasFinanceAccess, showUpgradePrompt]);
+  }, [hasFinanceAccess, promptDismissed]);
 
   useEffect(() => {
     if (currentOrganization) {
@@ -201,7 +202,10 @@ export default function Finance() {
         feature="finance"
         action="access finance features"
         open={showUpgradePrompt}
-        onClose={() => setShowUpgradePrompt(false)}
+        onClose={() => {
+          setShowUpgradePrompt(false);
+          setPromptDismissed(true);
+        }}
       />
     </div>
   );
