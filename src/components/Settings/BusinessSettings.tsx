@@ -1,25 +1,47 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useBusinessSettings } from '@/hooks/useBusinessSettings';
+import { Loader2 } from 'lucide-react';
 
 export function BusinessSettings() {
-  const [businessInfo, setBusinessInfo] = useState({
-    name: 'BizWiz Company',
-    email: 'contact@bizwiz.com',
-    phone: '+1234567890',
-    address: '123 Business St',
-    city: 'Business City',
-    country: 'United States',
-    timezone: 'America/New_York'
+  const { businessSettings, loading, saveBusinessSettings } = useBusinessSettings();
+  const [formData, setFormData] = useState({
+    business_name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    country: '',
+    timezone: 'UTC',
+    logo_url: null as string | null
   });
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    console.log('Saving business settings:', businessInfo);
+  useEffect(() => {
+    if (businessSettings) {
+      setFormData({
+        business_name: businessSettings.business_name || '',
+        email: businessSettings.email || '',
+        phone: businessSettings.phone || '',
+        address: businessSettings.address || '',
+        city: businessSettings.city || '',
+        country: businessSettings.country || '',
+        timezone: businessSettings.timezone || 'UTC',
+        logo_url: businessSettings.logo_url || null
+      });
+    }
+  }, [businessSettings]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    await saveBusinessSettings(formData);
+    setSaving(false);
   };
 
   return (
@@ -32,68 +54,104 @@ export function BusinessSettings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="businessName">Business Name</Label>
-              <Input
-                id="businessName"
-                value={businessInfo.name}
-                onChange={(e) => setBusinessInfo({...businessInfo, name: e.target.value})}
-              />
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="businessEmail">Email</Label>
-              <Input
-                id="businessEmail"
-                type="email"
-                value={businessInfo.email}
-                onChange={(e) => setBusinessInfo({...businessInfo, email: e.target.value})}
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="businessPhone">Phone</Label>
-              <Input
-                id="businessPhone"
-                value={businessInfo.phone}
-                onChange={(e) => setBusinessInfo({...businessInfo, phone: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="timezone">Timezone</Label>
-              <Select value={businessInfo.timezone} onValueChange={(value) => setBusinessInfo({...businessInfo, timezone: value})}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                  <SelectItem value="America/Chicago">Central Time</SelectItem>
-                  <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                  <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="businessName">Business Name</Label>
+                  <Input
+                    id="businessName"
+                    value={formData.business_name}
+                    onChange={(e) => setFormData({...formData, business_name: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="businessEmail">Email</Label>
+                  <Input
+                    id="businessEmail"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="businessPhone">Phone</Label>
+                  <Input
+                    id="businessPhone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    value={formData.country}
+                    onChange={(e) => setFormData({...formData, country: e.target.value})}
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="businessAddress">Address</Label>
-            <Textarea
-              id="businessAddress"
-              value={`${businessInfo.address}\n${businessInfo.city}`}
-              onChange={(e) => {
-                const lines = e.target.value.split('\n');
-                setBusinessInfo({
-                  ...businessInfo,
-                  address: lines[0] || '',
-                  city: lines[1] || ''
-                });
-              }}
-            />
-          </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="timezone">Timezone</Label>
+                  <Select value={formData.timezone} onValueChange={(value) => setFormData({...formData, timezone: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="UTC">UTC</SelectItem>
+                      <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                      <SelectItem value="America/Chicago">Central Time</SelectItem>
+                      <SelectItem value="America/Denver">Mountain Time</SelectItem>
+                      <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                      <SelectItem value="Europe/London">London</SelectItem>
+                      <SelectItem value="Europe/Paris">Paris</SelectItem>
+                      <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-          <Button onClick={handleSave}>Save Changes</Button>
+              <div className="space-y-2">
+                <Label htmlFor="businessAddress">Address</Label>
+                <Input
+                  id="businessAddress"
+                  placeholder="Street address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="businessCity">City</Label>
+                <Input
+                  id="businessCity"
+                  placeholder="City"
+                  value={formData.city}
+                  onChange={(e) => setFormData({...formData, city: e.target.value})}
+                />
+              </div>
+
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

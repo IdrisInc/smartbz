@@ -1,56 +1,68 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Download, Trash2, Filter } from 'lucide-react';
+import { Search, Download, Trash2, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { useExportUtils } from '@/hooks/useExportUtils';
+import { toast } from 'sonner';
 
-const mockLogs = [
-  {
-    id: 1,
-    timestamp: '2024-01-15 14:30:25',
-    level: 'info',
-    message: 'User logged in successfully',
-    user: 'admin@bizwiz.com',
-    module: 'authentication',
-    details: 'Login from IP: 192.168.1.100'
-  },
-  {
-    id: 2,
-    timestamp: '2024-01-15 14:25:10',
-    level: 'warning',
-    message: 'Failed payment attempt',
-    user: 'customer@example.com',
-    module: 'payments',
-    details: 'Card declined - insufficient funds'
-  },
-  {
-    id: 3,
-    timestamp: '2024-01-15 14:20:05',
-    level: 'error',
-    message: 'Database connection timeout',
-    user: 'system',
-    module: 'database',
-    details: 'Connection timeout after 30 seconds'
-  },
-  {
-    id: 4,
-    timestamp: '2024-01-15 14:15:00',
-    level: 'info',
-    message: 'Product inventory updated',
-    user: 'manager@bizwiz.com',
-    module: 'inventory',
-    details: 'Product ID: 12345, New quantity: 150'
-  }
-];
+interface SystemLog {
+  id: string;
+  created_at: string;
+  level: string;
+  message: string;
+  module: string;
+  action?: string;
+  details?: any;
+  user_id?: string;
+  organization_id?: string;
+}
 
 export function LogsSettings() {
+  const [logs, setLogs] = useState<SystemLog[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [levelFilter, setLevelFilter] = useState('all');
   const [moduleFilter, setModuleFilter] = useState('all');
+  const { currentOrganization } = useOrganization();
+  const { exportToCSV } = useExportUtils();
+
+  const loadLogs = async () => {
+    if (!currentOrganization?.id) return;
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('system_logs')
+        .select('*')
+        .eq('organization_id', currentOrganization.id)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) {
+        console.error('Error loading logs:', error);
+        toast.error('Failed to load system logs');
+        return;
+      }
+
+      setLogs(data || []);
+    } catch (error) {
+      console.error('Error loading logs:', error);
+      toast.error('Failed to load system logs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLogs();
+  }, [currentOrganization?.id]);
 
   const getLevelBadgeVariant = (level: string) => {
     switch (level) {
@@ -61,14 +73,26 @@ export function LogsSettings() {
     }
   };
 
-  const filteredLogs = mockLogs.filter(log => {
+  const filteredLogs = logs.filter(log => {
     const matchesSearch = log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         log.user.toLowerCase().includes(searchTerm.toLowerCase());
+                         (log.action?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
     const matchesLevel = levelFilter === 'all' || log.level === levelFilter;
     const matchesModule = moduleFilter === 'all' || log.module === moduleFilter;
     
     return matchesSearch && matchesLevel && matchesModule;
   });
+
+  const handleExportLogs = () => {
+    const exportData = filteredLogs.map(log => ({
+      Timestamp: new Date(log.created_at).toLocaleString(),
+      Level: log.level.toUpperCase(),
+      Message: log.message,
+      Module: log.module,
+      Action: log.action || '',
+      Details: typeof log.details === 'object' ? JSON.stringify(log.details) : log.details || ''
+    }));
+    exportToCSV(exportData, 'system-logs');
+  };
 
   return (
     <div className="space-y-6">
@@ -99,6 +123,7 @@ export function LogsSettings() {
                 <SelectItem value="info">Info</SelectItem>
                 <SelectItem value="warning">Warning</SelectItem>
                 <SelectItem value="error">Error</SelectItem>
+                <SelectItem value="debug">Debug</SelectItem>
               </SelectContent>
             </Select>
             <Select value={moduleFilter} onValueChange={setModuleFilter}>
@@ -109,54 +134,75 @@ export function LogsSettings() {
                 <SelectItem value="all">All Modules</SelectItem>
                 <SelectItem value="authentication">Authentication</SelectItem>
                 <SelectItem value="payments">Payments</SelectItem>
-                <SelectItem value="database">Database</SelectItem>
+                <SelectItem value="settings">Settings</SelectItem>
                 <SelectItem value="inventory">Inventory</SelectItem>
+                <SelectItem value="sales">Sales</SelectItem>
+                <SelectItem value="finance">Finance</SelectItem>
+                <SelectItem value="employees">Employees</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleExportLogs}>
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
           </div>
 
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Timestamp</TableHead>
-                  <TableHead>Level</TableHead>
-                  <TableHead>Message</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Module</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredLogs.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell className="font-mono text-sm">
-                      {log.timestamp}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getLevelBadgeVariant(log.level)}>
-                        {log.level.toUpperCase()}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{log.message}</TableCell>
-                    <TableCell className="text-sm">{log.user}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{log.module}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : (
+
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Timestamp</TableHead>
+                    <TableHead>Level</TableHead>
+                    <TableHead>Message</TableHead>
+                    <TableHead>Module</TableHead>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Details</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {filteredLogs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        No logs found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredLogs.map((log) => (
+                      <TableRow key={log.id}>
+                        <TableCell className="font-mono text-sm">
+                          {new Date(log.created_at).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getLevelBadgeVariant(log.level)}>
+                            {log.level.toUpperCase()}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{log.message}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{log.module}</Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {log.action || '-'}
+                        </TableCell>
+                        <TableCell className="text-sm max-w-xs truncate">
+                          {typeof log.details === 'object' 
+                            ? JSON.stringify(log.details) 
+                            : log.details || '-'
+                          }
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

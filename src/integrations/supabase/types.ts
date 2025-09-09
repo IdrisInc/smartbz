@@ -167,6 +167,51 @@ export type Database = {
           },
         ]
       }
+      business_settings: {
+        Row: {
+          address: string | null
+          business_name: string
+          city: string | null
+          country: string | null
+          created_at: string
+          email: string | null
+          id: string
+          logo_url: string | null
+          organization_id: string
+          phone: string | null
+          timezone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          business_name: string
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          organization_id: string
+          phone?: string | null
+          timezone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          business_name?: string
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          organization_id?: string
+          phone?: string | null
+          timezone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       code_redemption_logs: {
         Row: {
           code_id: string
@@ -1075,6 +1120,48 @@ export type Database = {
           super_admin_id?: string
           target_organization_id?: string | null
           target_user_id?: string | null
+        }
+        Relationships: []
+      }
+      system_logs: {
+        Row: {
+          action: string | null
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          level: string
+          message: string
+          module: string
+          organization_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          level: string
+          message: string
+          module: string
+          organization_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          level?: string
+          message?: string
+          module?: string
+          organization_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

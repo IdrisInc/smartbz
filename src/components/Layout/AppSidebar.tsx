@@ -5,6 +5,7 @@ import { Crown, AlertTriangle } from 'lucide-react';
 import { useRoleBasedNavigation } from './RoleBasedNavigation';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 import { SubscriptionUpgradeInterface } from '@/components/Organization/SubscriptionUpgradeInterface';
 import {
   Sidebar,
@@ -27,6 +28,7 @@ export function AppSidebar() {
   const menuItems = useRoleBasedNavigation();
   const { userRole } = useUserRole();
   const { currentPlan, limits, currentUsage, getNextPlan } = useSubscriptionLimits();
+  const { businessSettings } = useBusinessSettings();
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   const isActive = (path: string) => {
@@ -75,7 +77,11 @@ export function AppSidebar() {
         <div className="p-4">
           <div className="flex items-center gap-2">
             <Crown className="h-8 w-8 text-primary" />
-            {!isCollapsed && <span className="font-bold text-xl">BizWiz</span>}
+            {!isCollapsed && (
+              <span className="font-bold text-xl truncate">
+                {businessSettings?.business_name || 'BizWiz'}
+              </span>
+            )}
           </div>
           {!isCollapsed && userRole && (
             <div className="mt-2">
