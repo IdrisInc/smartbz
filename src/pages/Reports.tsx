@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, Download, Calendar, Filter, Loader2 } from 'lucide-react';
+import { BarChart3, TrendingUp, Download, Calendar, Filter, Loader2, Users, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,6 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 import { TopProductsChart } from '@/components/Reports/TopProductsChart';
 import { LowStockAlerts } from '@/components/Reports/LowStockAlerts';
 import { CustomerSegments } from '@/components/Reports/CustomerSegments';
+import { SalesPerformanceChart } from '@/components/Reports/SalesPerformanceChart';
+import { InventoryLevelsChart } from '@/components/Reports/InventoryLevelsChart';
+import { CashFlowChart } from '@/components/Reports/CashFlowChart';
+import { CustomerAcquisitionChart } from '@/components/Reports/CustomerAcquisitionChart';
 
 export default function Reports() {
   const [dateRange, setDateRange] = useState('30d');
@@ -184,12 +188,7 @@ export default function Reports() {
                 <CardDescription>Revenue trends over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground border-2 border-dashed border-gray-300 rounded-lg">
-                  <div className="text-center">
-                    <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p>Sales performance chart will be implemented</p>
-                  </div>
-                </div>
+                <SalesPerformanceChart />
               </CardContent>
             </Card>
             <Card>
@@ -212,12 +211,7 @@ export default function Reports() {
                 <CardDescription>Current inventory status</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground border-2 border-dashed border-gray-300 rounded-lg">
-                  <div className="text-center">
-                    <BarChart3 className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p>Inventory levels chart will be implemented</p>
-                  </div>
-                </div>
+                <InventoryLevelsChart />
               </CardContent>
             </Card>
             <Card>
@@ -264,12 +258,7 @@ export default function Reports() {
                 <CardDescription>Money in vs money out</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground border-2 border-dashed border-gray-300 rounded-lg">
-                  <div className="text-center">
-                    <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p>Cash flow chart will be implemented</p>
-                  </div>
-                </div>
+                <CashFlowChart />
               </CardContent>
             </Card>
           </div>
@@ -283,12 +272,7 @@ export default function Reports() {
                 <CardDescription>New customers over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground border-2 border-dashed border-gray-300 rounded-lg">
-                  <div className="text-center">
-                    <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p>Customer acquisition chart will be implemented</p>
-                  </div>
-                </div>
+                <CustomerAcquisitionChart />
               </CardContent>
             </Card>
             <Card>
