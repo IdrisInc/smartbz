@@ -264,3 +264,5 @@ export function AddEmployeeDialog({ trigger }: AddEmployeeDialogProps) {
     </Dialog>
   );
 }
+
+export default AddEmployeeDialog;
