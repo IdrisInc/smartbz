@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InvoicesTab } from '@/components/Finance/InvoicesTab';
 import { ExpensesTab } from '@/components/Finance/ExpensesTab';
 import { ReportsTab } from '@/components/Finance/ReportsTab';
+import { RevenueTrendChart } from '@/components/Finance/RevenueTrendChart';
+import { ExpenseBreakdownChart } from '@/components/Finance/ExpenseBreakdownChart';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
@@ -166,9 +168,7 @@ export default function Finance() {
                 <CardDescription>Monthly revenue over time</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  Revenue chart would go here
-                </div>
+                <RevenueTrendChart />
               </CardContent>
             </Card>
             <Card>
@@ -177,9 +177,7 @@ export default function Finance() {
                 <CardDescription>Expenses by category</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  Expense chart would go here
-                </div>
+                <ExpenseBreakdownChart />
               </CardContent>
             </Card>
           </div>
