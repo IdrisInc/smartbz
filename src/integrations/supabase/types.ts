@@ -1186,6 +1186,10 @@ export type Database = {
         Args: { org_id: string; user_id: string }
         Returns: boolean
       }
+      is_super_admin: {
+        Args: { check_user_id: string }
+        Returns: boolean
+      }
       promote_to_admin: {
         Args: { target_user_id: string }
         Returns: undefined
