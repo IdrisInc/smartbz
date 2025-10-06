@@ -67,21 +67,21 @@ export default function Products() {
 
   return (
     <ProtectedRoute requiredPermissions={['canManageProducts']}>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Products & Services</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Products & Services</h2>
+            <p className="text-sm text-muted-foreground">
               Manage your products, services, and packages
             </p>
           </div>
-          <Button onClick={() => setShowForm(true)}>
+          <Button onClick={() => setShowForm(true)} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Add Product
           </Button>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input

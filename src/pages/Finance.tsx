@@ -93,10 +93,10 @@ export default function Finance() {
     }
   };
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Finance & Accounting</h2>
-        <p className="text-muted-foreground">
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Finance & Accounting</h2>
+        <p className="text-sm text-muted-foreground">
           Track revenue, expenses, and financial performance
         </p>
       </div>
@@ -106,7 +106,7 @@ export default function Finance() {
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -153,7 +153,7 @@ export default function Finance() {
       )}
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
           <TabsTrigger value="expenses">Expenses</TabsTrigger>
@@ -161,7 +161,7 @@ export default function Finance() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Revenue Trend</CardTitle>

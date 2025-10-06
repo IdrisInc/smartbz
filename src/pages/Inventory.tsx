@@ -93,21 +93,21 @@ export default function Inventory() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Purchases & Inventory</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Purchases & Inventory</h2>
+          <p className="text-sm text-muted-foreground">
             Manage inventory levels, purchase orders, and stock movements
           </p>
         </div>
-        <Button onClick={() => setShowPOForm(true)}>
+        <Button onClick={() => setShowPOForm(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           New Purchase Order
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Items</CardTitle>
@@ -195,22 +195,22 @@ export default function Inventory() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                     <div>
-                      <div className="text-sm text-muted-foreground">Current Stock</div>
-                      <div className="text-lg font-semibold">{item.stock_quantity || 0}</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">Current Stock</div>
+                      <div className="text-base sm:text-lg font-semibold">{item.stock_quantity || 0}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted-foreground">Min Stock Level</div>
-                      <div className="text-lg">{item.min_stock_level || 0}</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">Min Stock Level</div>
+                      <div className="text-base sm:text-lg">{item.min_stock_level || 0}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted-foreground">Price</div>
-                      <div className="text-lg font-semibold">${item.price?.toLocaleString() || '0'}</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">Price</div>
+                      <div className="text-base sm:text-lg font-semibold">${item.price?.toLocaleString() || '0'}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted-foreground">Cost</div>
-                      <div className="text-lg">${item.cost?.toLocaleString() || '0'}</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">Cost</div>
+                      <div className="text-base sm:text-lg">${item.cost?.toLocaleString() || '0'}</div>
                     </div>
                   </div>
                   {item.description && (
