@@ -140,13 +140,13 @@ export function AppSidebar() {
                       className={({ isActive }) =>
                         `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           isActive
-                            ? 'bg-primary text-primary-foreground font-medium'
-                            : 'text-sidebar-foreground hover:text-sidebar-accent-foreground hover:bg-sidebar-accent'
+                            ? 'bg-primary text-primary-foreground font-semibold'
+                            : 'text-foreground hover:bg-accent hover:text-accent-foreground'
                         }`
                       }
                     >
-                      <item.icon className="h-4 w-4" />
-                      {!isCollapsed && <span>{item.title}</span>}
+                      <item.icon className="h-4 w-4 flex-shrink-0" />
+                      {!isCollapsed && <span className="truncate">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
