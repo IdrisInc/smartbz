@@ -6,6 +6,7 @@ import { useRoleBasedNavigation } from './RoleBasedNavigation';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { SubscriptionUpgradeInterface } from '@/components/Organization/SubscriptionUpgradeInterface';
 import {
   Sidebar,
@@ -31,12 +32,14 @@ export function AppSidebar() {
   const { businessSettings } = useBusinessSettings();
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
+  const isMobile = useIsMobile();
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
   };
 
   const isCollapsed = state === 'collapsed';
+  const showLabels = !isCollapsed || isMobile;
 
   const getRoleDisplayName = (role: string) => {
     const roleMap: Record<string, string> = {
@@ -77,13 +80,13 @@ export function AppSidebar() {
         <div className="p-4">
           <div className="flex items-center gap-2">
             <Crown className="h-8 w-8 text-primary" />
-            {!isCollapsed && (
+            {showLabels && (
               <span className="font-bold text-xl truncate">
                 {businessSettings?.business_name || 'BizWiz'}
               </span>
             )}
           </div>
-          {!isCollapsed && userRole && (
+          {showLabels && userRole && (
             <div className="mt-2">
               <Badge 
                 variant={userRole === 'super_admin' ? 'default' : 'secondary'} 
@@ -146,7 +149,7 @@ export function AppSidebar() {
                       }
                     >
                       <item.icon className="h-4 w-4 flex-shrink-0" />
-                      {!isCollapsed && <span className="truncate">{item.title}</span>}
+                      {showLabels && <span className="truncate">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
