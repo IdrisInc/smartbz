@@ -41,6 +41,7 @@ export function useRoleBasedNavigation() {
     { title: "Staff", url: "/super-admin/staff", icon: UserCog },
     { title: "Subscriptions", url: "/super-admin/subscriptions", icon: CreditCard },
     { title: "Reports", url: "/super-admin/reports", icon: BarChart3 },
+    { title: "Trunker", url: "/trunker", icon: FileText },
     { title: "Settings", url: "/settings", icon: Settings },
   ];
 
@@ -55,6 +56,7 @@ export function useRoleBasedNavigation() {
     { title: "Finance", url: "/finance", icon: Wallet },
     { title: "Contacts", url: "/contacts", icon: Users },
     { title: "Reports", url: "/reports", icon: TrendingUp },
+    { title: "Trunker", url: "/trunker", icon: FileText },
     { title: "Settings", url: "/settings", icon: Settings },
   ];
 
@@ -67,6 +69,7 @@ export function useRoleBasedNavigation() {
     { title: "Finance", url: "/finance", icon: Wallet },
     { title: "Reports", url: "/reports", icon: TrendingUp },
     { title: "Contacts", url: "/contacts", icon: Users },
+    { title: "Trunker", url: "/trunker", icon: FileText },
   ];
 
   // Sales Staff Navigation

@@ -26,6 +26,7 @@ import Settings from "./pages/Settings";
 import Branches from "./pages/Branches";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
+import Trunker from "./pages/Trunker";
 
 // Super Admin Pages
 import SuperAdminOwners from "./pages/SuperAdminOwners";
@@ -72,6 +73,7 @@ function App() {
                     <Route path="reports" element={<Reports />} />
                     <Route path="settings" element={<Settings />} />
                     <Route path="branches" element={<Branches />} />
+                    <Route path="trunker" element={<Trunker />} />
                     
                     {/* Super Admin Routes */}
                     <Route path="super-admin/owners" element={<SuperAdminOwners />} />
