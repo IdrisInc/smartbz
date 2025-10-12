@@ -39,7 +39,6 @@ export function AppSidebar() {
   };
 
   const isCollapsed = state === 'collapsed';
-  const showLabels = !isCollapsed || isMobile;
 
   const getRoleDisplayName = (role: string) => {
     const roleMap: Record<string, string> = {
@@ -74,19 +73,19 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className={isCollapsed ? "w-14" : "w-64"} collapsible="icon">
+    <Sidebar className="w-64" collapsible="none">
       <SidebarContent>
         {/* Header */}
         <div className="p-4">
           <div className="flex items-center gap-2">
             <Crown className="h-8 w-8 text-primary" />
-            {showLabels && (
+            {!isCollapsed && (
               <span className="font-bold text-xl truncate">
                 {businessSettings?.business_name || 'BizWiz'}
               </span>
             )}
           </div>
-          {showLabels && userRole && (
+          {!isCollapsed && userRole && (
             <div className="mt-2">
               <Badge 
                 variant={userRole === 'super_admin' ? 'default' : 'secondary'} 
@@ -149,7 +148,7 @@ export function AppSidebar() {
                       }
                     >
                       <item.icon className="h-4 w-4 flex-shrink-0" />
-                      {showLabels && <span className="truncate">{item.title}</span>}
+                      <span className="truncate">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
