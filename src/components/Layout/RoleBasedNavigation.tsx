@@ -18,7 +18,13 @@ import {
   CreditCard,
   BarChart3,
   Store,
-  UserCog
+  UserCog,
+  ShoppingBag,
+  RotateCcw,
+  ClipboardList,
+  Tag,
+  FolderOpen,
+  DollarSign
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -50,10 +56,15 @@ export function useRoleBasedNavigation() {
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
     { title: "Branches", url: "/branches", icon: GitBranch },
     { title: "Employees", url: "/employees", icon: UserCheck },
+    { title: "Purchases", url: "/purchases", icon: ShoppingBag },
     { title: "Products", url: "/products", icon: Package },
+    { title: "Product Management", url: "/product-management", icon: Tag },
     { title: "Inventory", url: "/inventory", icon: Store },
     { title: "Sales", url: "/sales", icon: ShoppingCart },
+    { title: "Sale Returns", url: "/sale-returns", icon: RotateCcw },
     { title: "Finance", url: "/finance", icon: Wallet },
+    { title: "Expense Categories", url: "/expense-categories", icon: FolderOpen },
+    { title: "Cash Registers", url: "/cash-registers", icon: DollarSign },
     { title: "Contacts", url: "/contacts", icon: Users },
     { title: "Reports", url: "/reports", icon: TrendingUp },
     { title: "Trunker", url: "/trunker", icon: FileText },
@@ -63,10 +74,15 @@ export function useRoleBasedNavigation() {
   // Admin Staff Navigation (Full branch access)
   const adminStaffItems: NavigationItem[] = [
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
+    { title: "Purchases", url: "/purchases", icon: ShoppingBag },
     { title: "Products", url: "/products", icon: Package },
+    { title: "Product Management", url: "/product-management", icon: Tag },
     { title: "Inventory", url: "/inventory", icon: Store },
     { title: "Sales", url: "/sales", icon: ShoppingCart },
+    { title: "Sale Returns", url: "/sale-returns", icon: RotateCcw },
     { title: "Finance", url: "/finance", icon: Wallet },
+    { title: "Expense Categories", url: "/expense-categories", icon: FolderOpen },
+    { title: "Cash Registers", url: "/cash-registers", icon: DollarSign },
     { title: "Reports", url: "/reports", icon: TrendingUp },
     { title: "Contacts", url: "/contacts", icon: Users },
     { title: "Trunker", url: "/trunker", icon: FileText },
@@ -82,6 +98,7 @@ export function useRoleBasedNavigation() {
   // Inventory Staff Navigation
   const inventoryStaffItems: NavigationItem[] = [
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
+    { title: "Purchases", url: "/purchases", icon: ShoppingBag },
     { title: "Products", url: "/products", icon: Package },
     { title: "Inventory", url: "/inventory", icon: Store },
   ];
