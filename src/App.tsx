@@ -27,9 +27,6 @@ import Branches from "./pages/Branches";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 import Trunker from "./pages/Trunker";
-import Purchases from "./pages/Purchases";
-import SaleReturns from "./pages/SaleReturns";
-import ProductManagement from "./pages/ProductManagement";
 import CashRegisters from "./pages/CashRegisters";
 import ExpenseCategories from "./pages/ExpenseCategories";
 
@@ -70,10 +67,7 @@ function App() {
                   }>
                     <Route index element={<Dashboard />} />
                     <Route path="sales" element={<Sales />} />
-                    <Route path="sale-returns" element={<SaleReturns />} />
-                    <Route path="purchases" element={<Purchases />} />
                     <Route path="products" element={<Products />} />
-                    <Route path="product-management" element={<ProductManagement />} />
                     <Route path="inventory" element={<Inventory />} />
                     <Route path="contacts" element={<Contacts />} />
                     <Route path="employees" element={<Employees />} />

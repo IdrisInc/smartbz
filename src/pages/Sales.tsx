@@ -8,20 +8,27 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SaleForm } from '@/components/Sales/SaleForm';
 import { POSInterface } from '@/components/Sales/POSInterface';
+import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { RotateCcw } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function Sales() {
+  const [activeTab, setActiveTab] = useState('sales');
   const [showForm, setShowForm] = useState(false);
   const [showPOS, setShowPOS] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sales, setSales] = useState([]);
+  const [returns, setReturns] = useState([]);
   const [stats, setStats] = useState({
     todaysSales: 0,
     ordersToday: 0
   });
   const [loading, setLoading] = useState(true);
+  const [loadingReturns, setLoadingReturns] = useState(true);
   
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
@@ -30,6 +37,7 @@ export default function Sales() {
     if (currentOrganization) {
       fetchSales();
       fetchStats();
+      fetchReturns();
     }
   }, [currentOrganization]);
 
@@ -86,13 +94,37 @@ export default function Sales() {
     }
   };
 
+  const fetchReturns = async () => {
+    try {
+      setLoadingReturns(true);
+      const { data, error } = await supabase
+        .from('sale_returns')
+        .select('*')
+        .eq('organization_id', currentOrganization?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setReturns(data || []);
+    } catch (error) {
+      console.error('Error fetching returns:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load sale returns",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingReturns(false);
+    }
+  };
+
   const filteredSales = sales.filter(sale =>
     sale.sale_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     sale.contacts?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <ProtectedRoute>
+      <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Sales & Orders</h2>
@@ -135,60 +167,125 @@ export default function Sales() {
         </Card>
       </div>
 
-      <div className="flex gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search orders..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
-          />
-        </div>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="sales">
+            <Receipt className="h-4 w-4 mr-2" />
+            Sales
+          </TabsTrigger>
+          <TabsTrigger value="returns">
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Sale Returns
+          </TabsTrigger>
+        </TabsList>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredSales.length === 0 ? (
-            <Card>
-              <CardContent className="py-8">
-                <div className="text-center text-muted-foreground">
-                  {searchTerm ? 'No sales found matching your search.' : 'No sales recorded yet.'}
-                </div>
-              </CardContent>
-            </Card>
+        <TabsContent value="sales" className="space-y-4">
+          <div className="flex gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search orders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
           ) : (
-            filteredSales.map((sale) => (
-              <Card key={sale.id}>
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle className="text-lg">{sale.sale_number || `Sale #${sale.id.slice(0, 8)}`}</CardTitle>
-                      <CardDescription>Customer: {sale.contacts?.name || 'Walk-in Customer'}</CardDescription>
+            <div className="space-y-4">
+              {filteredSales.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8">
+                    <div className="text-center text-muted-foreground">
+                      {searchTerm ? 'No sales found matching your search.' : 'No sales recorded yet.'}
                     </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold">${sale.total_amount?.toLocaleString() || '0'}</div>
-                      <Badge variant={sale.payment_status === 'paid' ? 'default' : 'secondary'}>
-                        {sale.payment_status || 'pending'}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Payment: {sale.payment_method || 'Not specified'}</span>
-                    <span>Date: {new Date(sale.sale_date || sale.created_at).toLocaleDateString()}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                  </CardContent>
+                </Card>
+              ) : (
+                filteredSales.map((sale) => (
+                  <Card key={sale.id}>
+                    <CardHeader>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <CardTitle className="text-lg">{sale.sale_number || `Sale #${sale.id.slice(0, 8)}`}</CardTitle>
+                          <CardDescription>Customer: {sale.contacts?.name || 'Walk-in Customer'}</CardDescription>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold">${sale.total_amount?.toLocaleString() || '0'}</div>
+                          <Badge variant={sale.payment_status === 'paid' ? 'default' : 'secondary'}>
+                            {sale.payment_status || 'pending'}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex justify-between text-sm text-muted-foreground">
+                        <span>Payment: {sale.payment_method || 'Not specified'}</span>
+                        <span>Date: {new Date(sale.sale_date || sale.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
           )}
-        </div>
-      )}
+        </TabsContent>
+
+        <TabsContent value="returns" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Sale Returns</CardTitle>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                New Return
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {loadingReturns ? (
+                <div className="text-center py-8">Loading...</div>
+              ) : !returns || returns.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No sale returns found
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Return Number</TableHead>
+                      <TableHead>Return Date</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Refund</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Reason</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {returns.map((ret) => (
+                      <TableRow key={ret.id}>
+                        <TableCell className="font-medium">{ret.return_number}</TableCell>
+                        <TableCell>{ret.return_date}</TableCell>
+                        <TableCell>${Number(ret.total_amount).toFixed(2)}</TableCell>
+                        <TableCell>${Number(ret.refund_amount || 0).toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Badge variant={ret.status === 'approved' ? 'default' : ret.status === 'rejected' ? 'destructive' : 'secondary'}>
+                            {ret.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">{ret.reason || '-'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {showForm && (
         <SaleForm onClose={() => setShowForm(false)} />
@@ -197,6 +294,7 @@ export default function Sales() {
       {showPOS && (
         <POSInterface onClose={() => setShowPOS(false)} />
       )}
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }
