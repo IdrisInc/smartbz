@@ -11,11 +11,11 @@ interface TrashItem {
   id: string;
   table_name: string;
   record_id: string;
-  organization_id: string | null;
-  user_id: string | null;
+  organization_id: string;
+  old_data: any;
   deleted_at: string;
-  expires_at: string;
-  data: any;
+  deleted_by: string | null;
+  purge_at: string;
 }
 
 export default function Trunker() {
@@ -52,7 +52,7 @@ export default function Trunker() {
     return items.filter((it) =>
       it.table_name.toLowerCase().includes(f) ||
       it.record_id.toLowerCase().includes(f) ||
-      JSON.stringify(it.data || {}).toLowerCase().includes(f)
+      JSON.stringify(it.old_data || {}).toLowerCase().includes(f)
     );
   }, [items, filter]);
 
@@ -73,7 +73,7 @@ export default function Trunker() {
   return (
     <main className="space-y-4">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Trunker — Deleted records (kept 3 months)</h1>
+        <h1 className="text-2xl font-semibold">Trunker — Deleted records (kept 90 days)</h1>
         <div className="w-64">
           <Input placeholder="Search table, id or content..." value={filter} onChange={(e) => setFilter(e.target.value)} />
         </div>
@@ -91,7 +91,7 @@ export default function Trunker() {
                   <TableHead>Table</TableHead>
                   <TableHead>Summary</TableHead>
                   <TableHead>Deleted</TableHead>
-                  <TableHead>Expires</TableHead>
+                  <TableHead>Purges On</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -101,10 +101,10 @@ export default function Trunker() {
                       <Badge variant="secondary" className="capitalize">{it.table_name.replace(/_/g, ' ')}</Badge>
                     </TableCell>
                     <TableCell className="max-w-[420px] truncate text-sm text-muted-foreground">
-                      {summarize(it.data)}
+                      {summarize(it.old_data)}
                     </TableCell>
                     <TableCell className="text-sm">{new Date(it.deleted_at).toLocaleString()}</TableCell>
-                    <TableCell className="text-sm">{new Date(it.expires_at).toLocaleString()}</TableCell>
+                    <TableCell className="text-sm">{new Date(it.purge_at).toLocaleString()}</TableCell>
                   </TableRow>
                 ))}
                 {!loading && filtered.length === 0 && (

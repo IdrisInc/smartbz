@@ -218,7 +218,7 @@ export type Database = {
           created_at: string
           failure_reason: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           organization_id: string | null
           success: boolean
           user_agent: string | null
@@ -229,7 +229,7 @@ export type Database = {
           created_at?: string
           failure_reason?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           organization_id?: string | null
           success?: boolean
           user_agent?: string | null
@@ -240,7 +240,7 @@ export type Database = {
           created_at?: string
           failure_reason?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           organization_id?: string | null
           success?: boolean
           user_agent?: string | null
@@ -1129,7 +1129,7 @@ export type Database = {
           created_at: string
           details: Json | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           level: string
           message: string
           module: string
@@ -1142,7 +1142,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           level: string
           message: string
           module: string
@@ -1155,13 +1155,46 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           level?: string
           message?: string
           module?: string
           organization_id?: string | null
           user_agent?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      trash_bin: {
+        Row: {
+          deleted_at: string
+          deleted_by: string | null
+          id: string
+          old_data: Json
+          organization_id: string
+          purge_at: string
+          record_id: string
+          table_name: string
+        }
+        Insert: {
+          deleted_at?: string
+          deleted_by?: string | null
+          id?: string
+          old_data: Json
+          organization_id: string
+          purge_at?: string
+          record_id: string
+          table_name: string
+        }
+        Update: {
+          deleted_at?: string
+          deleted_by?: string | null
+          id?: string
+          old_data?: Json
+          organization_id?: string
+          purge_at?: string
+          record_id?: string
+          table_name?: string
         }
         Relationships: []
       }
@@ -1178,22 +1211,14 @@ export type Database = {
         }
         Returns: string
       }
-      generate_activation_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_activation_code: { Args: never; Returns: string }
       is_organization_owner: {
         Args: { org_id: string; user_id: string }
         Returns: boolean
       }
-      is_super_admin: {
-        Args: { check_user_id: string }
-        Returns: boolean
-      }
-      promote_to_admin: {
-        Args: { target_user_id: string }
-        Returns: undefined
-      }
+      is_super_admin: { Args: { check_user_id: string }; Returns: boolean }
+      promote_to_admin: { Args: { target_user_id: string }; Returns: undefined }
+      purge_expired_trash: { Args: never; Returns: undefined }
     }
     Enums: {
       business_sector:
