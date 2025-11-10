@@ -1008,6 +1008,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          image_url: string | null
           is_active: boolean
           min_stock_level: number | null
           name: string
@@ -1024,6 +1025,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           min_stock_level?: number | null
           name: string
@@ -1040,6 +1042,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_url?: string | null
           is_active?: boolean
           min_stock_level?: number | null
           name?: string

@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { X, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Plus, Upload, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSectorFeatures } from '@/hooks/useSectorFeatures';
+import { CategoryDialog } from './CategoryDialog';
+import { BrandDialog } from './BrandDialog';
+import { UnitDialog } from './UnitDialog';
+import { TaxDialog } from './TaxDialog';
 
 interface ProductFormProps {
   onClose: () => void;
@@ -40,6 +44,68 @@ export function ProductForm({ onClose }: ProductFormProps) {
   
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
   const customFields = getCustomFields();
+  
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  
+  const [categories, setCategories] = useState<any[]>([]);
+  const [units, setUnits] = useState<any[]>([]);
+  const [taxes, setTaxes] = useState<any[]>([]);
+  
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [showUnitDialog, setShowUnitDialog] = useState(false);
+  const [showTaxDialog, setShowTaxDialog] = useState(false);
+  
+  useEffect(() => {
+    if (currentOrganization?.id) {
+      fetchCategories();
+      fetchUnits();
+      fetchTaxes();
+    }
+  }, [currentOrganization?.id]);
+  
+  const fetchCategories = async () => {
+    const { data } = await supabase
+      .from('product_categories')
+      .select('*')
+      .eq('organization_id', currentOrganization!.id)
+      .eq('is_active', true)
+      .order('name');
+    setCategories(data || []);
+  };
+  
+  const fetchUnits = async () => {
+    const { data } = await supabase
+      .from('product_units')
+      .select('*')
+      .eq('organization_id', currentOrganization!.id)
+      .eq('is_active', true)
+      .order('name');
+    setUnits(data || []);
+  };
+  
+  const fetchTaxes = async () => {
+    const { data } = await supabase
+      .from('product_taxes')
+      .select('*')
+      .eq('organization_id', currentOrganization!.id)
+      .eq('is_active', true)
+      .order('name');
+    setTaxes(data || []);
+  };
+  
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const generateSKU = () => {
     const prefix = product.type.toUpperCase().substring(0, 3);
@@ -75,6 +141,27 @@ export function ProductForm({ onClose }: ProductFormProps) {
     }
 
     try {
+      setUploading(true);
+      let imageUrl = null;
+      
+      // Upload image if selected
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${currentOrganization.id}/${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(fileName, imageFile);
+        
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(fileName);
+        
+        imageUrl = publicUrl;
+      }
+      
       const productData = {
         organization_id: currentOrganization.id,
         name: product.name,
@@ -86,6 +173,7 @@ export function ProductForm({ onClose }: ProductFormProps) {
         description: product.description,
         stock_quantity: product.trackStock ? parseInt(product.minStock) || 0 : 0,
         min_stock_level: product.trackStock ? parseInt(product.minStock) || 0 : 0,
+        image_url: imageUrl,
         is_active: true
       };
 
@@ -114,6 +202,8 @@ export function ProductForm({ onClose }: ProductFormProps) {
         description: "An unexpected error occurred",
       });
       console.error('Error:', error);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -153,6 +243,49 @@ export function ProductForm({ onClose }: ProductFormProps) {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="image">Product Image</Label>
+              <div className="flex gap-4 items-start">
+                {imagePreview ? (
+                  <div className="relative">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-32 h-32 object-cover rounded-lg border"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2"
+                      onClick={() => {
+                        setImageFile(null);
+                        setImagePreview(null);
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="w-32 h-32 border-2 border-dashed rounded-lg flex items-center justify-center bg-muted">
+                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <Input
+                    id="image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="cursor-pointer"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Upload product image (JPG, PNG, WEBP)
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="sku">SKU</Label>
@@ -169,42 +302,53 @@ export function ProductForm({ onClose }: ProductFormProps) {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
-                <Select value={product.category} onValueChange={(value) => setProduct({...product, category: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isSectorSpecific ? (
-                      productCategories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
+                <div className="flex gap-2">
+                  <Select value={product.category} onValueChange={(value) => setProduct({...product, category: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.name}>
+                          {cat.name}
                         </SelectItem>
-                      ))
-                    ) : (
-                      <>
-                        <SelectItem value="electronics">Electronics</SelectItem>
-                        <SelectItem value="services">Services</SelectItem>
-                        <SelectItem value="packages">Packages</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => setShowCategoryDialog(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="unit">Unit</Label>
-                <Select value={product.unit} onValueChange={(value) => setProduct({...product, unit: value})}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="piece">Piece</SelectItem>
-                    <SelectItem value="hour">Hour</SelectItem>
-                    <SelectItem value="package">Package</SelectItem>
-                    <SelectItem value="kg">Kilogram</SelectItem>
-                    <SelectItem value="liter">Liter</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select value={product.unit} onValueChange={(value) => setProduct({...product, unit: value})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {units.map((unit) => (
+                        <SelectItem key={unit.id} value={unit.short_name || unit.name}>
+                          {unit.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => setShowUnitDialog(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -423,11 +567,38 @@ export function ProductForm({ onClose }: ProductFormProps) {
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit">Create Product</Button>
+              <Button type="submit" disabled={uploading}>
+                {uploading ? 'Creating...' : 'Create Product'}
+              </Button>
             </div>
           </form>
         </CardContent>
       </Card>
+      
+      <CategoryDialog
+        open={showCategoryDialog}
+        onOpenChange={setShowCategoryDialog}
+        onSuccess={() => {
+          fetchCategories();
+          setShowCategoryDialog(false);
+        }}
+      />
+      <UnitDialog
+        open={showUnitDialog}
+        onOpenChange={setShowUnitDialog}
+        onSuccess={() => {
+          fetchUnits();
+          setShowUnitDialog(false);
+        }}
+      />
+      <TaxDialog
+        open={showTaxDialog}
+        onOpenChange={setShowTaxDialog}
+        onSuccess={() => {
+          fetchTaxes();
+          setShowTaxDialog(false);
+        }}
+      />
     </div>
   );
 }
