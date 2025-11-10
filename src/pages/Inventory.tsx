@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PurchaseOrderForm } from '@/components/Inventory/PurchaseOrderForm';
+import { PurchaseReturnDialog } from '@/components/Inventory/PurchaseReturnDialog';
+import { QuotationDialog } from '@/components/Inventory/QuotationDialog';
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -17,6 +19,8 @@ import { formatDistanceToNow } from 'date-fns';
 export default function Inventory() {
   const [activeTab, setActiveTab] = useState('overview');
   const [showPOForm, setShowPOForm] = useState(false);
+  const [showReturnDialog, setShowReturnDialog] = useState(false);
+  const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [products, setProducts] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -377,7 +381,7 @@ export default function Inventory() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Purchase Returns</CardTitle>
-              <Button>
+              <Button onClick={() => setShowReturnDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Return
               </Button>
@@ -425,7 +429,7 @@ export default function Inventory() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Quotations</CardTitle>
-              <Button>
+              <Button onClick={() => setShowQuotationDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Quotation
               </Button>
@@ -473,6 +477,17 @@ export default function Inventory() {
       {showPOForm && (
         <PurchaseOrderForm onClose={() => { setShowPOForm(false); fetchPurchaseOrders(); fetchStats(); }} />
       )}
+
+      <PurchaseReturnDialog
+        open={showReturnDialog}
+        onOpenChange={setShowReturnDialog}
+        onSuccess={fetchPurchaseReturns}
+      />
+      <QuotationDialog
+        open={showQuotationDialog}
+        onOpenChange={setShowQuotationDialog}
+        onSuccess={fetchQuotations}
+      />
       </div>
     </ProtectedRoute>
   );

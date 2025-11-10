@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -8,11 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Plus, DollarSign } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { CashRegisterDialog } from '@/components/CashRegisters/CashRegisterDialog';
 
 export default function CashRegisters() {
   const { currentOrganization } = useOrganization();
+  const [showDialog, setShowDialog] = useState(false);
 
-  const { data: registers, isLoading } = useQuery({
+  const { data: registers, isLoading, refetch } = useQuery({
     queryKey: ['cash-registers', currentOrganization?.id],
     queryFn: async () => {
       if (!currentOrganization?.id) return [];
@@ -45,7 +47,7 @@ export default function CashRegisters() {
               Manage and monitor your cash registers
             </p>
           </div>
-          <Button>
+          <Button onClick={() => setShowDialog(true)}>
             <Plus className="h-4 w-4 mr-2" />
             New Register
           </Button>
@@ -107,6 +109,12 @@ export default function CashRegisters() {
             )}
           </CardContent>
         </Card>
+
+        <CashRegisterDialog
+          open={showDialog}
+          onOpenChange={setShowDialog}
+          onSuccess={() => refetch()}
+        />
       </div>
     </ProtectedRoute>
   );

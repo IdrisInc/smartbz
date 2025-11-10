@@ -8,6 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ProductForm } from '@/components/Products/ProductForm';
+import { CategoryDialog } from '@/components/Products/CategoryDialog';
+import { BrandDialog } from '@/components/Products/BrandDialog';
+import { UnitDialog } from '@/components/Products/UnitDialog';
+import { TaxDialog } from '@/components/Products/TaxDialog';
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -28,6 +32,10 @@ interface Product {
 export default function Products() {
   const [activeTab, setActiveTab] = useState('products');
   const [showForm, setShowForm] = useState(false);
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [showBrandDialog, setShowBrandDialog] = useState(false);
+  const [showUnitDialog, setShowUnitDialog] = useState(false);
+  const [showTaxDialog, setShowTaxDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState([]);
@@ -279,7 +287,7 @@ export default function Products() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Product Categories</CardTitle>
-                <Button>
+                <Button onClick={() => setShowCategoryDialog(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   New Category
                 </Button>
@@ -323,7 +331,7 @@ export default function Products() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Product Brands</CardTitle>
-                <Button>
+                <Button onClick={() => setShowBrandDialog(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   New Brand
                 </Button>
@@ -367,7 +375,7 @@ export default function Products() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Product Units</CardTitle>
-                <Button>
+                <Button onClick={() => setShowUnitDialog(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   New Unit
                 </Button>
@@ -411,7 +419,7 @@ export default function Products() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Product Taxes</CardTitle>
-                <Button>
+                <Button onClick={() => setShowTaxDialog(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   New Tax
                 </Button>
@@ -455,6 +463,27 @@ export default function Products() {
         {showForm && (
           <ProductForm onClose={() => { setShowForm(false); fetchProducts(); }} />
         )}
+
+        <CategoryDialog
+          open={showCategoryDialog}
+          onOpenChange={setShowCategoryDialog}
+          onSuccess={fetchCategories}
+        />
+        <BrandDialog
+          open={showBrandDialog}
+          onOpenChange={setShowBrandDialog}
+          onSuccess={fetchBrands}
+        />
+        <UnitDialog
+          open={showUnitDialog}
+          onOpenChange={setShowUnitDialog}
+          onSuccess={fetchUnits}
+        />
+        <TaxDialog
+          open={showTaxDialog}
+          onOpenChange={setShowTaxDialog}
+          onSuccess={fetchTaxes}
+        />
       </div>
     </ProtectedRoute>
   );

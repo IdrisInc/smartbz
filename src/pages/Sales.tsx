@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SaleForm } from '@/components/Sales/SaleForm';
+import { SaleReturnDialog } from '@/components/Sales/SaleReturnDialog';
 import { POSInterface } from '@/components/Sales/POSInterface';
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +21,7 @@ export default function Sales() {
   const [activeTab, setActiveTab] = useState('sales');
   const [showForm, setShowForm] = useState(false);
   const [showPOS, setShowPOS] = useState(false);
+  const [showReturnDialog, setShowReturnDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [sales, setSales] = useState([]);
   const [returns, setReturns] = useState([]);
@@ -240,7 +242,7 @@ export default function Sales() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Sale Returns</CardTitle>
-              <Button>
+              <Button onClick={() => setShowReturnDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Return
               </Button>
@@ -294,6 +296,12 @@ export default function Sales() {
       {showPOS && (
         <POSInterface onClose={() => setShowPOS(false)} />
       )}
+
+      <SaleReturnDialog
+        open={showReturnDialog}
+        onOpenChange={setShowReturnDialog}
+        onSuccess={fetchReturns}
+      />
       </div>
     </ProtectedRoute>
   );
