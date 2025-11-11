@@ -13,6 +13,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface PurchaseOrderFormProps {
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 interface OrderItem {
@@ -29,7 +30,7 @@ interface Supplier {
   name: string;
 }
 
-export function PurchaseOrderForm({ onClose }: PurchaseOrderFormProps) {
+export function PurchaseOrderForm({ onClose, onSuccess }: PurchaseOrderFormProps) {
   const { toast } = useToast();
   const { currentOrganization } = useOrganization();
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
@@ -115,9 +116,21 @@ export function PurchaseOrderForm({ onClose }: PurchaseOrderFormProps) {
       return;
     }
 
+    // Validate that all items have products selected
+    const invalidItems = orderItems.filter(item => !item.product_id || item.quantity <= 0);
+    if (invalidItems.length > 0) {
+      toast({
+        title: "Error",
+        description: "Please select products and enter valid quantities for all items",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      const { error } = await supabase
+      // Insert purchase order
+      const { data: poData, error: poError } = await supabase
         .from('purchase_orders')
         .insert({
           organization_id: currentOrganization?.id,
@@ -126,16 +139,39 @@ export function PurchaseOrderForm({ onClose }: PurchaseOrderFormProps) {
           expected_date: expectedDate || null,
           po_number: `PO-${Date.now()}`,
           status: 'draft'
-        });
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (poError) throw poError;
+
+      // Insert purchase order items
+      const itemsToInsert = orderItems.map(item => ({
+        purchase_order_id: poData.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        unit_price: item.price,
+        total_amount: item.total
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('purchase_order_items')
+        .insert(itemsToInsert);
+
+      if (itemsError) throw itemsError;
       
       toast({
         title: "Success",
         description: "Purchase order created successfully",
       });
+      
+      if (onSuccess) {
+        onSuccess();
+      }
+      
       onClose();
     } catch (error) {
+      console.error('Error creating purchase order:', error);
       toast({
         title: "Error",
         description: "Failed to create purchase order",

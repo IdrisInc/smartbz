@@ -475,7 +475,13 @@ export default function Inventory() {
       </Tabs>
 
       {showPOForm && (
-        <PurchaseOrderForm onClose={() => { setShowPOForm(false); fetchPurchaseOrders(); fetchStats(); }} />
+        <PurchaseOrderForm 
+          onClose={() => setShowPOForm(false)} 
+          onSuccess={() => {
+            fetchPurchaseOrders();
+            fetchStats();
+          }}
+        />
       )}
 
       <PurchaseReturnDialog
