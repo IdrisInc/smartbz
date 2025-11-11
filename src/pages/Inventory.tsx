@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Package, TrendingDown, AlertTriangle, Loader2, FileText, RotateCcw, ClipboardList } from 'lucide-react';
+import { Plus, Search, Package, TrendingDown, AlertTriangle, Loader2, FileText, RotateCcw, ClipboardList, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -163,6 +163,33 @@ export default function Inventory() {
       cancelled: 'destructive',
     };
     return colors[status] || 'secondary';
+  };
+
+  const handleReceivePO = async (poId: string) => {
+    try {
+      const { error } = await supabase
+        .from('purchase_orders')
+        .update({ status: 'received' })
+        .eq('id', poId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Purchase order received and stock updated",
+      });
+
+      fetchPurchaseOrders();
+      fetchStats();
+      fetchProducts();
+    } catch (error) {
+      console.error('Error receiving purchase order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to receive purchase order",
+        variant: "destructive",
+      });
+    }
   };
 
   const filteredProducts = products.filter(product =>
@@ -352,6 +379,7 @@ export default function Inventory() {
                       <TableHead>Total</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Created</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -367,6 +395,18 @@ export default function Inventory() {
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
                           {formatDistanceToNow(new Date(po.created_at), { addSuffix: true })}
+                        </TableCell>
+                        <TableCell>
+                          {po.status !== 'received' && po.status !== 'cancelled' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleReceivePO(po.id)}
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Receive
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
