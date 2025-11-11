@@ -91,9 +91,19 @@ export function PurchaseOrderForm({ onClose, onSuccess }: PurchaseOrderFormProps
 
   const handleProductSelect = (id: string, product: any) => {
     if (product) {
-      updateItem(id, 'product_id', product.id);
-      updateItem(id, 'product_name', product.name);
-      updateItem(id, 'price', product.price || 0);
+      setOrderItems(orderItems.map(item => {
+        if (item.id === id) {
+          const price = product.price || 0;
+          return {
+            ...item,
+            product_id: product.id,
+            product_name: product.name,
+            price: price,
+            total: item.quantity * price
+          };
+        }
+        return item;
+      }));
     }
   };
 
