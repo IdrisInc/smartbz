@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Package, TrendingDown, AlertTriangle, Loader2, FileText, RotateCcw, ClipboardList, Check } from 'lucide-react';
+import { Plus, Search, Package, TrendingDown, AlertTriangle, Loader2, FileText, RotateCcw, ClipboardList, Check, Eye, ArrowRight, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PurchaseOrderForm } from '@/components/Inventory/PurchaseOrderForm';
 import { PurchaseReturnDialog } from '@/components/Inventory/PurchaseReturnDialog';
 import { QuotationDialog } from '@/components/Inventory/QuotationDialog';
@@ -14,13 +15,19 @@ import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 
 export default function Inventory() {
   const [activeTab, setActiveTab] = useState('overview');
   const [showPOForm, setShowPOForm] = useState(false);
   const [showReturnDialog, setShowReturnDialog] = useState(false);
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
+  const [showPODetails, setShowPODetails] = useState(false);
+  const [showReturnDetails, setShowReturnDetails] = useState(false);
+  const [showQuotationDetails, setShowQuotationDetails] = useState(false);
+  const [selectedPO, setSelectedPO] = useState<any>(null);
+  const [selectedReturn, setSelectedReturn] = useState<any>(null);
+  const [selectedQuotation, setSelectedQuotation] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [products, setProducts] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -108,7 +115,10 @@ export default function Inventory() {
       setLoadingPO(true);
       const { data, error } = await supabase
         .from('purchase_orders')
-        .select('*')
+        .select(`
+          *,
+          supplier:contacts(name, phone, email)
+        `)
         .eq('organization_id', currentOrganization?.id)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -192,6 +202,148 @@ export default function Inventory() {
     }
   };
 
+  const viewPODetails = async (po: any) => {
+    try {
+      const { data: items, error } = await supabase
+        .from('purchase_order_items')
+        .select('*, product:products(name, sku)')
+        .eq('purchase_order_id', po.id);
+      
+      if (error) throw error;
+      setSelectedPO({ ...po, items });
+      setShowPODetails(true);
+    } catch (error) {
+      console.error('Error fetching PO details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load purchase order details",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const viewReturnDetails = async (returnItem: any) => {
+    try {
+      const { data: items, error } = await supabase
+        .from('purchase_return_items')
+        .select('*, product:products(name, sku)')
+        .eq('purchase_return_id', returnItem.id);
+      
+      if (error) throw error;
+      setSelectedReturn({ ...returnItem, items });
+      setShowReturnDetails(true);
+    } catch (error) {
+      console.error('Error fetching return details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load return details",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const viewQuotationDetails = async (quotation: any) => {
+    try {
+      const { data: items, error } = await supabase
+        .from('quotation_items')
+        .select('*, product:products(name, sku)')
+        .eq('quotation_id', quotation.id);
+      
+      if (error) throw error;
+      setSelectedQuotation({ ...quotation, items });
+      setShowQuotationDetails(true);
+    } catch (error) {
+      console.error('Error fetching quotation details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load quotation details",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const convertQuotationToPO = async (quotation: any) => {
+    try {
+      // Get quotation items
+      const { data: items, error: itemsError } = await supabase
+        .from('quotation_items')
+        .select('*')
+        .eq('quotation_id', quotation.id);
+
+      if (itemsError) throw itemsError;
+
+      // Generate PO number
+      const { data: lastPO } = await supabase
+        .from('purchase_orders')
+        .select('po_number')
+        .eq('organization_id', currentOrganization?.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      let poNumber = 'PO-0001';
+      if (lastPO && lastPO.length > 0) {
+        const lastNumber = parseInt(lastPO[0].po_number.split('-')[1]);
+        poNumber = `PO-${String(lastNumber + 1).padStart(4, '0')}`;
+      }
+
+      // Create purchase order
+      const { data: newPO, error: poError } = await supabase
+        .from('purchase_orders')
+        .insert({
+          organization_id: currentOrganization?.id,
+          branch_id: quotation.branch_id,
+          supplier_id: quotation.supplier_id,
+          po_number: poNumber,
+          order_date: new Date().toISOString().split('T')[0],
+          total_amount: quotation.total_amount,
+          status: 'pending',
+          notes: `Converted from Quotation ${quotation.quotation_number}`
+        })
+        .select()
+        .single();
+
+      if (poError) throw poError;
+
+      // Create PO items
+      const poItems = items?.map(item => ({
+        purchase_order_id: newPO.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_amount: item.total_amount
+      }));
+
+      const { error: itemsInsertError } = await supabase
+        .from('purchase_order_items')
+        .insert(poItems);
+
+      if (itemsInsertError) throw itemsInsertError;
+
+      // Update quotation status
+      await supabase
+        .from('quotations')
+        .update({ status: 'converted' })
+        .eq('id', quotation.id);
+
+      toast({
+        title: "Success",
+        description: `Purchase Order ${poNumber} created from quotation`,
+      });
+
+      fetchQuotations();
+      fetchPurchaseOrders();
+      setShowQuotationDetails(false);
+      setActiveTab('orders');
+    } catch (error) {
+      console.error('Error converting quotation to PO:', error);
+      toast({
+        title: "Error",
+        description: "Failed to convert quotation to purchase order",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredProducts = products.filter(product =>
     product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.sku?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -257,22 +409,26 @@ export default function Inventory() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">
             <Package className="h-4 w-4 mr-2" />
-            Inventory Overview
+            Overview
           </TabsTrigger>
           <TabsTrigger value="orders">
             <FileText className="h-4 w-4 mr-2" />
-            Purchase Orders
+            Orders
           </TabsTrigger>
           <TabsTrigger value="returns">
             <RotateCcw className="h-4 w-4 mr-2" />
-            Purchase Returns
+            Returns
           </TabsTrigger>
           <TabsTrigger value="quotations">
             <ClipboardList className="h-4 w-4 mr-2" />
             Quotations
+          </TabsTrigger>
+          <TabsTrigger value="movements">
+            <History className="h-4 w-4 mr-2" />
+            Movements
           </TabsTrigger>
         </TabsList>
 
@@ -375,10 +531,11 @@ export default function Inventory() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>PO Number</TableHead>
+                      <TableHead>Supplier</TableHead>
                       <TableHead>Order Date</TableHead>
+                      <TableHead>Expected</TableHead>
                       <TableHead>Total</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Created</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -386,27 +543,44 @@ export default function Inventory() {
                     {purchaseOrders.map((po) => (
                       <TableRow key={po.id}>
                         <TableCell className="font-medium">{po.po_number}</TableCell>
-                        <TableCell>{po.order_date}</TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{po.supplier?.name || 'N/A'}</div>
+                            {po.supplier?.phone && (
+                              <div className="text-xs text-muted-foreground">{po.supplier.phone}</div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>{format(new Date(po.order_date), 'MMM dd, yyyy')}</TableCell>
+                        <TableCell>
+                          {po.expected_date ? format(new Date(po.expected_date), 'MMM dd, yyyy') : 'N/A'}
+                        </TableCell>
                         <TableCell>${Number(po.total_amount).toFixed(2)}</TableCell>
                         <TableCell>
                           <Badge variant={getStatusColor(po.status || 'draft')}>
                             {po.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {formatDistanceToNow(new Date(po.created_at), { addSuffix: true })}
-                        </TableCell>
                         <TableCell>
-                          {po.status !== 'received' && po.status !== 'cancelled' && (
+                          <div className="flex gap-2">
                             <Button 
                               size="sm" 
-                              variant="outline"
-                              onClick={() => handleReceivePO(po.id)}
+                              variant="ghost"
+                              onClick={() => viewPODetails(po)}
                             >
-                              <Check className="h-4 w-4 mr-1" />
-                              Receive
+                              <Eye className="h-4 w-4" />
                             </Button>
-                          )}
+                            {po.status !== 'received' && po.status !== 'cancelled' && (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleReceivePO(po.id)}
+                              >
+                                <Check className="h-4 w-4 mr-1" />
+                                Receive
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -442,13 +616,14 @@ export default function Inventory() {
                       <TableHead>Total</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Reason</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {purchaseReturns.map((ret) => (
                       <TableRow key={ret.id}>
                         <TableCell className="font-medium">{ret.return_number}</TableCell>
-                        <TableCell>{ret.return_date}</TableCell>
+                        <TableCell>{format(new Date(ret.return_date), 'MMM dd, yyyy')}</TableCell>
                         <TableCell>${Number(ret.total_amount).toFixed(2)}</TableCell>
                         <TableCell>
                           <Badge variant={getStatusColor(ret.status || 'pending')}>
@@ -456,6 +631,15 @@ export default function Inventory() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm">{ret.reason || '-'}</TableCell>
+                        <TableCell>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => viewReturnDetails(ret)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -490,19 +674,41 @@ export default function Inventory() {
                       <TableHead>Valid Until</TableHead>
                       <TableHead>Total</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {quotations.map((quote) => (
                       <TableRow key={quote.id}>
                         <TableCell className="font-medium">{quote.quotation_number}</TableCell>
-                        <TableCell>{quote.quotation_date}</TableCell>
-                        <TableCell>{quote.valid_until || '-'}</TableCell>
+                        <TableCell>{format(new Date(quote.quotation_date), 'MMM dd, yyyy')}</TableCell>
+                        <TableCell>{quote.valid_until ? format(new Date(quote.valid_until), 'MMM dd, yyyy') : '-'}</TableCell>
                         <TableCell>${Number(quote.total_amount).toFixed(2)}</TableCell>
                         <TableCell>
                           <Badge variant={getStatusColor(quote.status || 'draft')}>
                             {quote.status}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => viewQuotationDetails(quote)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {quote.status !== 'converted' && quote.status !== 'rejected' && (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => viewQuotationDetails(quote)}
+                              >
+                                <ArrowRight className="h-4 w-4 mr-1" />
+                                Convert
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -512,7 +718,267 @@ export default function Inventory() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="movements" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Inventory Movements</CardTitle>
+              <CardDescription>Track incoming and outgoing stock movements</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-12 text-muted-foreground">
+                <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">Inventory Movement Tracking</p>
+                <p className="text-sm">
+                  View all stock adjustments, incoming deliveries, and outgoing shipments
+                </p>
+                <p className="text-xs mt-4">
+                  Coming soon: Detailed logs of all inventory changes with timestamps and user tracking
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      {/* Purchase Order Details Dialog */}
+      <Dialog open={showPODetails} onOpenChange={setShowPODetails}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Purchase Order Details</DialogTitle>
+            <DialogDescription>
+              {selectedPO?.po_number} - {selectedPO?.supplier?.name}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPO && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Order Date</p>
+                  <p className="font-medium">{format(new Date(selectedPO.order_date), 'MMM dd, yyyy')}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Expected Date</p>
+                  <p className="font-medium">
+                    {selectedPO.expected_date ? format(new Date(selectedPO.expected_date), 'MMM dd, yyyy') : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge variant={getStatusColor(selectedPO.status)}>{selectedPO.status}</Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Amount</p>
+                  <p className="font-medium text-lg">${Number(selectedPO.total_amount).toFixed(2)}</p>
+                </div>
+              </div>
+              
+              {selectedPO.supplier && (
+                <div className="border rounded-lg p-4">
+                  <p className="text-sm font-medium mb-2">Supplier Information</p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Name:</span> {selectedPO.supplier.name}
+                    </div>
+                    {selectedPO.supplier.phone && (
+                      <div>
+                        <span className="text-muted-foreground">Phone:</span> {selectedPO.supplier.phone}
+                      </div>
+                    )}
+                    {selectedPO.supplier.email && (
+                      <div>
+                        <span className="text-muted-foreground">Email:</span> {selectedPO.supplier.email}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <p className="text-sm font-medium mb-2">Line Items</p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>SKU</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Unit Price</TableHead>
+                      <TableHead>Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedPO.items?.map((item: any) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.product?.name}</TableCell>
+                        <TableCell className="text-muted-foreground">{item.product?.sku || '-'}</TableCell>
+                        <TableCell>{item.quantity}</TableCell>
+                        <TableCell>${Number(item.unit_price).toFixed(2)}</TableCell>
+                        <TableCell className="font-medium">${Number(item.total_amount).toFixed(2)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {selectedPO.notes && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Notes</p>
+                  <p className="text-sm border rounded p-2">{selectedPO.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Return Details Dialog */}
+      <Dialog open={showReturnDetails} onOpenChange={setShowReturnDetails}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Purchase Return Details</DialogTitle>
+            <DialogDescription>{selectedReturn?.return_number}</DialogDescription>
+          </DialogHeader>
+          {selectedReturn && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Return Date</p>
+                  <p className="font-medium">{format(new Date(selectedReturn.return_date), 'MMM dd, yyyy')}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge variant={getStatusColor(selectedReturn.status)}>{selectedReturn.status}</Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Amount</p>
+                  <p className="font-medium text-lg">${Number(selectedReturn.total_amount).toFixed(2)}</p>
+                </div>
+                {selectedReturn.reason && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Reason</p>
+                    <p className="text-sm">{selectedReturn.reason}</p>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <p className="text-sm font-medium mb-2">Returned Items</p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>SKU</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Unit Price</TableHead>
+                      <TableHead>Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedReturn.items?.map((item: any) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.product?.name}</TableCell>
+                        <TableCell className="text-muted-foreground">{item.product?.sku || '-'}</TableCell>
+                        <TableCell>{item.quantity}</TableCell>
+                        <TableCell>${Number(item.unit_price).toFixed(2)}</TableCell>
+                        <TableCell className="font-medium">${Number(item.total_amount).toFixed(2)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {selectedReturn.notes && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Notes</p>
+                  <p className="text-sm border rounded p-2">{selectedReturn.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Quotation Details Dialog */}
+      <Dialog open={showQuotationDetails} onOpenChange={setShowQuotationDetails}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Quotation Details</DialogTitle>
+            <DialogDescription>{selectedQuotation?.quotation_number}</DialogDescription>
+          </DialogHeader>
+          {selectedQuotation && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Quotation Date</p>
+                  <p className="font-medium">{format(new Date(selectedQuotation.quotation_date), 'MMM dd, yyyy')}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Valid Until</p>
+                  <p className="font-medium">
+                    {selectedQuotation.valid_until ? format(new Date(selectedQuotation.valid_until), 'MMM dd, yyyy') : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge variant={getStatusColor(selectedQuotation.status)}>{selectedQuotation.status}</Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Amount</p>
+                  <p className="font-medium text-lg">${Number(selectedQuotation.total_amount).toFixed(2)}</p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium mb-2">Items</p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>SKU</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Unit Price</TableHead>
+                      <TableHead>Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedQuotation.items?.map((item: any) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.product?.name}</TableCell>
+                        <TableCell className="text-muted-foreground">{item.product?.sku || '-'}</TableCell>
+                        <TableCell>{item.quantity}</TableCell>
+                        <TableCell>${Number(item.unit_price).toFixed(2)}</TableCell>
+                        <TableCell className="font-medium">${Number(item.total_amount).toFixed(2)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {selectedQuotation.notes && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Notes</p>
+                  <p className="text-sm border rounded p-2">{selectedQuotation.notes}</p>
+                </div>
+              )}
+
+              {selectedQuotation.status !== 'converted' && selectedQuotation.status !== 'rejected' && (
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button 
+                    variant="outline"
+                    onClick={() => setShowQuotationDetails(false)}
+                  >
+                    Close
+                  </Button>
+                  <Button onClick={() => convertQuotationToPO(selectedQuotation)}>
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    Convert to Purchase Order
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {showPOForm && (
         <PurchaseOrderForm 
