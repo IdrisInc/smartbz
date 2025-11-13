@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Minus } from 'lucide-react';
+import { X, Plus, Minus, Printer, Download, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useExportUtils } from '@/hooks/useExportUtils';
 import { ProductSelector } from '@/components/Products/ProductSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -32,12 +32,22 @@ interface Supplier {
 
 export function PurchaseOrderForm({ onClose, onSuccess }: PurchaseOrderFormProps) {
   const { toast } = useToast();
+  const { exportToCSV } = useExportUtils();
   const { currentOrganization } = useOrganization();
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [supplier, setSupplier] = useState('');
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [supplierEmail, setSupplierEmail] = useState('');
   const [expectedDate, setExpectedDate] = useState('');
   const [loading, setLoading] = useState(false);
+  const [createdPOId, setCreatedPOId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (supplier) {
+      const selectedSupplier = suppliers.find(s => s.id === supplier);
+      setSupplierEmail((selectedSupplier as any)?.email || '');
+    }
+  }, [supplier, suppliers]);
 
   useEffect(() => {
     if (currentOrganization?.id) {
@@ -49,7 +59,7 @@ export function PurchaseOrderForm({ onClose, onSuccess }: PurchaseOrderFormProps
     try {
       const { data, error } = await supabase
         .from('contacts')
-        .select('id, name')
+        .select('id, name, email')
         .eq('organization_id', currentOrganization?.id)
         .eq('contact_type', 'supplier');
 
@@ -169,17 +179,26 @@ export function PurchaseOrderForm({ onClose, onSuccess }: PurchaseOrderFormProps
         .insert(itemsToInsert);
 
       if (itemsError) throw itemsError;
+
+      // Log inventory movement
+      for (const item of orderItems) {
+        await supabase.from('inventory_movements').insert({
+          organization_id: currentOrganization?.id,
+          product_id: item.product_id,
+          movement_type: 'purchase_order',
+          quantity: item.quantity,
+          reference_type: 'purchase_order',
+          reference_id: poData.id,
+          notes: `Purchase Order ${poData.po_number}`
+        });
+      }
+      
+      setCreatedPOId(poData.id);
       
       toast({
         title: "Success",
-        description: "Purchase order created successfully",
+        description: "Purchase order created successfully. You can now print, export, or email it.",
       });
-      
-      if (onSuccess) {
-        onSuccess();
-      }
-      
-      onClose();
     } catch (error) {
       console.error('Error creating purchase order:', error);
       toast({
@@ -192,6 +211,43 @@ export function PurchaseOrderForm({ onClose, onSuccess }: PurchaseOrderFormProps
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+    toast({ title: "Print dialog opened" });
+  };
+
+  const handleExport = () => {
+    const exportData = orderItems.map(item => ({
+      Product: item.product_name,
+      Quantity: item.quantity,
+      'Unit Price': item.price,
+      Total: item.total
+    }));
+    exportToCSV(exportData, `PO-${Date.now()}`);
+  };
+
+  const handleEmail = () => {
+    if (!supplierEmail) {
+      toast({
+        variant: "destructive",
+        title: "No email",
+        description: "Supplier has no email address"
+      });
+      return;
+    }
+    const subject = `Purchase Order - PO-${Date.now()}`;
+    const body = `Please find attached purchase order.\n\nTotal: $${totalAmount.toFixed(2)}`;
+    window.location.href = `mailto:${supplierEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    toast({ title: "Email client opened" });
+  };
+
+  const handleClose = () => {
+    if (createdPOId && onSuccess) {
+      onSuccess();
+    }
+    onClose();
+  };
+
   const totalAmount = orderItems.reduce((sum, item) => sum + item.total, 0);
 
   return (
@@ -199,9 +255,27 @@ export function PurchaseOrderForm({ onClose, onSuccess }: PurchaseOrderFormProps
       <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>New Purchase Order</CardTitle>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {createdPOId && (
+              <>
+                <Button variant="outline" size="sm" onClick={handlePrint}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleEmail}>
+                  <Mail className="h-4 w-4 mr-2" />
+                  Email
+                </Button>
+              </>
+            )}
+            <Button variant="ghost" size="icon" onClick={handleClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -292,12 +366,14 @@ export function PurchaseOrderForm({ onClose, onSuccess }: PurchaseOrderFormProps
           )}
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
+            <Button variant="outline" onClick={handleClose}>
+              {createdPOId ? 'Close' : 'Cancel'}
             </Button>
-            <Button onClick={handleSubmit} disabled={loading}>
-              {loading ? 'Creating...' : 'Create Purchase Order'}
-            </Button>
+            {!createdPOId && (
+              <Button onClick={handleSubmit} disabled={loading}>
+                {loading ? 'Creating...' : 'Create Purchase Order'}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

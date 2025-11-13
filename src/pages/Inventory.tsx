@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Package, TrendingDown, AlertTriangle, Loader2, FileText, RotateCcw, ClipboardList, Check, Eye, ArrowRight, History } from 'lucide-react';
+import { Plus, Search, Package, TrendingDown, AlertTriangle, Loader2, FileText, RotateCcw, ClipboardList, Check, Eye, ArrowRight, History, Printer, Download, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
+import { useExportUtils } from '@/hooks/useExportUtils';
 import { formatDistanceToNow, format } from 'date-fns';
 
 export default function Inventory() {
@@ -25,14 +26,17 @@ export default function Inventory() {
   const [showPODetails, setShowPODetails] = useState(false);
   const [showReturnDetails, setShowReturnDetails] = useState(false);
   const [showQuotationDetails, setShowQuotationDetails] = useState(false);
+  const [showReceiveActions, setShowReceiveActions] = useState(false);
   const [selectedPO, setSelectedPO] = useState<any>(null);
   const [selectedReturn, setSelectedReturn] = useState<any>(null);
   const [selectedQuotation, setSelectedQuotation] = useState<any>(null);
+  const [receivedPO, setReceivedPO] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [products, setProducts] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [purchaseReturns, setPurchaseReturns] = useState([]);
   const [quotations, setQuotations] = useState([]);
+  const [movements, setMovements] = useState([]);
   const [stats, setStats] = useState({
     totalItems: 0,
     lowStockItems: 0,
@@ -43,9 +47,11 @@ export default function Inventory() {
   const [loadingPO, setLoadingPO] = useState(true);
   const [loadingReturns, setLoadingReturns] = useState(true);
   const [loadingQuotations, setLoadingQuotations] = useState(true);
+  const [loadingMovements, setLoadingMovements] = useState(true);
   
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+  const { exportToCSV } = useExportUtils();
 
   useEffect(() => {
     if (currentOrganization) {
@@ -54,6 +60,7 @@ export default function Inventory() {
       fetchPurchaseOrders();
       fetchPurchaseReturns();
       fetchQuotations();
+      fetchMovements();
     }
   }, [currentOrganization]);
 
@@ -164,6 +171,24 @@ export default function Inventory() {
     }
   };
 
+  const fetchMovements = async () => {
+    try {
+      setLoadingMovements(true);
+      const { data, error } = await supabase
+        .from('inventory_movements')
+        .select('*, product:products(name, sku)')
+        .eq('organization_id', currentOrganization?.id)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      setMovements(data || []);
+    } catch (error) {
+      console.error('Error fetching movements:', error);
+    } finally {
+      setLoadingMovements(false);
+    }
+  };
+
   const getStatusColor = (status: string): "default" | "destructive" | "outline" | "secondary" => {
     const colors: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
       draft: 'secondary',
@@ -177,12 +202,24 @@ export default function Inventory() {
 
   const handleReceivePO = async (poId: string) => {
     try {
+      // Get PO details with items
+      const { data: po, error: poError } = await supabase
+        .from('purchase_orders')
+        .select('*, supplier:contacts(name, email), items:purchase_order_items(*, product:products(name))')
+        .eq('id', poId)
+        .single();
+
+      if (poError) throw poError;
+
       const { error } = await supabase
         .from('purchase_orders')
         .update({ status: 'received' })
         .eq('id', poId);
 
       if (error) throw error;
+
+      setReceivedPO(po);
+      setShowReceiveActions(true);
 
       toast({
         title: "Success",
@@ -192,6 +229,7 @@ export default function Inventory() {
       fetchPurchaseOrders();
       fetchStats();
       fetchProducts();
+      fetchMovements();
     } catch (error) {
       console.error('Error receiving purchase order:', error);
       toast({
@@ -200,6 +238,37 @@ export default function Inventory() {
         variant: "destructive",
       });
     }
+  };
+
+  const handlePrintPO = () => {
+    window.print();
+    toast({ title: "Print dialog opened" });
+  };
+
+  const handleExportPO = () => {
+    if (!receivedPO) return;
+    const exportData = receivedPO.items?.map((item: any) => ({
+      Product: item.product?.name,
+      Quantity: item.quantity,
+      'Unit Price': item.unit_price,
+      Total: item.total_amount
+    }));
+    exportToCSV(exportData, `Received-${receivedPO.po_number}`);
+  };
+
+  const handleEmailPO = () => {
+    if (!receivedPO?.supplier?.email) {
+      toast({
+        variant: "destructive",
+        title: "No email",
+        description: "Supplier has no email address"
+      });
+      return;
+    }
+    const subject = `Purchase Order Received - ${receivedPO.po_number}`;
+    const body = `Purchase Order ${receivedPO.po_number} has been received.\n\nTotal: $${Number(receivedPO.total_amount).toFixed(2)}`;
+    window.location.href = `mailto:${receivedPO.supplier.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    toast({ title: "Email client opened" });
   };
 
   const viewPODetails = async (po: any) => {
@@ -726,20 +795,97 @@ export default function Inventory() {
               <CardDescription>Track incoming and outgoing stock movements</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium mb-2">Inventory Movement Tracking</p>
-                <p className="text-sm">
-                  View all stock adjustments, incoming deliveries, and outgoing shipments
-                </p>
-                <p className="text-xs mt-4">
-                  Coming soon: Detailed logs of all inventory changes with timestamps and user tracking
-                </p>
-              </div>
+              {loadingMovements ? (
+                <div className="text-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                </div>
+              ) : !movements || movements.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium mb-2">No Movements Yet</p>
+                  <p className="text-sm">Stock movements will appear here as you receive orders and process returns</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Reference</TableHead>
+                      <TableHead>Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {movements.map((movement: any) => (
+                      <TableRow key={movement.id}>
+                        <TableCell>{format(new Date(movement.created_at), 'MMM dd, yyyy HH:mm')}</TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{movement.product?.name}</div>
+                            <div className="text-xs text-muted-foreground">{movement.product?.sku}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={movement.quantity > 0 ? 'default' : 'secondary'}>
+                            {movement.movement_type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className={movement.quantity > 0 ? 'text-green-600' : 'text-red-600'}>
+                            {movement.quantity > 0 ? '+' : ''}{movement.quantity}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {movement.reference_type || '-'}
+                        </TableCell>
+                        <TableCell className="text-sm">{movement.notes || '-'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Receive PO Actions Dialog */}
+      <Dialog open={showReceiveActions} onOpenChange={setShowReceiveActions}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Purchase Order Received</DialogTitle>
+            <DialogDescription>
+              {receivedPO?.po_number} - Stock has been updated
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              What would you like to do next?
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button variant="outline" onClick={handlePrintPO}>
+                <Printer className="h-4 w-4 mr-2" />
+                Print Purchase Order
+              </Button>
+              <Button variant="outline" onClick={handleExportPO}>
+                <Download className="h-4 w-4 mr-2" />
+                Export to CSV
+              </Button>
+              <Button variant="outline" onClick={handleEmailPO}>
+                <Mail className="h-4 w-4 mr-2" />
+                Email Supplier
+              </Button>
+            </div>
+            <div className="flex justify-end pt-4 border-t">
+              <Button onClick={() => setShowReceiveActions(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Purchase Order Details Dialog */}
       <Dialog open={showPODetails} onOpenChange={setShowPODetails}>
