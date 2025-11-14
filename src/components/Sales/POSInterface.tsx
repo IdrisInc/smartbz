@@ -166,7 +166,7 @@ Please keep this code for your records.`;
       const saleNumber = generateSaleNumber();
       
       // Get customer info
-      const selectedCustomer = customers.find(c => c.id === selectedCustomerId);
+      const selectedCustomer = selectedCustomerId ? customers.find(c => c.id === selectedCustomerId) : null;
       const customerName = selectedCustomer?.name || 'Walk-in Customer';
       
       // Create sale record
@@ -410,12 +410,12 @@ Please keep this code for your records.`;
                             <div>
                               <Label htmlFor="customer">Select Customer</Label>
                               <div className="flex gap-2">
-                                <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                                <Select value={selectedCustomerId || "walk-in"} onValueChange={(value) => setSelectedCustomerId(value === "walk-in" ? "" : value)}>
                                   <SelectTrigger className="flex-1">
                                     <SelectValue placeholder="Walk-in customer" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="">Walk-in customer</SelectItem>
+                                    <SelectItem value="walk-in">Walk-in customer</SelectItem>
                                     {customers.map((customer) => (
                                       <SelectItem key={customer.id} value={customer.id}>
                                         {customer.name} {customer.phone && `- ${customer.phone}`}
