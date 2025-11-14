@@ -6,10 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { Search, ShoppingCart, CreditCard, Banknote, Copy, CheckCircle, Mail, Phone } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Search, ShoppingCart, CreditCard, Banknote, Copy, CheckCircle, Mail, Phone, Plus, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { ContactForm } from '@/components/Contacts/ContactForm';
 
 interface POSInterfaceProps {
   onClose: () => void;
@@ -36,8 +39,9 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [customerEmail, setCustomerEmail] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [paymentCode, setPaymentCode] = useState('');
   const [showPaymentCode, setShowPaymentCode] = useState(false);
   const { toast } = useToast();
@@ -46,8 +50,25 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
   useEffect(() => {
     if (currentOrganization?.id) {
       fetchProducts();
+      fetchCustomers();
     }
   }, [currentOrganization]);
+
+  const fetchCustomers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('organization_id', currentOrganization?.id)
+        .eq('contact_type', 'customer')
+        .order('name');
+
+      if (error) throw error;
+      setCustomers(data || []);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -263,8 +284,7 @@ Please keep this code for your records.`;
 
   const handleNewSale = () => {
     setCart([]);
-    setCustomerEmail('');
-    setCustomerPhone('');
+    setSelectedCustomerId('');
     setPaymentCode('');
     setShowPaymentCode(false);
   };
