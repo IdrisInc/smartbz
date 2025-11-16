@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Receipt, CreditCard, Loader2 } from 'lucide-react';
+import { Plus, Search, Receipt, CreditCard, Loader2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SaleForm } from '@/components/Sales/SaleForm';
 import { SaleReturnDialog } from '@/components/Sales/SaleReturnDialog';
+import { SaleDetailsModal } from '@/components/Sales/SaleDetailsModal';
 import { POSInterface } from '@/components/Sales/POSInterface';
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +23,8 @@ export default function Sales() {
   const [showForm, setShowForm] = useState(false);
   const [showPOS, setShowPOS] = useState(false);
   const [showReturnDialog, setShowReturnDialog] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedSaleId, setSelectedSaleId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sales, setSales] = useState([]);
   const [returns, setReturns] = useState([]);
@@ -34,6 +37,11 @@ export default function Sales() {
   
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+
+  const handleViewDetails = (saleId: string) => {
+    setSelectedSaleId(saleId);
+    setShowDetailsModal(true);
+  };
 
   useEffect(() => {
     if (currentOrganization) {
@@ -226,9 +234,19 @@ export default function Sales() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                        <span>Payment: {sale.payment_method || 'Not specified'}</span>
-                        <span>Date: {new Date(sale.sale_date || sale.created_at).toLocaleDateString()}</span>
+                      <div className="flex justify-between items-center">
+                        <div className="flex gap-4 text-sm text-muted-foreground">
+                          <span>Payment: {sale.payment_method || 'Not specified'}</span>
+                          <span>Date: {new Date(sale.sale_date || sale.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewDetails(sale.id)}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -300,7 +318,16 @@ export default function Sales() {
       <SaleReturnDialog
         open={showReturnDialog}
         onOpenChange={setShowReturnDialog}
-        onSuccess={fetchReturns}
+        onSuccess={() => {
+          fetchReturns();
+          fetchSales();
+        }}
+      />
+
+      <SaleDetailsModal
+        saleId={selectedSaleId}
+        open={showDetailsModal}
+        onOpenChange={setShowDetailsModal}
       />
       </div>
     </ProtectedRoute>
