@@ -35,7 +35,11 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
         .from('sale_returns')
         .select(`
           *,
-          sales(sale_number)
+          sales(
+            sale_number,
+            contacts(name, phone, email),
+            employees(first_name, last_name)
+          )
         `)
         .eq('id', returnId)
         .single();
@@ -129,6 +133,32 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
                   <p className="text-muted-foreground">Return Date</p>
                   <p className="font-medium">{new Date(returnData.return_date).toLocaleDateString()}</p>
                 </div>
+                {returnData.sales?.contacts && (
+                  <>
+                    <div>
+                      <p className="text-muted-foreground">Customer</p>
+                      <p className="font-medium">{returnData.sales.contacts.name}</p>
+                    </div>
+                    {returnData.sales.contacts.phone && (
+                      <div>
+                        <p className="text-muted-foreground">Phone</p>
+                        <p className="font-medium">{returnData.sales.contacts.phone}</p>
+                      </div>
+                    )}
+                    {returnData.sales.contacts.email && (
+                      <div>
+                        <p className="text-muted-foreground">Email</p>
+                        <p className="font-medium">{returnData.sales.contacts.email}</p>
+                      </div>
+                    )}
+                  </>
+                )}
+                {returnData.sales?.employees && (
+                  <div>
+                    <p className="text-muted-foreground">Sold By</p>
+                    <p className="font-medium">{returnData.sales.employees.first_name} {returnData.sales.employees.last_name}</p>
+                  </div>
+                )}
                 {returnData.reason && (
                   <div className="col-span-2">
                     <p className="text-muted-foreground">Reason</p>
