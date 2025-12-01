@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SaleForm } from '@/components/Sales/SaleForm';
 import { SaleReturnDialog } from '@/components/Sales/SaleReturnDialog';
 import { SaleDetailsModal } from '@/components/Sales/SaleDetailsModal';
+import { SaleReturnDetailsModal } from '@/components/Sales/SaleReturnDetailsModal';
 import { POSInterface } from '@/components/Sales/POSInterface';
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +25,9 @@ export default function Sales() {
   const [showPOS, setShowPOS] = useState(false);
   const [showReturnDialog, setShowReturnDialog] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showReturnDetailsModal, setShowReturnDetailsModal] = useState(false);
   const [selectedSaleId, setSelectedSaleId] = useState('');
+  const [selectedReturnId, setSelectedReturnId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sales, setSales] = useState([]);
   const [returns, setReturns] = useState([]);
@@ -41,6 +44,11 @@ export default function Sales() {
   const handleViewDetails = (saleId: string) => {
     setSelectedSaleId(saleId);
     setShowDetailsModal(true);
+  };
+
+  const handleViewReturnDetails = (returnId: string) => {
+    setSelectedReturnId(returnId);
+    setShowReturnDetailsModal(true);
   };
 
   useEffect(() => {
@@ -282,6 +290,7 @@ export default function Sales() {
                       <TableHead>Refund</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Reason</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -297,6 +306,16 @@ export default function Sales() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm">{ret.reason || '-'}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewReturnDetails(ret.id)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -328,6 +347,13 @@ export default function Sales() {
         saleId={selectedSaleId}
         open={showDetailsModal}
         onOpenChange={setShowDetailsModal}
+      />
+
+      <SaleReturnDetailsModal
+        returnId={selectedReturnId}
+        open={showReturnDetailsModal}
+        onOpenChange={setShowReturnDetailsModal}
+        onSuccess={fetchReturns}
       />
       </div>
     </ProtectedRoute>
