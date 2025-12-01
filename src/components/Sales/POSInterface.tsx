@@ -163,6 +163,8 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
     return {
       businessName: businessSettings?.business_name || currentOrganization?.name || 'Business',
       businessAddress: businessSettings?.address || '',
+      businessCity: businessSettings?.city || '',
+      businessCountry: businessSettings?.country || '',
       businessPhone: businessSettings?.phone || '',
       businessEmail: businessSettings?.email || '',
       saleNumber,
@@ -300,6 +302,7 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
             <div class="header">
               <h1>${receipt.businessName}</h1>
               ${receipt.businessAddress ? `<p>${receipt.businessAddress}</p>` : ''}
+              ${receipt.businessCity || receipt.businessCountry ? `<p>${receipt.businessCity}${receipt.businessCity && receipt.businessCountry ? ', ' : ''}${receipt.businessCountry}</p>` : ''}
               ${receipt.businessPhone ? `<p>Phone: ${receipt.businessPhone}</p>` : ''}
               ${receipt.businessEmail ? `<p>Email: ${receipt.businessEmail}</p>` : ''}
             </div>
@@ -352,6 +355,11 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
     const receipt = JSON.parse(paymentCode);
     const csvData = [
       { field: 'Business Name', value: receipt.businessName },
+      { field: 'Address', value: receipt.businessAddress },
+      { field: 'City', value: `${receipt.businessCity}${receipt.businessCity && receipt.businessCountry ? ', ' : ''}${receipt.businessCountry}` },
+      { field: 'Phone', value: receipt.businessPhone },
+      { field: 'Email', value: receipt.businessEmail },
+      { field: '', value: '' },
       { field: 'Receipt Number', value: receipt.saleNumber },
       { field: 'Date', value: receipt.date },
       { field: 'Customer', value: receipt.customerName },
@@ -631,10 +639,15 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
                         try {
                           const receipt = JSON.parse(paymentCode);
                           return (
-                            <div className="space-y-4 font-mono text-sm">
+                             <div className="space-y-4 font-mono text-sm">
                               <div className="text-center border-b pb-4">
                                 <h2 className="text-xl font-bold">{receipt.businessName}</h2>
                                 {receipt.businessAddress && <p className="text-xs">{receipt.businessAddress}</p>}
+                                {(receipt.businessCity || receipt.businessCountry) && (
+                                  <p className="text-xs">
+                                    {receipt.businessCity}{receipt.businessCity && receipt.businessCountry && ', '}{receipt.businessCountry}
+                                  </p>
+                                )}
                                 {receipt.businessPhone && <p className="text-xs">Phone: {receipt.businessPhone}</p>}
                                 {receipt.businessEmail && <p className="text-xs">Email: {receipt.businessEmail}</p>}
                               </div>
