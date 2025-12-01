@@ -35,8 +35,7 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
         .from('sale_returns')
         .select(`
           *,
-          sales(sale_number),
-          contacts(name)
+          sales(sale_number)
         `)
         .eq('id', returnId)
         .single();
@@ -129,10 +128,6 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
                 <div>
                   <p className="text-muted-foreground">Return Date</p>
                   <p className="font-medium">{new Date(returnData.return_date).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Customer</p>
-                  <p className="font-medium">{returnData.contacts?.name || 'N/A'}</p>
                 </div>
                 {returnData.reason && (
                   <div className="col-span-2">
