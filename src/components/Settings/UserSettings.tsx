@@ -7,16 +7,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, UserMinus, Loader2 } from 'lucide-react';
+import { Plus, UserMinus, Loader2, Eye, Pencil, MoreHorizontal } from 'lucide-react';
 import { RolesPermissionsTab } from './RolesPermissionsTab';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 export function UserSettings() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState({ firstName: '', lastName: '', role: '' });
+  const [updating, setUpdating] = useState(false);
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
 
@@ -192,6 +199,67 @@ export function UserSettings() {
     }
   };
 
+  const handleViewUser = (membership: any) => {
+    setSelectedUser(membership);
+    setViewDialogOpen(true);
+  };
+
+  const handleEditUser = (membership: any) => {
+    setSelectedUser(membership);
+    setEditingUser({
+      firstName: membership.profiles.first_name || '',
+      lastName: membership.profiles.last_name || '',
+      role: membership.role
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateUser = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      setUpdating(true);
+
+      // Update profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          first_name: editingUser.firstName,
+          last_name: editingUser.lastName,
+          display_name: `${editingUser.firstName} ${editingUser.lastName}`.trim()
+        })
+        .eq('user_id', selectedUser.user_id);
+
+      if (profileError) throw profileError;
+
+      // Update role in membership
+      const { error: membershipError } = await supabase
+        .from('organization_memberships')
+        .update({ role: editingUser.role as 'admin_staff' | 'business_owner' | 'cashier' | 'finance_staff' | 'inventory_staff' | 'manager' | 'sales_staff' | 'super_admin' })
+        .eq('user_id', selectedUser.user_id)
+        .eq('organization_id', currentOrganization?.id);
+
+      if (membershipError) throw membershipError;
+
+      toast({
+        title: "Success",
+        description: "User updated successfully",
+      });
+
+      setEditDialogOpen(false);
+      fetchUsers();
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update user",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   return (
     <Tabs defaultValue="users" className="space-y-4">
       <TabsList>
@@ -228,14 +296,31 @@ export function UserSettings() {
                       <Badge variant={membership.role === 'business_owner' ? 'default' : 'secondary'}>
                         {membership.role.replace('_', ' ').toUpperCase()}
                       </Badge>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleRemoveUser(membership.profiles.user_id)}
-                        disabled={membership.role === 'business_owner'}
-                      >
-                        <UserMinus className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleViewUser(membership)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditUser(membership)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit User
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleRemoveUser(membership.profiles.user_id)}
+                            disabled={membership.role === 'business_owner'}
+                            className="text-destructive"
+                          >
+                            <UserMinus className="mr-2 h-4 w-4" />
+                            Remove User
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 ))}
@@ -334,6 +419,109 @@ export function UserSettings() {
       <TabsContent value="roles">
         <RolesPermissionsTab />
       </TabsContent>
+
+      {/* View User Dialog */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+            <DialogDescription>View user information</DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">First Name</Label>
+                  <p className="font-medium">{selectedUser.profiles.first_name || 'Not set'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Last Name</Label>
+                  <p className="font-medium">{selectedUser.profiles.last_name || 'Not set'}</p>
+                </div>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Display Name</Label>
+                <p className="font-medium">{selectedUser.profiles.display_name}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Role</Label>
+                <div className="mt-1">
+                  <Badge variant={selectedUser.role === 'business_owner' ? 'default' : 'secondary'}>
+                    {selectedUser.role.replace('_', ' ').toUpperCase()}
+                  </Badge>
+                </div>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Joined Date</Label>
+                <p className="font-medium">{new Date(selectedUser.joined_at).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">User ID</Label>
+                <p className="font-mono text-sm text-muted-foreground">{selectedUser.user_id}</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>Update user information and role</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="editFirstName">First Name</Label>
+                <Input
+                  id="editFirstName"
+                  value={editingUser.firstName}
+                  onChange={(e) => setEditingUser({ ...editingUser, firstName: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editLastName">Last Name</Label>
+                <Input
+                  id="editLastName"
+                  value={editingUser.lastName}
+                  onChange={(e) => setEditingUser({ ...editingUser, lastName: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editRole">Role</Label>
+              <Select 
+                value={editingUser.role} 
+                onValueChange={(value) => setEditingUser({ ...editingUser, role: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="business_owner">Business Owner</SelectItem>
+                  <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="admin_staff">Admin Staff</SelectItem>
+                  <SelectItem value="sales_staff">Sales Staff</SelectItem>
+                  <SelectItem value="inventory_staff">Inventory Staff</SelectItem>
+                  <SelectItem value="finance_staff">Finance Staff</SelectItem>
+                  <SelectItem value="cashier">Cashier</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateUser} disabled={updating}>
+              {updating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {updating ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Tabs>
   );
 }
