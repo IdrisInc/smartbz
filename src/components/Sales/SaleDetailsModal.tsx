@@ -58,17 +58,30 @@ export function SaleDetailsModal({ saleId, open, onOpenChange }: SaleDetailsModa
       if (itemsError) throw itemsError;
 
       // Fetch business settings
-      const { data: settingsData, error: settingsError } = await supabase
+      const { data: settingsData } = await supabase
         .from('business_settings')
         .select('*')
         .eq('organization_id', saleData.organization_id)
         .maybeSingle();
 
-      if (settingsError) throw settingsError;
+      // Fetch organization as fallback for business name
+      const { data: orgData } = await supabase
+        .from('organizations')
+        .select('name, phone, email, address, city, country')
+        .eq('id', saleData.organization_id)
+        .single();
 
       setSale(saleData);
       setSaleItems(itemsData || []);
-      setBusinessSettings(settingsData);
+      // Use business_settings if available, otherwise use organization data
+      setBusinessSettings(settingsData || {
+        business_name: orgData?.name,
+        phone: orgData?.phone,
+        email: orgData?.email,
+        address: orgData?.address,
+        city: orgData?.city,
+        country: orgData?.country,
+      });
     } catch (error) {
       console.error('Error fetching sale details:', error);
       toast({
