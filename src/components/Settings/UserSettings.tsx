@@ -58,13 +58,28 @@ export function UserSettings() {
             .eq('user_id', membership.user_id)
             .single();
 
+          // Generate a meaningful name from profile data
+          let displayName = 'User';
+          if (profile) {
+            if (profile.display_name && profile.display_name !== 'null null') {
+              displayName = profile.display_name;
+            } else if (profile.first_name || profile.last_name) {
+              displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+            }
+          }
+          
+          // If no profile or empty name, show truncated user ID
+          if (displayName === 'User' || !displayName) {
+            displayName = `User (${membership.user_id.substring(0, 8)}...)`;
+          }
+
           return {
             ...membership,
-            profiles: profile || {
-              id: membership.user_id,
-              first_name: 'Unknown',
-              last_name: 'User',
-              display_name: 'Unknown User',
+            profiles: {
+              id: profile?.id || membership.user_id,
+              first_name: profile?.first_name || '',
+              last_name: profile?.last_name || '',
+              display_name: displayName,
               user_id: membership.user_id
             }
           };
