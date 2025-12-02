@@ -63,15 +63,21 @@ export function UserSettings() {
             .from('profiles')
             .select('id, first_name, last_name, display_name, user_id')
             .eq('user_id', membership.user_id)
-            .single();
+            .maybeSingle();
+
+          // Extract email from display_name if it looks like an email (fallback from auth)
+          let email = '';
+          if (profile?.display_name && profile.display_name.includes('@')) {
+            email = profile.display_name;
+          }
 
           // Generate a meaningful name from profile data
           let displayName = 'User';
           if (profile) {
-            if (profile.display_name && profile.display_name !== 'null null') {
-              displayName = profile.display_name;
-            } else if (profile.first_name || profile.last_name) {
+            if (profile.first_name || profile.last_name) {
               displayName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+            } else if (profile.display_name && !profile.display_name.includes('@')) {
+              displayName = profile.display_name;
             }
           }
           
@@ -87,7 +93,9 @@ export function UserSettings() {
               first_name: profile?.first_name || '',
               last_name: profile?.last_name || '',
               display_name: displayName,
-              user_id: membership.user_id
+              email: email,
+              user_id: membership.user_id,
+              has_profile: !!profile
             }
           };
         })
@@ -220,17 +228,39 @@ export function UserSettings() {
     try {
       setUpdating(true);
 
-      // Update profile
-      const { error: profileError } = await supabase
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .update({
-          first_name: editingUser.firstName,
-          last_name: editingUser.lastName,
-          display_name: `${editingUser.firstName} ${editingUser.lastName}`.trim()
-        })
-        .eq('user_id', selectedUser.user_id);
+        .select('id')
+        .eq('user_id', selectedUser.user_id)
+        .maybeSingle();
 
-      if (profileError) throw profileError;
+      if (existingProfile) {
+        // Update existing profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            first_name: editingUser.firstName,
+            last_name: editingUser.lastName,
+            display_name: `${editingUser.firstName} ${editingUser.lastName}`.trim()
+          })
+          .eq('user_id', selectedUser.user_id);
+
+        if (profileError) throw profileError;
+      } else {
+        // Insert new profile if it doesn't exist
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: selectedUser.user_id,
+            user_id: selectedUser.user_id,
+            first_name: editingUser.firstName,
+            last_name: editingUser.lastName,
+            display_name: `${editingUser.firstName} ${editingUser.lastName}`.trim()
+          });
+
+        if (insertError) throw insertError;
+      }
 
       // Update role in membership
       const { error: membershipError } = await supabase
@@ -286,9 +316,14 @@ export function UserSettings() {
                   <div key={membership.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
                       <div className="font-medium">
-                        {membership.profiles.display_name || `${membership.profiles.first_name} ${membership.profiles.last_name}`}
+                        {membership.profiles.display_name}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      {membership.profiles.email && (
+                        <div className="text-sm text-muted-foreground">
+                          {membership.profiles.email}
+                        </div>
+                      )}
+                      <div className="text-xs text-muted-foreground">
                         Joined: {new Date(membership.joined_at).toLocaleDateString()}
                       </div>
                     </div>
@@ -443,6 +478,12 @@ export function UserSettings() {
                 <Label className="text-muted-foreground">Display Name</Label>
                 <p className="font-medium">{selectedUser.profiles.display_name}</p>
               </div>
+              {selectedUser.profiles.email && (
+                <div>
+                  <Label className="text-muted-foreground">Email</Label>
+                  <p className="font-medium">{selectedUser.profiles.email}</p>
+                </div>
+              )}
               <div>
                 <Label className="text-muted-foreground">Role</Label>
                 <div className="mt-1">
