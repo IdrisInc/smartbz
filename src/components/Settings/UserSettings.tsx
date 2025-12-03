@@ -247,20 +247,8 @@ export function UserSettings() {
           .eq('user_id', selectedUser.user_id);
 
         if (profileError) throw profileError;
-      } else {
-        // Insert new profile if it doesn't exist
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: selectedUser.user_id,
-            user_id: selectedUser.user_id,
-            first_name: editingUser.firstName,
-            last_name: editingUser.lastName,
-            display_name: `${editingUser.firstName} ${editingUser.lastName}`.trim()
-          });
-
-        if (insertError) throw insertError;
       }
+      // Note: Cannot insert new profiles due to RLS - profile is created on user signup
 
       // Update role in membership
       const { error: membershipError } = await supabase
