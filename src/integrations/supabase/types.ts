@@ -1809,6 +1809,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_user_profile: {
+        Args: { profile_user_id: string }
+        Returns: boolean
+      }
       create_organization_with_membership: {
         Args: {
           org_description?: string
