@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, UserCheck, UserX, Calendar, DollarSign, Loader2 } from 'lucide-react';
+import { Plus, Search, UserCheck, Calendar, DollarSign, Loader2, Eye, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,18 +7,20 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { PayrollTab } from '@/components/Employees/PayrollTab';
 import { AttendanceTab } from '@/components/Employees/AttendanceTab';
 import { PerformanceTab } from '@/components/Employees/PerformanceTab';
-import { AddEmployeeDialog } from '@/components/Employees/AddEmployeeDialog';
+import { EmployeeDialog } from '@/components/Employees/EmployeeDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Employees() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [employees, setEmployees] = useState([]);
+  const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteEmployee, setDeleteEmployee] = useState<any>(null);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -48,7 +49,6 @@ export default function Employees() {
 
       setEmployees(data || []);
       
-      // Calculate stats
       const activeEmployees = data?.filter(emp => emp.status === 'active') || [];
       const totalSalary = data?.reduce((sum, emp) => sum + (emp.salary || 0), 0) || 0;
       
@@ -70,6 +70,35 @@ export default function Employees() {
     }
   };
 
+  const handleDeleteEmployee = async () => {
+    if (!deleteEmployee) return;
+    
+    try {
+      const { error } = await supabase
+        .from('employees')
+        .delete()
+        .eq('id', deleteEmployee.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Employee deleted successfully",
+      });
+      
+      fetchEmployees();
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete employee",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteEmployee(null);
+    }
+  };
+
   const filteredEmployees = employees.filter(employee =>
     employee.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     employee.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -86,7 +115,9 @@ export default function Employees() {
             Manage your team members, roles, and payroll
           </p>
         </div>
-        <AddEmployeeDialog 
+        <EmployeeDialog 
+          mode="add"
+          onSuccess={fetchEmployees}
           trigger={
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -217,7 +248,34 @@ export default function Employees() {
                             {employee.salary ? `$${employee.salary.toLocaleString()}` : '-'}
                           </TableCell>
                           <TableCell>
-                            <Button variant="outline" size="sm">Edit</Button>
+                            <div className="flex items-center gap-1">
+                              <EmployeeDialog
+                                mode="view"
+                                employee={employee}
+                                trigger={
+                                  <Button variant="ghost" size="sm">
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                }
+                              />
+                              <EmployeeDialog
+                                mode="edit"
+                                employee={employee}
+                                onSuccess={fetchEmployees}
+                                trigger={
+                                  <Button variant="ghost" size="sm">
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                }
+                              />
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => setDeleteEmployee(employee)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -236,7 +294,7 @@ export default function Employees() {
         </TabsContent>
 
         <TabsContent value="payroll">
-          <PayrollTab />
+          <PayrollTab onRefresh={fetchEmployees} />
         </TabsContent>
 
         <TabsContent value="attendance">
@@ -247,6 +305,23 @@ export default function Employees() {
           <PerformanceTab />
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={!!deleteEmployee} onOpenChange={() => setDeleteEmployee(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Employee</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {deleteEmployee?.first_name} {deleteEmployee?.last_name}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteEmployee} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
