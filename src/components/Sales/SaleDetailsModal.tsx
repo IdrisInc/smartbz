@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Printer, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface SaleDetailsModalProps {
   saleId: string;
@@ -118,6 +119,8 @@ export function SaleDetailsModal({ saleId, open, onOpenChange }: SaleDetailsModa
       .totals .grand-total { font-size: 18px; font-weight: bold; }
       .receipt-footer { text-align: center; margin-top: 30px; font-size: 12px; }
       hr { border: none; border-top: 2px solid #000; margin: 10px 0; }
+      .qr-container { text-align: center; margin-top: 20px; }
+      .qr-container svg { display: inline-block; }
     `);
     printWindow.document.write('</style></head><body>');
     printWindow.document.write(printContent.innerHTML);
@@ -281,6 +284,29 @@ export function SaleDetailsModal({ saleId, open, onOpenChange }: SaleDetailsModa
                     </div>
                   </>
                 )}
+
+                {/* QR Code with sale details */}
+                <div className="qr-container mt-6 text-center">
+                  <p className="text-sm font-semibold mb-2">Scan for Receipt Details</p>
+                  <div className="flex justify-center">
+                    <QRCodeSVG
+                      value={JSON.stringify({
+                        receipt: sale.sale_number || sale.id.slice(0, 8),
+                        date: new Date(sale.sale_date || sale.created_at).toISOString(),
+                        total: Number(sale.total_amount).toFixed(2),
+                        items: saleItems.map(item => ({
+                          name: item.products?.name,
+                          qty: item.quantity,
+                          price: Number(item.unit_price).toFixed(2),
+                          total: Number(item.total_amount).toFixed(2)
+                        })),
+                        business: businessSettings?.business_name
+                      })}
+                      size={120}
+                      level="M"
+                    />
+                  </div>
+                </div>
 
                 {/* Footer */}
                 <div className="receipt-footer mt-6 text-center text-sm text-muted-foreground">

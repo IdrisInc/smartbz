@@ -117,7 +117,10 @@ export default function Sales() {
       setLoadingReturns(true);
       const { data, error } = await supabase
         .from('sale_returns')
-        .select('*')
+        .select(`
+          *,
+          sales(contacts(name))
+        `)
         .eq('organization_id', currentOrganization?.id)
         .order('created_at', { ascending: false });
 
@@ -285,6 +288,7 @@ export default function Sales() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Return Number</TableHead>
+                      <TableHead>Customer</TableHead>
                       <TableHead>Return Date</TableHead>
                       <TableHead>Total</TableHead>
                       <TableHead>Refund</TableHead>
@@ -297,6 +301,7 @@ export default function Sales() {
                     {returns.map((ret) => (
                       <TableRow key={ret.id}>
                         <TableCell className="font-medium">{ret.return_number}</TableCell>
+                        <TableCell>{ret.sales?.contacts?.name || 'Walk-in Customer'}</TableCell>
                         <TableCell>{ret.return_date}</TableCell>
                         <TableCell>${Number(ret.total_amount).toFixed(2)}</TableCell>
                         <TableCell>${Number(ret.refund_amount || 0).toFixed(2)}</TableCell>
