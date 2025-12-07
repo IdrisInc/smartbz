@@ -1,20 +1,23 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, Download, Play, DollarSign, Users, Banknote, CreditCard, Loader2 } from 'lucide-react';
+import { Download, Play, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 import { useExportUtils } from '@/hooks/useExportUtils';
+import { PayrollSettingsDialog } from './PayrollSettingsDialog';
 
-export function PayrollTab() {
+interface PayrollTabProps {
+  onRefresh?: () => void;
+}
+
+export function PayrollTab({ onRefresh }: PayrollTabProps) {
   const [payPeriod, setPayPeriod] = useState('current');
-  const [employees, setEmployees] = useState([]);
+  const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const { currentOrganization } = useOrganization();
@@ -54,9 +57,7 @@ export function PayrollTab() {
     
     setLoading(true);
     try {
-      // This would typically integrate with a payroll system
-      // For now, we'll just show a success message
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       toast({
         title: "Payroll Processed",
@@ -102,15 +103,13 @@ export function PayrollTab() {
     }
   };
 
-  // Calculate payroll stats from employee data
   const calculatePayrollData = () => {
     return employees.map(emp => {
       const baseSalary = emp.salary || 0;
-      const monthlySalary = baseSalary / 12;
-      const hoursWorked = 160; // Standard monthly hours
-      const overtime = 0; // Mock overtime for now
-      const grossPay = monthlySalary;
-      const deductions = grossPay * 0.25; // 25% deductions (taxes, benefits, etc.)
+      const hoursWorked = 160;
+      const overtime = 0;
+      const grossPay = baseSalary;
+      const deductions = grossPay * 0.25;
       const netPay = grossPay - deductions;
       
       return {
@@ -123,7 +122,8 @@ export function PayrollTab() {
         grossPay,
         deductions,
         netPay,
-        status: 'pending'
+        status: 'pending',
+        rawEmployee: emp
       };
     });
   };
@@ -211,7 +211,7 @@ export function PayrollTab() {
       <Card>
         <CardHeader>
           <CardTitle>Payroll Details</CardTitle>
-          <CardDescription>Employee payroll breakdown for current pay period</CardDescription>
+          <CardDescription>Employee payroll breakdown for current pay period. Click settings to customize individual payroll.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -230,6 +230,7 @@ export function PayrollTab() {
                   <TableHead>Deductions</TableHead>
                   <TableHead>Net Pay</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Settings</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -248,11 +249,20 @@ export function PayrollTab() {
                           {employee.status}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <PayrollSettingsDialog 
+                          employee={employee.rawEmployee}
+                          onSuccess={() => {
+                            fetchEmployees();
+                            onRefresh?.();
+                          }}
+                        />
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       No employees found for payroll
                     </TableCell>
                   </TableRow>
