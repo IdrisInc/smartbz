@@ -199,6 +199,27 @@ serve(async (req) => {
       throw membershipInsertError
     }
 
+    // Also create an employee record for this user
+    const { error: employeeError } = await supabaseAdmin
+      .from('employees')
+      .insert({
+        organization_id: organizationId,
+        employee_id: `EMP-${Date.now()}`,
+        first_name: firstName,
+        last_name: lastName,
+        email: email,
+        position: role.replace('_', ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()),
+        department: 'General',
+        status: 'active',
+        hire_date: new Date().toISOString().split('T')[0]
+      })
+
+    if (employeeError) {
+      console.error('Employee creation error:', employeeError)
+      // Don't throw - user and membership were created successfully
+      // Employee can be added manually if needed
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
