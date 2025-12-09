@@ -18,6 +18,25 @@ export interface UserPermissions {
   canManageBusinessOwners: boolean;
   canApproveOrganizations: boolean;
   canManageContacts: boolean;
+  // Extended permissions from custom settings
+  canManageBranches?: boolean;
+  canManageRoles?: boolean;
+  canViewUserReports?: boolean;
+  canViewInventoryReports?: boolean;
+  canCreateSales?: boolean;
+  canManageCustomers?: boolean;
+  canViewSalesReports?: boolean;
+  canApplyDiscounts?: boolean;
+  canViewFinances?: boolean;
+  canManageInvoices?: boolean;
+  canManageExpenses?: boolean;
+  canProcessRefunds?: boolean;
+  canManageAttendance?: boolean;
+  canManagePayroll?: boolean;
+  canViewEmployeeReports?: boolean;
+  canManageSettings?: boolean;
+  canViewLogs?: boolean;
+  canManageIntegrations?: boolean;
 }
 
 export function useUserRole() {
@@ -52,10 +71,10 @@ export function useUserRole() {
           return;
         }
 
-        // Get user's role in current organization
+        // Get user's role and custom permissions in current organization
         const { data: membership } = await supabase
           .from('organization_memberships')
-          .select('role')
+          .select('role, permissions')
           .eq('user_id', user.id)
           .eq('organization_id', currentOrganization.id)
           .single();
@@ -63,7 +82,48 @@ export function useUserRole() {
         if (membership) {
           const role = membership.role as UserRole;
           setUserRole(role);
-          setPermissions(getPermissionsForRole(role));
+          
+          // Merge default permissions with custom permissions from database
+          const defaultPerms = getPermissionsForRole(role);
+          const customPerms = membership.permissions as Record<string, boolean> | null;
+          
+          if (customPerms) {
+            // Map custom permissions to the UserPermissions interface
+            const mergedPermissions: UserPermissions = {
+              ...defaultPerms,
+              canManageOrganizations: customPerms.canManageOrganizations ?? defaultPerms.canManageOrganizations,
+              canManageUsers: customPerms.canManageUsers ?? defaultPerms.canManageUsers,
+              canManageFinances: customPerms.canViewFinances ?? defaultPerms.canManageFinances,
+              canViewReports: customPerms.canViewSalesReports ?? defaultPerms.canViewReports,
+              canManageProducts: customPerms.canManageProducts ?? defaultPerms.canManageProducts,
+              canProcessSales: customPerms.canCreateSales ?? defaultPerms.canProcessSales,
+              canManageInventory: customPerms.canManageInventory ?? defaultPerms.canManageInventory,
+              canManageEmployees: customPerms.canManageEmployees ?? defaultPerms.canManageEmployees,
+              canManageContacts: customPerms.canManageCustomers ?? defaultPerms.canManageContacts,
+              // Extended permissions
+              canManageBranches: customPerms.canManageBranches,
+              canManageRoles: customPerms.canManageRoles,
+              canViewUserReports: customPerms.canViewUserReports,
+              canViewInventoryReports: customPerms.canViewInventoryReports,
+              canCreateSales: customPerms.canCreateSales,
+              canManageCustomers: customPerms.canManageCustomers,
+              canViewSalesReports: customPerms.canViewSalesReports,
+              canApplyDiscounts: customPerms.canApplyDiscounts,
+              canViewFinances: customPerms.canViewFinances,
+              canManageInvoices: customPerms.canManageInvoices,
+              canManageExpenses: customPerms.canManageExpenses,
+              canProcessRefunds: customPerms.canProcessRefunds,
+              canManageAttendance: customPerms.canManageAttendance,
+              canManagePayroll: customPerms.canManagePayroll,
+              canViewEmployeeReports: customPerms.canViewEmployeeReports,
+              canManageSettings: customPerms.canManageSettings,
+              canViewLogs: customPerms.canViewLogs,
+              canManageIntegrations: customPerms.canManageIntegrations,
+            };
+            setPermissions(mergedPermissions);
+          } else {
+            setPermissions(defaultPerms);
+          }
         } else {
           setUserRole(null);
           setPermissions(null);

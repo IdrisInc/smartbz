@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Save, RotateCcw } from 'lucide-react';
+import { Save, RotateCcw, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Permission {
   key: string;
@@ -60,32 +62,7 @@ const PERMISSIONS: Permission[] = [
 ];
 
 const DEFAULT_ROLE_PERMISSIONS: RolePermissions = {
-  admin: Object.fromEntries(PERMISSIONS.map(p => [p.key, true])),
-  business_owner: {
-    canManageOrganizations: true,
-    canManageBranches: true,
-    canManageUsers: true,
-    canManageRoles: true,
-    canViewUserReports: true,
-    canManageProducts: true,
-    canManageInventory: true,
-    canViewInventoryReports: true,
-    canCreateSales: true,
-    canManageCustomers: true,
-    canViewSalesReports: true,
-    canApplyDiscounts: true,
-    canViewFinances: true,
-    canManageInvoices: true,
-    canManageExpenses: true,
-    canProcessRefunds: true,
-    canManageEmployees: true,
-    canManageAttendance: true,
-    canManagePayroll: true,
-    canViewEmployeeReports: true,
-    canManageSettings: true,
-    canViewLogs: true,
-    canManageIntegrations: true,
-  },
+  business_owner: Object.fromEntries(PERMISSIONS.map(p => [p.key, true])),
   manager: {
     canManageOrganizations: false,
     canManageBranches: false,
@@ -111,14 +88,39 @@ const DEFAULT_ROLE_PERMISSIONS: RolePermissions = {
     canViewLogs: false,
     canManageIntegrations: false,
   },
-  staff: {
+  admin_staff: {
+    canManageOrganizations: false,
+    canManageBranches: false,
+    canManageUsers: true,
+    canManageRoles: false,
+    canViewUserReports: true,
+    canManageProducts: true,
+    canManageInventory: true,
+    canViewInventoryReports: true,
+    canCreateSales: true,
+    canManageCustomers: true,
+    canViewSalesReports: true,
+    canApplyDiscounts: true,
+    canViewFinances: true,
+    canManageInvoices: true,
+    canManageExpenses: true,
+    canProcessRefunds: true,
+    canManageEmployees: true,
+    canManageAttendance: true,
+    canManagePayroll: false,
+    canViewEmployeeReports: true,
+    canManageSettings: false,
+    canViewLogs: false,
+    canManageIntegrations: false,
+  },
+  sales_staff: {
     canManageOrganizations: false,
     canManageBranches: false,
     canManageUsers: false,
     canManageRoles: false,
     canViewUserReports: false,
     canManageProducts: false,
-    canManageInventory: true,
+    canManageInventory: false,
     canViewInventoryReports: false,
     canCreateSales: true,
     canManageCustomers: true,
@@ -128,6 +130,56 @@ const DEFAULT_ROLE_PERMISSIONS: RolePermissions = {
     canManageInvoices: false,
     canManageExpenses: false,
     canProcessRefunds: false,
+    canManageEmployees: false,
+    canManageAttendance: false,
+    canManagePayroll: false,
+    canViewEmployeeReports: false,
+    canManageSettings: false,
+    canViewLogs: false,
+    canManageIntegrations: false,
+  },
+  inventory_staff: {
+    canManageOrganizations: false,
+    canManageBranches: false,
+    canManageUsers: false,
+    canManageRoles: false,
+    canViewUserReports: false,
+    canManageProducts: true,
+    canManageInventory: true,
+    canViewInventoryReports: true,
+    canCreateSales: false,
+    canManageCustomers: false,
+    canViewSalesReports: false,
+    canApplyDiscounts: false,
+    canViewFinances: false,
+    canManageInvoices: false,
+    canManageExpenses: false,
+    canProcessRefunds: false,
+    canManageEmployees: false,
+    canManageAttendance: false,
+    canManagePayroll: false,
+    canViewEmployeeReports: false,
+    canManageSettings: false,
+    canViewLogs: false,
+    canManageIntegrations: false,
+  },
+  finance_staff: {
+    canManageOrganizations: false,
+    canManageBranches: false,
+    canManageUsers: false,
+    canManageRoles: false,
+    canViewUserReports: false,
+    canManageProducts: false,
+    canManageInventory: false,
+    canViewInventoryReports: false,
+    canCreateSales: false,
+    canManageCustomers: false,
+    canViewSalesReports: true,
+    canApplyDiscounts: false,
+    canViewFinances: true,
+    canManageInvoices: true,
+    canManageExpenses: true,
+    canProcessRefunds: true,
     canManageEmployees: false,
     canManageAttendance: false,
     canManagePayroll: false,
@@ -164,21 +216,53 @@ const DEFAULT_ROLE_PERMISSIONS: RolePermissions = {
 };
 
 export function RolePermissionEditor() {
+  const { currentOrganization } = useOrganization();
   const [rolePermissions, setRolePermissions] = useState<RolePermissions>(DEFAULT_ROLE_PERMISSIONS);
   const [hasChanges, setHasChanges] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load saved permissions from localStorage
-    const saved = localStorage.getItem('customRolePermissions');
-    if (saved) {
-      try {
-        setRolePermissions(JSON.parse(saved));
-      } catch (error) {
-        console.error('Failed to load saved permissions');
-      }
+    if (currentOrganization) {
+      loadPermissions();
     }
-  }, []);
+  }, [currentOrganization]);
+
+  const loadPermissions = async () => {
+    try {
+      setLoading(true);
+      
+      // Load all members with their custom permissions
+      const { data: members, error } = await supabase
+        .from('organization_memberships')
+        .select('role, permissions')
+        .eq('organization_id', currentOrganization?.id);
+
+      if (error) throw error;
+
+      // Merge saved permissions with defaults
+      const mergedPermissions = { ...DEFAULT_ROLE_PERMISSIONS };
+      
+      for (const member of members || []) {
+        if (member.permissions && typeof member.permissions === 'object') {
+          const role = member.role as string;
+          if (mergedPermissions[role]) {
+            mergedPermissions[role] = {
+              ...mergedPermissions[role],
+              ...(member.permissions as Record<string, boolean>)
+            };
+          }
+        }
+      }
+
+      setRolePermissions(mergedPermissions);
+    } catch (error) {
+      console.error('Error loading permissions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const updatePermission = (role: string, permission: string, enabled: boolean) => {
     setRolePermissions(prev => ({
@@ -191,23 +275,74 @@ export function RolePermissionEditor() {
     setHasChanges(true);
   };
 
-  const saveChanges = () => {
-    localStorage.setItem('customRolePermissions', JSON.stringify(rolePermissions));
-    setHasChanges(false);
-    toast({
-      title: "Settings saved",
-      description: "Role permissions have been updated successfully.",
-    });
+  const saveChanges = async () => {
+    if (!currentOrganization) return;
+
+    try {
+      setSaving(true);
+
+      // Update permissions for all members by role
+      for (const role of Object.keys(rolePermissions)) {
+        const permissions = rolePermissions[role];
+        
+        // Update all members with this role
+        const { error } = await supabase
+          .from('organization_memberships')
+          .update({ permissions })
+          .eq('organization_id', currentOrganization.id)
+          .eq('role', role as 'business_owner' | 'manager' | 'admin_staff' | 'sales_staff' | 'inventory_staff' | 'finance_staff' | 'cashier');
+        if (error) {
+          console.error(`Error updating ${role} permissions:`, error);
+        }
+      }
+
+      setHasChanges(false);
+      toast({
+        title: "Settings saved",
+        description: "Role permissions have been updated and will apply to all users.",
+      });
+    } catch (error) {
+      console.error('Error saving permissions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save permissions",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const resetToDefaults = () => {
-    setRolePermissions(DEFAULT_ROLE_PERMISSIONS);
-    localStorage.removeItem('customRolePermissions');
-    setHasChanges(false);
-    toast({
-      title: "Reset complete",
-      description: "Role permissions have been reset to defaults.",
-    });
+  const resetToDefaults = async () => {
+    if (!currentOrganization) return;
+
+    try {
+      setSaving(true);
+
+      // Clear permissions for all members in org
+      const { error } = await supabase
+        .from('organization_memberships')
+        .update({ permissions: null })
+        .eq('organization_id', currentOrganization.id);
+
+      if (error) throw error;
+
+      setRolePermissions(DEFAULT_ROLE_PERMISSIONS);
+      setHasChanges(false);
+      toast({
+        title: "Reset complete",
+        description: "Role permissions have been reset to defaults.",
+      });
+    } catch (error) {
+      console.error('Error resetting permissions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reset permissions",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const groupedPermissions = PERMISSIONS.reduce((acc, permission) => {
@@ -218,7 +353,15 @@ export function RolePermissionEditor() {
     return acc;
   }, {} as Record<string, Permission[]>);
 
-  const roles = Object.keys(rolePermissions);
+  const roles = ['business_owner', 'manager', 'admin_staff', 'sales_staff', 'inventory_staff', 'finance_staff', 'cashier'];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -226,16 +369,16 @@ export function RolePermissionEditor() {
         <div>
           <h3 className="text-lg font-medium">Role & Permission Management</h3>
           <p className="text-sm text-muted-foreground">
-            Customize permissions for each role to control system access
+            Customize permissions for each role. Changes apply to all users with that role.
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={resetToDefaults}>
+          <Button variant="outline" onClick={resetToDefaults} disabled={saving}>
             <RotateCcw className="mr-2 h-4 w-4" />
             Reset to Defaults
           </Button>
-          <Button onClick={saveChanges} disabled={!hasChanges}>
-            <Save className="mr-2 h-4 w-4" />
+          <Button onClick={saveChanges} disabled={!hasChanges || saving}>
+            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
             Save Changes
           </Button>
         </div>
@@ -244,7 +387,7 @@ export function RolePermissionEditor() {
       {hasChanges && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <p className="text-sm text-amber-800">
-            You have unsaved changes. Click "Save Changes" to apply your modifications.
+            You have unsaved changes. Click "Save Changes" to apply your modifications to all users.
           </p>
         </div>
       )}
@@ -263,7 +406,7 @@ export function RolePermissionEditor() {
                       <h4 className="font-medium">{permission.label}</h4>
                       <p className="text-sm text-muted-foreground">{permission.description}</p>
                     </div>
-                    <div className="grid grid-cols-5 gap-4">
+                    <div className="grid grid-cols-4 lg:grid-cols-7 gap-3">
                       {roles.map((role) => (
                         <div key={role} className="flex items-center space-x-2">
                           <Switch
@@ -272,10 +415,11 @@ export function RolePermissionEditor() {
                             onCheckedChange={(checked) => 
                               updatePermission(role, permission.key, checked)
                             }
+                            disabled={role === 'business_owner'} // Business owner always has all permissions
                           />
-                          <Label htmlFor={`${permission.key}-${role}`} className="capitalize">
-                            <Badge variant="outline" className="text-xs">
-                              {role.replace('_', ' ')}
+                          <Label htmlFor={`${permission.key}-${role}`} className="text-xs">
+                            <Badge variant="outline" className="text-xs whitespace-nowrap">
+                              {role.replace(/_/g, ' ')}
                             </Badge>
                           </Label>
                         </div>
