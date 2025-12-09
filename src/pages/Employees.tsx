@@ -106,50 +106,40 @@ export default function Employees() {
     try {
       setSyncing(true);
       
-      // Get all organization members with their profiles
+      // Get all organization members
       const { data: members, error: membersError } = await supabase
         .from('organization_memberships')
-        .select(`
-          user_id,
-          role,
-          joined_at,
-          profiles!organization_memberships_user_id_fkey (
-            first_name,
-            last_name,
-            user_id
-          )
-        `)
+        .select('user_id, role, joined_at')
         .eq('organization_id', currentOrganization.id);
 
       if (membersError) throw membersError;
 
-      // Get existing employee emails
+      // Get existing employees for this org
       const { data: existingEmployees } = await supabase
         .from('employees')
-        .select('email')
+        .select('first_name, last_name')
         .eq('organization_id', currentOrganization.id);
 
-      const existingEmails = new Set(existingEmployees?.map(e => e.email?.toLowerCase()) || []);
+      const existingNames = new Set(
+        existingEmployees?.map(e => `${e.first_name?.toLowerCase()}-${e.last_name?.toLowerCase()}`) || []
+      );
 
-      // Get user emails from auth
-      const userIds = members?.map(m => m.user_id) || [];
-      
       let addedCount = 0;
       
       for (const member of members || []) {
-        const profile = member.profiles as any;
-        if (!profile) continue;
-
-        // Get user email - we need to check if already exists by user_id
-        const { data: existingByUserId } = await supabase
-          .from('employees')
-          .select('id')
-          .eq('organization_id', currentOrganization.id)
-          .eq('first_name', profile.first_name || '')
-          .eq('last_name', profile.last_name || '')
+        // Fetch profile separately for each member
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('user_id', member.user_id)
           .maybeSingle();
 
-        if (existingByUserId) continue;
+        if (!profile) continue;
+
+        const nameKey = `${(profile.first_name || '').toLowerCase()}-${(profile.last_name || '').toLowerCase()}`;
+        
+        // Skip if employee with same name already exists
+        if (existingNames.has(nameKey)) continue;
 
         // Create employee record
         const { error: insertError } = await supabase
@@ -159,13 +149,16 @@ export default function Employees() {
             employee_id: `EMP-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
             first_name: profile.first_name || 'Unknown',
             last_name: profile.last_name || 'User',
-            position: member.role?.replace('_', ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) || 'Staff',
+            position: member.role?.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) || 'Staff',
             department: 'General',
             status: 'active',
             hire_date: member.joined_at ? new Date(member.joined_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
           });
 
-        if (!insertError) addedCount++;
+        if (!insertError) {
+          addedCount++;
+          existingNames.add(nameKey); // Prevent duplicates in same sync
+        }
       }
 
       toast({
