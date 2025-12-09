@@ -3,12 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Trash2, Edit, Mail } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Edit, Mail, Save, Loader2 } from 'lucide-react';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -16,13 +17,20 @@ import { RolePermissionEditor } from './RolePermissionEditor';
 import { RoleManagementGuide } from './RoleManagementGuide';
 import { RoleSystemGuide } from './RoleSystemGuide';
 
+type UserRole = 'super_admin' | 'business_owner' | 'manager' | 'admin_staff' | 'sales_staff' | 'inventory_staff' | 'finance_staff' | 'cashier';
+
 interface OrganizationMember {
   id: string;
   user_id: string;
-  role: 'super_admin' | 'business_owner' | 'manager' | 'admin_staff' | 'sales_staff' | 'inventory_staff' | 'finance_staff' | 'cashier';
+  role: UserRole;
   is_owner: boolean;
   joined_at: string;
   branch_id?: string;
+  profile?: {
+    first_name: string | null;
+    last_name: string | null;
+    display_name: string | null;
+  };
 }
 
 interface Branch {
@@ -38,8 +46,15 @@ export function RolesPermissionsTab() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'manager' | 'admin_staff' | 'sales_staff' | 'inventory_staff' | 'finance_staff' | 'cashier'>('admin_staff');
+  const [inviteRole, setInviteRole] = useState<UserRole>('admin_staff');
   const [inviteBranch, setInviteBranch] = useState<string>('all');
+  
+  // Edit role dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<OrganizationMember | null>(null);
+  const [editRole, setEditRole] = useState<UserRole>('admin_staff');
+  const [editBranch, setEditBranch] = useState<string>('all');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (currentOrganization) {
@@ -58,7 +73,23 @@ export function RolesPermissionsTab() {
         .eq('organization_id', currentOrganization?.id);
 
       if (membersError) throw membersError;
-      setMembers(membersData || []);
+
+      // Load profiles for each member
+      const membersWithProfiles: OrganizationMember[] = [];
+      for (const member of membersData || []) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, display_name')
+          .eq('user_id', member.user_id)
+          .maybeSingle();
+        
+        membersWithProfiles.push({
+          ...member,
+          profile: profile || undefined
+        });
+      }
+      
+      setMembers(membersWithProfiles);
 
       // Load branches
       const { data: branchesData, error: branchesError } = await supabase
@@ -86,11 +117,9 @@ export function RolesPermissionsTab() {
     if (!inviteEmail || !currentOrganization) return;
 
     try {
-      // In a real app, you'd send an invitation email
-      // For now, we'll just show a message
       toast({
         title: "Invitation Sent",
-        description: `Invitation sent to ${inviteEmail} as ${inviteRole}`,
+        description: `Invitation sent to ${inviteEmail} as ${inviteRole.replace(/_/g, ' ')}`,
       });
       
       setInviteEmail('');
@@ -106,116 +135,238 @@ export function RolesPermissionsTab() {
     }
   };
 
+  const openEditDialog = (member: OrganizationMember) => {
+    setSelectedMember(member);
+    setEditRole(member.role);
+    setEditBranch(member.branch_id || 'all');
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateRole = async () => {
+    if (!selectedMember || !currentOrganization) return;
+
+    try {
+      setSaving(true);
+
+      const { error } = await supabase
+        .from('organization_memberships')
+        .update({
+          role: editRole,
+          branch_id: editBranch === 'all' ? null : editBranch,
+          is_owner: editRole === 'business_owner'
+        })
+        .eq('id', selectedMember.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Role Updated",
+        description: `Member role updated to ${editRole.replace(/_/g, ' ')}`,
+      });
+
+      setEditDialogOpen(false);
+      loadMembersAndBranches();
+    } catch (error) {
+      console.error('Error updating role:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update member role",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const getMemberName = (member: OrganizationMember) => {
+    if (member.profile) {
+      const firstName = member.profile.first_name || '';
+      const lastName = member.profile.last_name || '';
+      if (firstName || lastName) {
+        return `${firstName} ${lastName}`.trim();
+      }
+      if (member.profile.display_name) {
+        return member.profile.display_name;
+      }
+    }
+    return 'Unknown User';
+  };
+
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case 'super_admin': return 'destructive';
       case 'business_owner': return 'default';
       case 'manager': return 'secondary';
-      case 'admin_staff': return 'outline';
-      case 'sales_staff': return 'outline';
-      case 'inventory_staff': return 'outline';
-      case 'finance_staff': return 'outline';
-      case 'cashier': return 'outline';
       default: return 'outline';
     }
   };
 
-  const getRolePermissions = (role: string) => {
-    switch (role) {
-      case 'super_admin':
-        return 'Full platform control and business owner management';
-      case 'business_owner':
-        return 'Full organization access, manage all branches';
-      case 'manager':
-        return 'Branch management, view reports, manage staff';
-      case 'admin_staff':
-        return 'Full branch access - all features and operations';
-      case 'sales_staff':
-        return 'Sales processing and customer management only';
-      case 'inventory_staff':
-        return 'Product and inventory management only';
-      case 'finance_staff':
-        return 'Financial records and reporting only';
-      case 'cashier':
-        return 'Basic point of sale operations only';
-      default:
-        return 'Limited access';
-    }
+  const formatRole = (role: string) => {
+    return role.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="flex items-center justify-center p-8"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   }
 
   return (
-    <Tabs defaultValue="members" className="space-y-4">
-      <TabsList className="grid w-full grid-cols-5">
-        <TabsTrigger value="members">Team Members</TabsTrigger>
-        <TabsTrigger value="permissions">Custom Permissions</TabsTrigger>
-        <TabsTrigger value="guide">Role Guide</TabsTrigger>
-        <TabsTrigger value="workflow">System Workflow</TabsTrigger>
-        <TabsTrigger value="contacts">Contact Management</TabsTrigger>
-      </TabsList>
+    <>
+      <Tabs defaultValue="members" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="members">Team Members</TabsTrigger>
+          <TabsTrigger value="permissions">Custom Permissions</TabsTrigger>
+          <TabsTrigger value="guide">Role Guide</TabsTrigger>
+          <TabsTrigger value="workflow">System Workflow</TabsTrigger>
+          <TabsTrigger value="contacts">Contact Management</TabsTrigger>
+        </TabsList>
 
-      <TabsContent value="members">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TabsContent value="members">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Team Members</CardTitle>
+                <CardDescription>Manage your organization members and their roles</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Branch</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {members.map((member) => (
+                      <TableRow key={member.id}>
+                        <TableCell className="font-medium">
+                          {getMemberName(member)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getRoleBadgeVariant(member.role)}>
+                            {formatRole(member.role)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {member.branch_id 
+                            ? branches.find(b => b.id === member.branch_id)?.name || 'Unknown'
+                            : 'All branches'
+                          }
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => openEditDialog(member)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit Role
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Invite Team Member</CardTitle>
+                <CardDescription>Add new members to your organization</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Email Address</Label>
+                  <Input
+                    placeholder="member@example.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Role</Label>
+                  <Select value={inviteRole} onValueChange={(value: UserRole) => setInviteRole(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="business_owner">Business Owner</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
+                      <SelectItem value="admin_staff">Admin Staff</SelectItem>
+                      <SelectItem value="sales_staff">Sales Staff</SelectItem>
+                      <SelectItem value="inventory_staff">Inventory Staff</SelectItem>
+                      <SelectItem value="finance_staff">Finance Staff</SelectItem>
+                      <SelectItem value="cashier">Cashier</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Assign to Branch</Label>
+                  <Select value={inviteBranch} onValueChange={setInviteBranch}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Branches</SelectItem>
+                      {branches.map(branch => (
+                        <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={handleInviteMember} className="w-full">
+                  <Mail className="mr-2 h-4 w-4" />
+                  Send Invitation
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="permissions">
+          <RolePermissionEditor />
+        </TabsContent>
+
+        <TabsContent value="guide">
+          <RoleManagementGuide />
+        </TabsContent>
+
+        <TabsContent value="workflow">
+          <RoleSystemGuide />
+        </TabsContent>
+
+        <TabsContent value="contacts">
           <Card>
             <CardHeader>
-              <CardTitle>Team Members</CardTitle>
-              <CardDescription>Manage your organization members</CardDescription>
+              <CardTitle>Contact & Address Management</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Branch</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {members.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell>
-                        <Badge variant={getRoleBadgeVariant(member.role)}>
-                          {member.role.replace('_', ' ')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {member.branch_id 
-                          ? branches.find(b => b.id === member.branch_id)?.name || 'Unknown'
-                          : 'All branches'
-                        }
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="sm"><Edit className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="sm"><Trash2 className="h-4 w-4" /></Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <p>Contact management features will be implemented here.</p>
             </CardContent>
           </Card>
+        </TabsContent>
+      </Tabs>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Invite Team Member</CardTitle>
-              <CardDescription>Add new members to your organization</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Input
-                placeholder="member@example.com"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-              />
-              <Select value={inviteRole} onValueChange={(value: any) => setInviteRole(value)}>
+      {/* Edit Role Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Member Role</DialogTitle>
+            <DialogDescription>
+              Change role and branch assignment for {selectedMember ? getMemberName(selectedMember) : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select value={editRole} onValueChange={(value: UserRole) => setEditRole(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="business_owner">Business Owner</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
                   <SelectItem value="admin_staff">Admin Staff</SelectItem>
                   <SelectItem value="sales_staff">Sales Staff</SelectItem>
@@ -224,37 +375,33 @@ export function RolesPermissionsTab() {
                   <SelectItem value="cashier">Cashier</SelectItem>
                 </SelectContent>
               </Select>
-              <Button onClick={handleInviteMember} className="w-full">
-                <Mail className="mr-2 h-4 w-4" />
-                Send Invitation
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </TabsContent>
-
-      <TabsContent value="permissions">
-        <RolePermissionEditor />
-      </TabsContent>
-
-      <TabsContent value="guide">
-        <RoleManagementGuide />
-      </TabsContent>
-
-      <TabsContent value="workflow">
-        <RoleSystemGuide />
-      </TabsContent>
-
-      <TabsContent value="contacts">
-        <Card>
-          <CardHeader>
-            <CardTitle>Contact & Address Management</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>Contact management features will be implemented here.</p>
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
+            </div>
+            <div className="space-y-2">
+              <Label>Branch Assignment</Label>
+              <Select value={editBranch} onValueChange={setEditBranch}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Branches</SelectItem>
+                  {branches.map(branch => (
+                    <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateRole} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
