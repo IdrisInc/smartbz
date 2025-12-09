@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, UserCheck, Calendar, DollarSign, Loader2, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, UserCheck, Calendar, DollarSign, Loader2, Eye, Pencil, Trash2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +21,7 @@ export default function Employees() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteEmployee, setDeleteEmployee] = useState<any>(null);
+  const [syncing, setSyncing] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -99,6 +100,94 @@ export default function Employees() {
     }
   };
 
+  const syncSystemUsers = async () => {
+    if (!currentOrganization) return;
+    
+    try {
+      setSyncing(true);
+      
+      // Get all organization members with their profiles
+      const { data: members, error: membersError } = await supabase
+        .from('organization_memberships')
+        .select(`
+          user_id,
+          role,
+          joined_at,
+          profiles!organization_memberships_user_id_fkey (
+            first_name,
+            last_name,
+            user_id
+          )
+        `)
+        .eq('organization_id', currentOrganization.id);
+
+      if (membersError) throw membersError;
+
+      // Get existing employee emails
+      const { data: existingEmployees } = await supabase
+        .from('employees')
+        .select('email')
+        .eq('organization_id', currentOrganization.id);
+
+      const existingEmails = new Set(existingEmployees?.map(e => e.email?.toLowerCase()) || []);
+
+      // Get user emails from auth
+      const userIds = members?.map(m => m.user_id) || [];
+      
+      let addedCount = 0;
+      
+      for (const member of members || []) {
+        const profile = member.profiles as any;
+        if (!profile) continue;
+
+        // Get user email - we need to check if already exists by user_id
+        const { data: existingByUserId } = await supabase
+          .from('employees')
+          .select('id')
+          .eq('organization_id', currentOrganization.id)
+          .eq('first_name', profile.first_name || '')
+          .eq('last_name', profile.last_name || '')
+          .maybeSingle();
+
+        if (existingByUserId) continue;
+
+        // Create employee record
+        const { error: insertError } = await supabase
+          .from('employees')
+          .insert({
+            organization_id: currentOrganization.id,
+            employee_id: `EMP-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+            first_name: profile.first_name || 'Unknown',
+            last_name: profile.last_name || 'User',
+            position: member.role?.replace('_', ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) || 'Staff',
+            department: 'General',
+            status: 'active',
+            hire_date: member.joined_at ? new Date(member.joined_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+          });
+
+        if (!insertError) addedCount++;
+      }
+
+      toast({
+        title: "Sync Complete",
+        description: addedCount > 0 
+          ? `Added ${addedCount} system user(s) as employees` 
+          : "All system users are already in the employee list",
+      });
+      
+      fetchEmployees();
+    } catch (error) {
+      console.error('Error syncing users:', error);
+      toast({
+        title: "Error",
+        description: "Failed to sync system users",
+        variant: "destructive",
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const filteredEmployees = employees.filter(employee =>
     employee.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     employee.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -115,16 +204,22 @@ export default function Employees() {
             Manage your team members, roles, and payroll
           </p>
         </div>
-        <EmployeeDialog 
-          mode="add"
-          onSuccess={fetchEmployees}
-          trigger={
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Employee
-            </Button>
-          }
-        />
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={syncSystemUsers} disabled={syncing}>
+            {syncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+            Sync System Users
+          </Button>
+          <EmployeeDialog 
+            mode="add"
+            onSuccess={fetchEmployees}
+            trigger={
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Employee
+              </Button>
+            }
+          />
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
