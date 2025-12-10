@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { BusinessOwnersManagement } from './BusinessOwnersManagement';
+import { AnalyticsTab } from './AnalyticsTab';
 import { 
   Building2, 
   Users, 
@@ -26,7 +27,8 @@ import {
   MoreHorizontal,
   CheckCircle,
   XCircle,
-  Pause
+  Pause,
+  Play
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
@@ -494,6 +496,12 @@ export function SuperAdminDashboard() {
                                 Suspend
                               </DropdownMenuItem>
                             )}
+                            {org.status === 'suspended' && (
+                              <DropdownMenuItem onClick={() => handleApproveOrganization(org.id)}>
+                                <Play className="h-4 w-4 mr-2" />
+                                Activate
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -543,24 +551,7 @@ export function SuperAdminDashboard() {
         </TabsContent>
 
         <TabsContent value="analytics">
-          <Card>
-            <CardHeader>
-              <CardTitle>Platform Analytics</CardTitle>
-              <CardDescription>Advanced analytics and insights</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">Advanced Analytics</h3>
-                <p className="text-muted-foreground">
-                  Comprehensive analytics dashboard with revenue trends, user behavior, and growth metrics.
-                </p>
-                <Button className="mt-4" variant="outline">
-                  Coming Soon
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <AnalyticsTab />
         </TabsContent>
       </Tabs>
     </div>
