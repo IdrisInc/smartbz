@@ -1,5 +1,5 @@
 import React from 'react';
-import { useUserRole } from '@/hooks/useUserRole';
+import { useUserRole, UserPermissions } from '@/hooks/useUserRole';
 import { 
   LayoutDashboard, 
   Users, 
@@ -31,14 +31,14 @@ interface NavigationItem {
   title: string;
   url: string;
   icon: React.ComponentType<any>;
-  requiredRoles?: Array<import('@/hooks/useUserRole').UserRole>;
+  requiredPermission?: keyof UserPermissions;
   badge?: string;
 }
 
 export function useRoleBasedNavigation() {
-  const { userRole } = useUserRole();
+  const { userRole, permissions } = useUserRole();
 
-  // Super Admin Navigation
+  // Super Admin Navigation - always full access
   const superAdminItems: NavigationItem[] = [
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
     { title: "Owners", url: "/super-admin/owners", icon: Crown },
@@ -51,75 +51,51 @@ export function useRoleBasedNavigation() {
     { title: "Settings", url: "/settings", icon: Settings },
   ];
 
-  // Business Owner Navigation
-  const businessOwnerItems: NavigationItem[] = [
+  // All possible navigation items with their required permissions
+  const allNavigationItems: NavigationItem[] = [
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
-    { title: "Branches", url: "/branches", icon: GitBranch },
-    { title: "Employees", url: "/employees", icon: UserCheck },
-    { title: "Products", url: "/products", icon: Package },
-    { title: "Inventory", url: "/inventory", icon: Store },
-    { title: "Sales", url: "/sales", icon: ShoppingCart },
-    { title: "Finance", url: "/finance", icon: Wallet },
-    { title: "Expense Categories", url: "/expense-categories", icon: FolderOpen },
-    { title: "Cash Registers", url: "/cash-registers", icon: DollarSign },
-    { title: "Contacts", url: "/contacts", icon: Users },
-    { title: "Reports", url: "/reports", icon: TrendingUp },
-    { title: "Trunker", url: "/trunker", icon: FileText },
-    { title: "Settings", url: "/settings", icon: Settings },
+    { title: "Branches", url: "/branches", icon: GitBranch, requiredPermission: 'canManageBranches' },
+    { title: "Employees", url: "/employees", icon: UserCheck, requiredPermission: 'canManageEmployees' },
+    { title: "Products", url: "/products", icon: Package, requiredPermission: 'canManageProducts' },
+    { title: "Inventory", url: "/inventory", icon: Store, requiredPermission: 'canManageInventory' },
+    { title: "Sales", url: "/sales", icon: ShoppingCart, requiredPermission: 'canProcessSales' },
+    { title: "Finance", url: "/finance", icon: Wallet, requiredPermission: 'canManageFinances' },
+    { title: "Expense Categories", url: "/expense-categories", icon: FolderOpen, requiredPermission: 'canManageExpenses' },
+    { title: "Cash Registers", url: "/cash-registers", icon: DollarSign, requiredPermission: 'canProcessSales' },
+    { title: "Contacts", url: "/contacts", icon: Users, requiredPermission: 'canManageContacts' },
+    { title: "Reports", url: "/reports", icon: TrendingUp, requiredPermission: 'canViewReports' },
+    { title: "Trunker", url: "/trunker", icon: FileText, requiredPermission: 'canViewLogs' },
+    { title: "Settings", url: "/settings", icon: Settings, requiredPermission: 'canManageSettings' },
   ];
 
-  // Admin Staff Navigation (Full branch access)
-  const adminStaffItems: NavigationItem[] = [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard },
-    { title: "Products", url: "/products", icon: Package },
-    { title: "Inventory", url: "/inventory", icon: Store },
-    { title: "Sales", url: "/sales", icon: ShoppingCart },
-    { title: "Finance", url: "/finance", icon: Wallet },
-    { title: "Expense Categories", url: "/expense-categories", icon: FolderOpen },
-    { title: "Cash Registers", url: "/cash-registers", icon: DollarSign },
-    { title: "Reports", url: "/reports", icon: TrendingUp },
-    { title: "Contacts", url: "/contacts", icon: Users },
-    { title: "Trunker", url: "/trunker", icon: FileText },
-  ];
-
-  // Sales Staff Navigation
-  const salesStaffItems: NavigationItem[] = [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard },
-    { title: "Sales", url: "/sales", icon: ShoppingCart },
-    { title: "Contacts", url: "/contacts", icon: Users },
-  ];
-
-  // Inventory Staff Navigation
-  const inventoryStaffItems: NavigationItem[] = [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard },
-    { title: "Products", url: "/products", icon: Package },
-    { title: "Inventory", url: "/inventory", icon: Store },
-  ];
-
-  // Finance Staff Navigation
-  const financeStaffItems: NavigationItem[] = [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard },
-    { title: "Finance", url: "/finance", icon: Wallet },
-    { title: "Reports", url: "/reports", icon: TrendingUp },
-  ];
+  // Filter navigation items based on permissions
+  const filterByPermissions = (items: NavigationItem[]): NavigationItem[] => {
+    if (!permissions) return [{ title: "Dashboard", url: "/", icon: LayoutDashboard }];
+    
+    return items.filter(item => {
+      // Dashboard is always visible
+      if (item.url === "/") return true;
+      
+      // If no permission required, show the item
+      if (!item.requiredPermission) return true;
+      
+      // Check if user has the required permission
+      return permissions[item.requiredPermission] === true;
+    });
+  };
 
   // Return navigation based on user role
-  switch (userRole) {
-    case 'super_admin':
-      return superAdminItems;
-    case 'business_owner':
-      return businessOwnerItems;
-    case 'admin_staff':
-      return adminStaffItems;
-    case 'sales_staff':
-      return salesStaffItems;
-    case 'inventory_staff':
-      return inventoryStaffItems;
-    case 'finance_staff':
-      return financeStaffItems;
-    default:
-      return businessOwnerItems; // Default fallback
+  if (userRole === 'super_admin') {
+    return superAdminItems;
   }
+
+  // Business owner gets all items
+  if (userRole === 'business_owner') {
+    return allNavigationItems;
+  }
+
+  // All other roles get filtered items based on their permissions
+  return filterByPermissions(allNavigationItems);
 }
 
 export function RoleBasedNavigation() {
@@ -130,10 +106,12 @@ export function RoleBasedNavigation() {
     const roleMap: Record<string, string> = {
       'super_admin': 'Super Admin',
       'business_owner': 'Business Owner',
+      'manager': 'Manager',
       'admin_staff': 'Admin Staff',
       'sales_staff': 'Sales Staff',
       'inventory_staff': 'Inventory Staff',
       'finance_staff': 'Finance Staff',
+      'cashier': 'Cashier',
     };
     return roleMap[role] || role;
   };

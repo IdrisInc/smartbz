@@ -157,11 +157,31 @@ function getPermissionsForRole(role: UserRole): UserPermissions {
     canManageBusinessOwners: false,
     canApproveOrganizations: false,
     canManageContacts: false,
+    // Extended permissions
+    canManageBranches: false,
+    canManageRoles: false,
+    canViewUserReports: false,
+    canViewInventoryReports: false,
+    canCreateSales: false,
+    canManageCustomers: false,
+    canViewSalesReports: false,
+    canApplyDiscounts: false,
+    canViewFinances: false,
+    canManageInvoices: false,
+    canManageExpenses: false,
+    canProcessRefunds: false,
+    canManageAttendance: false,
+    canManagePayroll: false,
+    canViewEmployeeReports: false,
+    canManageSettings: false,
+    canViewLogs: false,
+    canManageIntegrations: false,
   };
 
   switch (role) {
     case 'super_admin':
       return {
+        ...basePermissions,
         canManageOrganizations: true,
         canManageUsers: true,
         canManageFinances: true,
@@ -174,6 +194,24 @@ function getPermissionsForRole(role: UserRole): UserPermissions {
         canManageBusinessOwners: true,
         canApproveOrganizations: true,
         canManageContacts: true,
+        canManageBranches: true,
+        canManageRoles: true,
+        canViewUserReports: true,
+        canViewInventoryReports: true,
+        canCreateSales: true,
+        canManageCustomers: true,
+        canViewSalesReports: true,
+        canApplyDiscounts: true,
+        canViewFinances: true,
+        canManageInvoices: true,
+        canManageExpenses: true,
+        canProcessRefunds: true,
+        canManageAttendance: true,
+        canManagePayroll: true,
+        canViewEmployeeReports: true,
+        canManageSettings: true,
+        canViewLogs: true,
+        canManageIntegrations: true,
       };
 
     case 'business_owner':
@@ -189,6 +227,24 @@ function getPermissionsForRole(role: UserRole): UserPermissions {
         canManageEmployees: true,
         canViewAllBranches: true,
         canManageContacts: true,
+        canManageBranches: true,
+        canManageRoles: true,
+        canViewUserReports: true,
+        canViewInventoryReports: true,
+        canCreateSales: true,
+        canManageCustomers: true,
+        canViewSalesReports: true,
+        canApplyDiscounts: true,
+        canViewFinances: true,
+        canManageInvoices: true,
+        canManageExpenses: true,
+        canProcessRefunds: true,
+        canManageAttendance: true,
+        canManagePayroll: true,
+        canViewEmployeeReports: true,
+        canManageSettings: true,
+        canViewLogs: true,
+        canManageIntegrations: true,
       };
 
     case 'manager':
@@ -203,6 +259,17 @@ function getPermissionsForRole(role: UserRole): UserPermissions {
         canManageEmployees: true,
         canViewAllBranches: true,
         canManageContacts: true,
+        canViewUserReports: true,
+        canViewInventoryReports: true,
+        canCreateSales: true,
+        canManageCustomers: true,
+        canViewSalesReports: true,
+        canApplyDiscounts: true,
+        canViewFinances: true,
+        canManageInvoices: true,
+        canManageExpenses: true,
+        canManageAttendance: true,
+        canViewEmployeeReports: true,
       };
 
     case 'admin_staff':
@@ -216,6 +283,18 @@ function getPermissionsForRole(role: UserRole): UserPermissions {
         canManageInventory: true,
         canManageEmployees: true,
         canManageContacts: true,
+        canViewUserReports: true,
+        canViewInventoryReports: true,
+        canCreateSales: true,
+        canManageCustomers: true,
+        canViewSalesReports: true,
+        canApplyDiscounts: true,
+        canViewFinances: true,
+        canManageInvoices: true,
+        canManageExpenses: true,
+        canProcessRefunds: true,
+        canManageAttendance: true,
+        canViewEmployeeReports: true,
       };
 
     case 'sales_staff':
@@ -223,6 +302,8 @@ function getPermissionsForRole(role: UserRole): UserPermissions {
         ...basePermissions,
         canProcessSales: true,
         canManageContacts: true,
+        canCreateSales: true,
+        canManageCustomers: true,
       };
 
     case 'inventory_staff':
@@ -230,6 +311,7 @@ function getPermissionsForRole(role: UserRole): UserPermissions {
         ...basePermissions,
         canManageProducts: true,
         canManageInventory: true,
+        canViewInventoryReports: true,
       };
 
     case 'finance_staff':
@@ -237,12 +319,18 @@ function getPermissionsForRole(role: UserRole): UserPermissions {
         ...basePermissions,
         canManageFinances: true,
         canViewReports: true,
+        canViewFinances: true,
+        canManageInvoices: true,
+        canManageExpenses: true,
+        canProcessRefunds: true,
+        canViewSalesReports: true,
       };
 
     case 'cashier':
       return {
         ...basePermissions,
         canProcessSales: true,
+        canCreateSales: true,
       };
 
     default:
