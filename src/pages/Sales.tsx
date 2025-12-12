@@ -148,6 +148,35 @@ export default function Sales() {
 
       if (error) throw error;
 
+      // Get sale details for email
+      const { data: saleData } = await supabase
+        .from('sales')
+        .select(`
+          id,
+          contacts(name, email)
+        `)
+        .eq('id', saleId)
+        .single();
+
+      // Send email notification to customer
+      if (saleData?.contacts?.email && currentOrganization) {
+        try {
+          await supabase.functions.invoke('send-transaction-email', {
+            body: {
+              type: 'sale',
+              transactionId: saleId,
+              recipientEmail: saleData.contacts.email,
+              recipientName: saleData.contacts.name || 'Customer',
+              organizationId: currentOrganization.id
+            }
+          });
+          console.log('Sale confirmation email sent');
+        } catch (emailError) {
+          console.error('Failed to send email:', emailError);
+          // Don't fail the confirmation if email fails
+        }
+      }
+
       toast({
         title: "Sale Confirmed",
         description: "The sale has been confirmed successfully.",
