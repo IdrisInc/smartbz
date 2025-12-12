@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
-import { Check, Zap, Crown, Building2, Users, Star, Shield } from 'lucide-react';
+import { Check, Zap, Crown, Building2, Users, Star, Shield, Smartphone, Loader2, Phone } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SubscriptionUpgradeInterfaceProps {
   open: boolean;
@@ -21,7 +27,14 @@ export function SubscriptionUpgradeInterface({
   limitReached 
 }: SubscriptionUpgradeInterfaceProps) {
   const { currentPlan, limits, currentUsage } = useSubscriptionLimits();
+  const { currentOrganization } = useOrganization();
+  const { toast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [showMobileMoneyDialog, setShowMobileMoneyDialog] = useState(false);
+  const [mobileMoneyPhone, setMobileMoneyPhone] = useState('');
+  const [mobileMoneyProvider, setMobileMoneyProvider] = useState('MPESA');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
 
   const plans = [
     {
@@ -116,8 +129,66 @@ export function SubscriptionUpgradeInterface({
 
   const handleUpgrade = (planId: string) => {
     setSelectedPlan(planId);
-    // Here you would integrate with your payment processor
-    console.log(`Upgrading to ${planId} plan`);
+    setPendingPlanId(planId);
+    setShowMobileMoneyDialog(true);
+  };
+
+  const processMobileMoneyPayment = async () => {
+    if (!mobileMoneyPhone || mobileMoneyPhone.length < 9 || !pendingPlanId || !currentOrganization) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid phone number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const plan = plans.find(p => p.id === pendingPlanId);
+      const planPrices: Record<string, number> = {
+        base: 75000,    // ~$29 in TZS
+        pro: 200000,    // ~$79 in TZS
+        enterprise: 500000 // Custom
+      };
+      const amount = planPrices[pendingPlanId] || 75000;
+
+      const { data, error } = await supabase.functions.invoke('clickpesa-payment', {
+        body: {
+          amount,
+          phone: `255${mobileMoneyPhone}`,
+          provider: mobileMoneyProvider,
+          reference: `SUB-${currentOrganization.id.slice(0, 8)}-${Date.now()}`,
+          description: `${plan?.name || pendingPlanId} Subscription`,
+          paymentType: 'subscription',
+          organizationId: currentOrganization.id,
+          plan: pendingPlanId,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Payment Request Sent",
+          description: data.message || "Check your phone for the USSD prompt to complete payment",
+        });
+        setShowMobileMoneyDialog(false);
+        onClose();
+      } else {
+        throw new Error(data.error || 'Payment initiation failed');
+      }
+    } catch (error: any) {
+      console.error('Subscription payment error:', error);
+      toast({
+        variant: "destructive",
+        title: "Payment Failed",
+        description: error.message || "There was an error processing the payment.",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const formatLimit = (limit: number) => {
@@ -125,6 +196,7 @@ export function SubscriptionUpgradeInterface({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -282,5 +354,64 @@ export function SubscriptionUpgradeInterface({
         </Card>
       </DialogContent>
     </Dialog>
+
+    {/* Mobile Money Payment Dialog */}
+    <Dialog open={showMobileMoneyDialog} onOpenChange={setShowMobileMoneyDialog}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Smartphone className="h-5 w-5 text-green-600" />
+            Pay with Mobile Money
+          </DialogTitle>
+          <DialogDescription>
+            Complete your subscription payment via mobile money
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Select Provider</Label>
+            <Select value={mobileMoneyProvider} onValueChange={setMobileMoneyProvider}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select provider" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MPESA">M-Pesa (Vodacom)</SelectItem>
+                <SelectItem value="TIGOPESA">Tigo Pesa</SelectItem>
+                <SelectItem value="AIRTELMONEY">Airtel Money</SelectItem>
+                <SelectItem value="HALOPESA">Halopesa</SelectItem>
+                <SelectItem value="EZYPESA">EzyPesa</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Phone Number</Label>
+            <div className="flex gap-2">
+              <div className="flex items-center px-3 border rounded-l-md bg-muted">
+                <span className="text-sm text-muted-foreground">+255</span>
+              </div>
+              <Input
+                placeholder="712345678"
+                value={mobileMoneyPhone}
+                onChange={(e) => setMobileMoneyPhone(e.target.value.replace(/\D/g, ''))}
+                className="rounded-l-none"
+                maxLength={9}
+              />
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowMobileMoneyDialog(false)}>Cancel</Button>
+          <Button 
+            onClick={processMobileMoneyPayment} 
+            disabled={isProcessing || mobileMoneyPhone.length < 9}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {isProcessing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Phone className="h-4 w-4 mr-2" />}
+            {isProcessing ? 'Processing...' : 'Pay Now'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </>
   );
 }

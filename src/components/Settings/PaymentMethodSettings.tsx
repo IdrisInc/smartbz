@@ -5,10 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
-import { CreditCard, Banknote, Smartphone, Building2, Loader2, Save, ExternalLink } from 'lucide-react';
+import { CreditCard, Banknote, Smartphone, Building2, Loader2, Save, ExternalLink, CheckCircle, Phone } from 'lucide-react';
 
 interface PaymentMethod {
   id: string;
@@ -20,8 +22,97 @@ interface PaymentMethod {
   integrationUrl?: string;
 }
 
+interface ClickPesaPaymentDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onPayment: (phone: string, provider: string) => void;
+  loading: boolean;
+  amount: number;
+}
+
+function ClickPesaPaymentDialog({ open, onOpenChange, onPayment, loading, amount }: ClickPesaPaymentDialogProps) {
+  const [phone, setPhone] = useState('');
+  const [provider, setProvider] = useState('MPESA');
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Smartphone className="h-5 w-5 text-green-600" />
+            Mobile Money Payment
+          </DialogTitle>
+          <DialogDescription>
+            Pay TZS {amount.toLocaleString()} using mobile money
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="provider">Select Provider</Label>
+            <Select value={provider} onValueChange={setProvider}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select provider" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MPESA">M-Pesa (Vodacom)</SelectItem>
+                <SelectItem value="TIGOPESA">Tigo Pesa (Mixx by Yas)</SelectItem>
+                <SelectItem value="AIRTELMONEY">Airtel Money</SelectItem>
+                <SelectItem value="HALOPESA">Halopesa</SelectItem>
+                <SelectItem value="EZYPESA">EzyPesa</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <div className="flex gap-2">
+              <div className="flex items-center px-3 border rounded-l-md bg-muted">
+                <span className="text-sm text-muted-foreground">+255</span>
+              </div>
+              <Input
+                id="phone"
+                placeholder="712345678"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                className="rounded-l-none"
+                maxLength={9}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Enter your phone number without the country code
+            </p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => onPayment(`255${phone}`, provider)} 
+            disabled={loading || phone.length < 9}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Phone className="h-4 w-4 mr-2" />
+                Send Payment Request
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function PaymentMethodSettings() {
   const [saving, setSaving] = useState(false);
+  const [clickPesaEnabled, setClickPesaEnabled] = useState(false);
+  const [testPaymentOpen, setTestPaymentOpen] = useState(false);
+  const [testPaymentLoading, setTestPaymentLoading] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
     {
       id: 'cash',
@@ -49,10 +140,10 @@ export function PaymentMethodSettings() {
       integrationUrl: 'https://stripe.com'
     },
     {
-      id: 'mobile_money',
-      name: 'Mobile Money',
-      description: 'Accept mobile money payments (M-Pesa, MTN, etc.)',
-      icon: <Smartphone className="h-5 w-5" />,
+      id: 'clickpesa',
+      name: 'ClickPesa (Mobile Money)',
+      description: 'Accept M-Pesa, Tigo Pesa, Airtel Money, Halopesa, EzyPesa',
+      icon: <Smartphone className="h-5 w-5 text-green-600" />,
       enabled: false,
       requiresIntegration: false
     },
@@ -93,6 +184,9 @@ export function PaymentMethodSettings() {
   };
 
   const togglePaymentMethod = (id: string) => {
+    if (id === 'clickpesa') {
+      setClickPesaEnabled(!clickPesaEnabled);
+    }
     setPaymentMethods(prev =>
       prev.map(method =>
         method.id === id ? { ...method, enabled: !method.enabled } : method
@@ -100,11 +194,50 @@ export function PaymentMethodSettings() {
     );
   };
 
+  const handleTestPayment = async (phone: string, provider: string) => {
+    if (!currentOrganization) return;
+    
+    setTestPaymentLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('clickpesa-payment', {
+        body: {
+          amount: 1000, // Test amount: 1000 TZS
+          phone,
+          provider,
+          reference: `TEST-${Date.now()}`,
+          description: 'Test payment from settings',
+          paymentType: 'sale',
+          organizationId: currentOrganization.id,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Payment Request Sent",
+          description: data.message || "Check your phone for the USSD prompt",
+        });
+        setTestPaymentOpen(false);
+      } else {
+        throw new Error(data.error || 'Payment failed');
+      }
+    } catch (error: any) {
+      console.error('Test payment error:', error);
+      toast({
+        title: "Payment Failed",
+        description: error.message || "Failed to initiate test payment",
+        variant: "destructive",
+      });
+    } finally {
+      setTestPaymentLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
       // In a full implementation, this would save to database
-      // For now, we just show success
       await new Promise(resolve => setTimeout(resolve, 500));
       
       toast({
@@ -164,6 +297,12 @@ export function PaymentMethodSettings() {
                           Requires Setup
                         </Badge>
                       )}
+                      {method.id === 'clickpesa' && method.enabled && (
+                        <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Active
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {method.description}
@@ -179,6 +318,15 @@ export function PaymentMethodSettings() {
                     >
                       <ExternalLink className="h-4 w-4 mr-1" />
                       Setup
+                    </Button>
+                  )}
+                  {method.id === 'clickpesa' && method.enabled && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setTestPaymentOpen(true)}
+                    >
+                      Test Payment
                     </Button>
                   )}
                   <Switch
@@ -205,12 +353,37 @@ export function PaymentMethodSettings() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Payment Gateway Integration</CardTitle>
+          <CardTitle>ClickPesa Integration</CardTitle>
           <CardDescription>
-            Connect third-party payment providers for online transactions
+            Accept mobile money payments from Tanzanian providers
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="p-4 border rounded-lg bg-green-50 dark:bg-green-950">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                  <Smartphone className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <h4 className="font-medium">ClickPesa Mobile Money</h4>
+                  <p className="text-sm text-muted-foreground">
+                    M-Pesa, Tigo Pesa, Airtel Money, Halopesa, EzyPesa
+                  </p>
+                </div>
+              </div>
+              <Badge className="bg-green-600 text-white">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Configured
+              </Badge>
+            </div>
+            <div className="mt-4 pt-4 border-t border-green-200 dark:border-green-800">
+              <p className="text-sm text-muted-foreground">
+                Your ClickPesa API credentials are configured. Enable "ClickPesa (Mobile Money)" above to start accepting payments.
+              </p>
+            </div>
+          </div>
+
           <div className="p-4 border rounded-lg bg-muted/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -228,28 +401,21 @@ export function PaymentMethodSettings() {
             </div>
           </div>
 
-          <div className="p-4 border rounded-lg bg-muted/50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                  <Smartphone className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <h4 className="font-medium">Mobile Money</h4>
-                  <p className="text-sm text-muted-foreground">
-                    M-Pesa, MTN Mobile Money, Airtel Money
-                  </p>
-                </div>
-              </div>
-              <Badge variant="outline">Coming Soon</Badge>
-            </div>
-          </div>
-
           <p className="text-sm text-muted-foreground">
             Need a specific payment integration? Contact support to request additional providers.
           </p>
         </CardContent>
       </Card>
+
+      <ClickPesaPaymentDialog
+        open={testPaymentOpen}
+        onOpenChange={setTestPaymentOpen}
+        onPayment={handleTestPayment}
+        loading={testPaymentLoading}
+        amount={1000}
+      />
     </div>
   );
 }
+
+export { ClickPesaPaymentDialog };
