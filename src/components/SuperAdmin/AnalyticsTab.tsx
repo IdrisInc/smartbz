@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
-import { TrendingUp, TrendingDown, Users, Building2, DollarSign, Activity } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, Building2, DollarSign, Activity, Download, FileText } from 'lucide-react';
+import { useExportUtils } from '@/hooks/useExportUtils';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 
 interface AnalyticsData {
   monthlyGrowth: { month: string; organizations: number; users: number; revenue: number }[];
@@ -17,6 +21,8 @@ const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3
 
 export function AnalyticsTab() {
   const [loading, setLoading] = useState(true);
+  const { exportToCSV, exportToJSON } = useExportUtils();
+  const [rawData, setRawData] = useState<{ orgs: any[]; memberships: any[]; sales: any[] }>({ orgs: [], memberships: [], sales: [] });
   const [analytics, setAnalytics] = useState<AnalyticsData>({
     monthlyGrowth: [],
     sectorDistribution: [],
@@ -48,6 +54,9 @@ export function AnalyticsTab() {
         .from('sales')
         .select('sale_date, total_amount')
         .order('sale_date', { ascending: true });
+
+      // Store raw data for export
+      setRawData({ orgs: orgs || [], memberships: memberships || [], sales: sales || [] });
 
       // Process monthly growth data (last 6 months)
       const monthlyGrowth = generateMonthlyGrowth(orgs || [], memberships || [], sales || []);
@@ -195,6 +204,50 @@ export function AnalyticsTab() {
       .slice(0, 5);
   };
 
+  const exportBusinessReport = (format: 'csv' | 'json') => {
+    const reportData = rawData.orgs.map(org => ({
+      name: org.name || 'N/A',
+      sector: org.business_sector,
+      subscription_plan: org.subscription_plan,
+      status: org.status,
+      created_at: new Date(org.created_at).toLocaleDateString()
+    }));
+    
+    if (format === 'csv') {
+      exportToCSV(reportData, 'business-report');
+    } else {
+      exportToJSON(reportData, 'business-report');
+    }
+  };
+
+  const exportAnalyticsData = (format: 'csv' | 'json') => {
+    const analyticsExport = {
+      monthly_growth: analytics.monthlyGrowth,
+      sector_distribution: analytics.sectorDistribution,
+      subscription_trends: analytics.subscriptionTrends,
+      top_sectors: analytics.topSectors
+    };
+    
+    if (format === 'csv') {
+      exportToCSV(analytics.monthlyGrowth, 'analytics-growth');
+    } else {
+      exportToJSON([analyticsExport], 'analytics-full-report');
+    }
+  };
+
+  const exportSalesReport = (format: 'csv' | 'json') => {
+    const salesData = rawData.sales.map(sale => ({
+      date: new Date(sale.sale_date).toLocaleDateString(),
+      amount: sale.total_amount
+    }));
+    
+    if (format === 'csv') {
+      exportToCSV(salesData, 'sales-report');
+    } else {
+      exportToJSON(salesData, 'sales-report');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -211,6 +264,66 @@ export function AnalyticsTab() {
 
   return (
     <div className="space-y-6">
+      {/* Export Actions */}
+      <div className="flex justify-end gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Export Analytics
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => exportAnalyticsData('csv')}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => exportAnalyticsData('json')}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export as JSON
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Business Report
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => exportBusinessReport('csv')}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => exportBusinessReport('json')}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export as JSON
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Sales Report
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => exportSalesReport('csv')}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => exportSalesReport('json')}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export as JSON
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
