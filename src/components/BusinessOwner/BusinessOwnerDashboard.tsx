@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,9 @@ import {
   Building2,
   Briefcase,
   Plus,
-  Zap
+  Zap,
+  Clock,
+  ArrowRight
 } from 'lucide-react';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSubscriptionLimits } from '@/hooks/useSubscriptionLimits';
@@ -43,11 +46,13 @@ export function BusinessOwnerDashboard() {
     totalProducts: 0,
     totalEmployees: 0,
     lowStockAlerts: 0,
-    pendingOrders: 0
+    pendingOrders: 0,
+    pendingApprovals: 0
   });
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (organizations.length > 0) {
@@ -63,6 +68,7 @@ export function BusinessOwnerDashboard() {
       let totalSales = 0;
       let totalProducts = 0;
       let totalEmployees = 0;
+      let totalPendingApprovals = 0;
 
       for (const org of organizations) {
         // Get sales data
@@ -70,6 +76,15 @@ export function BusinessOwnerDashboard() {
           .from('sales')
           .select('total_amount')
           .eq('organization_id', org.id);
+
+        // Get pending approvals count
+        const { count: pendingCount } = await supabase
+          .from('sales')
+          .select('*', { count: 'exact', head: true })
+          .eq('organization_id', org.id)
+          .eq('confirmation_status', 'pending');
+
+        totalPendingApprovals += pendingCount || 0;
 
         // Get products count
         const { data: products } = await supabase
@@ -120,7 +135,8 @@ export function BusinessOwnerDashboard() {
         totalProducts,
         totalEmployees,
         lowStockAlerts: 0, // Placeholder
-        pendingOrders: 0   // Placeholder
+        pendingOrders: 0,   // Placeholder
+        pendingApprovals: totalPendingApprovals
       });
     } catch (error) {
       console.error('Error loading business summaries:', error);
@@ -192,6 +208,33 @@ export function BusinessOwnerDashboard() {
           </Button>
         </div>
       </div>
+
+      {/* Pending Approvals Alert */}
+      {totalStats.pendingApprovals > 0 && (
+        <Card className="border-orange-500/50 bg-orange-500/10 cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/pending-approvals')}>
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-orange-500/20 rounded-full">
+                  <Clock className="h-6 w-6 text-orange-500" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Sales Pending Approval</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {totalStats.pendingApprovals} sale{totalStats.pendingApprovals !== 1 ? 's' : ''} awaiting your confirmation
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-lg px-3 py-1">
+                  {totalStats.pendingApprovals}
+                </Badge>
+                <ArrowRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Portfolio Overview */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

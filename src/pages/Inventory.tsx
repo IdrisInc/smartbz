@@ -221,6 +221,25 @@ export default function Inventory() {
       setReceivedPO(po);
       setShowReceiveActions(true);
 
+      // Send email notification to supplier
+      if (po?.supplier?.email && currentOrganization) {
+        try {
+          await supabase.functions.invoke('send-transaction-email', {
+            body: {
+              type: 'purchase',
+              transactionId: poId,
+              recipientEmail: po.supplier.email,
+              recipientName: po.supplier.name || 'Supplier',
+              organizationId: currentOrganization.id
+            }
+          });
+          console.log('PO received email sent to supplier');
+        } catch (emailError) {
+          console.error('Failed to send email:', emailError);
+          // Don't fail the receive if email fails
+        }
+      }
+
       toast({
         title: "Success",
         description: "Purchase order received and stock updated",

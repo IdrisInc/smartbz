@@ -124,6 +124,37 @@ export default function PendingApprovals() {
 
       if (error) throw error;
 
+      // Send emails to customers for each approved sale
+      if (currentOrganization) {
+        for (const saleId of selectedSales) {
+          const sale = sales.find(s => s.id === saleId);
+          if (sale?.contacts?.name) {
+            // Get email from contacts
+            const { data: contact } = await supabase
+              .from('sales')
+              .select('contacts(email, name)')
+              .eq('id', saleId)
+              .single();
+            
+            if (contact?.contacts?.email) {
+              try {
+                await supabase.functions.invoke('send-transaction-email', {
+                  body: {
+                    type: 'sale',
+                    transactionId: saleId,
+                    recipientEmail: contact.contacts.email,
+                    recipientName: contact.contacts.name || 'Customer',
+                    organizationId: currentOrganization.id
+                  }
+                });
+              } catch (emailError) {
+                console.error('Failed to send email for sale:', saleId, emailError);
+              }
+            }
+          }
+        }
+      }
+
       toast({
         title: "Sales Approved",
         description: `${selectedSales.length} sale(s) have been approved successfully.`,
@@ -205,6 +236,31 @@ export default function PendingApprovals() {
         .eq('id', saleId);
 
       if (error) throw error;
+
+      // Send email to customer
+      if (currentOrganization) {
+        const { data: saleData } = await supabase
+          .from('sales')
+          .select('contacts(name, email)')
+          .eq('id', saleId)
+          .single();
+
+        if (saleData?.contacts?.email) {
+          try {
+            await supabase.functions.invoke('send-transaction-email', {
+              body: {
+                type: 'sale',
+                transactionId: saleId,
+                recipientEmail: saleData.contacts.email,
+                recipientName: saleData.contacts.name || 'Customer',
+                organizationId: currentOrganization.id
+              }
+            });
+          } catch (emailError) {
+            console.error('Failed to send email:', emailError);
+          }
+        }
+      }
 
       toast({
         title: "Sale Approved",
