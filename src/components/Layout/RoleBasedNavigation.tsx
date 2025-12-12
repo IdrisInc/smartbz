@@ -24,7 +24,8 @@ import {
   ClipboardList,
   Tag,
   FolderOpen,
-  DollarSign
+  DollarSign,
+  CheckSquare
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -59,6 +60,7 @@ export function useRoleBasedNavigation() {
     { title: "Products", url: "/products", icon: Package, requiredPermission: 'canManageProducts' },
     { title: "Inventory", url: "/inventory", icon: Store, requiredPermission: 'canManageInventory' },
     { title: "Sales", url: "/sales", icon: ShoppingCart, requiredPermission: 'canProcessSales' },
+    { title: "Pending Approvals", url: "/pending-approvals", icon: CheckSquare },
     { title: "Finance", url: "/finance", icon: Wallet, requiredPermission: 'canManageFinances' },
     { title: "Expense Categories", url: "/expense-categories", icon: FolderOpen, requiredPermission: 'canManageExpenses' },
     { title: "Cash Registers", url: "/cash-registers", icon: DollarSign, requiredPermission: 'canProcessSales' },
