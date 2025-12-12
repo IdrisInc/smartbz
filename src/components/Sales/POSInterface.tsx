@@ -541,16 +541,19 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
   return (
     <>
       <Dialog open onOpenChange={onClose}>
-        <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col p-0">
-          <DialogHeader className="px-6 pt-6 pb-4">
-            <DialogTitle className="text-2xl">Point of Sale</DialogTitle>
+        <DialogContent className="w-full max-w-[95vw] md:max-w-6xl max-h-[95vh] md:max-h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="px-3 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-4">
+            <DialogTitle className="text-lg sm:text-2xl flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+              Point of Sale
+            </DialogTitle>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 px-6">
+          <ScrollArea className="flex-1 px-3 sm:px-6">
             {!showPaymentCode ? (
-              <div className="grid grid-cols-3 gap-6 pb-6">
+              <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6 pb-4 lg:pb-6">
                 {/* Products Section */}
-                <div className="col-span-2 space-y-4">
+                <div className="lg:col-span-2 space-y-3 sm:space-y-4 order-2 lg:order-1">
                   <div className="relative">
                     <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -561,27 +564,27 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 max-h-[35vh] lg:max-h-[50vh] overflow-y-auto">
                     {loading ? (
-                      <div className="col-span-3 text-center py-8">Loading products...</div>
+                      <div className="col-span-full text-center py-8 text-muted-foreground">Loading products...</div>
                     ) : filteredProducts.length === 0 ? (
-                      <div className="col-span-3 text-center py-8 text-muted-foreground">
+                      <div className="col-span-full text-center py-8 text-muted-foreground">
                         No products found
                       </div>
                     ) : (
                       filteredProducts.map((product) => (
                         <Card
                           key={product.id}
-                          className="cursor-pointer hover:shadow-lg transition-shadow"
+                          className="cursor-pointer hover:shadow-lg transition-shadow shadow-card"
                           onClick={() => addToCart(product)}
                         >
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-sm">{product.name}</CardTitle>
+                          <CardHeader className="p-2 sm:p-3 pb-1 sm:pb-2">
+                            <CardTitle className="text-xs sm:text-sm line-clamp-2">{product.name}</CardTitle>
                           </CardHeader>
-                          <CardContent>
-                            <div className="flex justify-between items-center">
-                              <span className="text-lg font-bold">${product.price.toFixed(2)}</span>
-                              <Badge variant="secondary">{product.stock_quantity} in stock</Badge>
+                          <CardContent className="p-2 sm:p-3 pt-0">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                              <span className="text-sm sm:text-lg font-bold text-primary">${product.price.toFixed(2)}</span>
+                              <Badge variant="secondary" className="text-xs w-fit">{product.stock_quantity} in stock</Badge>
                             </div>
                           </CardContent>
                         </Card>
@@ -591,38 +594,40 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
                 </div>
 
                 {/* Cart Section */}
-                <div className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <ShoppingCart className="h-5 w-5" />
-                        Shopping Cart ({cart.length})
+                <div className="space-y-3 sm:space-y-4 order-1 lg:order-2">
+                  <Card className="shadow-card">
+                    <CardHeader className="p-3 sm:p-4 pb-2 sm:pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                        <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                        Cart ({cart.length})
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="p-3 sm:p-4 pt-0 space-y-3 sm:space-y-4">
                       {cart.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-8">Cart is empty</p>
+                        <p className="text-center text-muted-foreground py-4 sm:py-8 text-sm">Cart is empty</p>
                       ) : (
                         <>
-                          <div className="space-y-3 max-h-[25vh] overflow-y-auto">
+                          <div className="space-y-2 sm:space-y-3 max-h-[20vh] lg:max-h-[25vh] overflow-y-auto">
                             {cart.map((item) => (
-                              <div key={item.id} className="flex items-center justify-between border-b pb-3">
-                                <div className="flex-1">
-                                  <p className="font-medium text-sm">{item.name}</p>
-                                  <p className="text-sm text-muted-foreground">${item.price.toFixed(2)} each</p>
+                              <div key={item.id} className="flex items-center justify-between border-b pb-2 sm:pb-3 gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-xs sm:text-sm truncate">{item.name}</p>
+                                  <p className="text-xs text-muted-foreground">${item.price.toFixed(2)}</p>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1 sm:gap-2">
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                   >
                                     -
                                   </Button>
-                                  <span className="w-8 text-center">{item.quantity}</span>
+                                  <span className="w-6 sm:w-8 text-center text-sm">{item.quantity}</span>
                                   <Button
                                     variant="outline"
                                     size="sm"
+                                    className="h-7 w-7 sm:h-8 sm:w-8 p-0"
                                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                   >
                                     +
@@ -634,14 +639,14 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
 
                           <Separator />
 
-                          <div className="space-y-3">
+                          <div className="space-y-2 sm:space-y-3 text-sm">
                             <div className="flex justify-between">
-                              <span>Subtotal:</span>
+                              <span className="text-muted-foreground">Subtotal:</span>
                               <span>${subtotal.toFixed(2)}</span>
                             </div>
                             
                             <div>
-                              <Label htmlFor="discount">Discount Amount</Label>
+                              <Label htmlFor="discount" className="text-xs sm:text-sm">Discount</Label>
                               <Input
                                 id="discount"
                                 type="number"
@@ -651,18 +656,19 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
                                 value={discountAmount}
                                 onChange={(e) => setDiscountAmount(Math.max(0, Math.min(subtotal, parseFloat(e.target.value) || 0)))}
                                 placeholder="0.00"
+                                className="h-8 sm:h-9 text-sm"
                               />
                             </div>
 
                             {discountAmount > 0 && (
-                              <div className="flex justify-between text-green-600">
+                              <div className="flex justify-between text-success">
                                 <span>Discount:</span>
                                 <span>-${discountAmount.toFixed(2)}</span>
                               </div>
                             )}
 
                             <div className="flex items-center justify-between">
-                              <Label htmlFor="apply-tax">Apply Tax (10%)</Label>
+                              <Label htmlFor="apply-tax" className="text-xs sm:text-sm">Apply Tax (10%)</Label>
                               <Switch
                                 id="apply-tax"
                                 checked={applyTax}
@@ -671,32 +677,32 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
                             </div>
 
                             {applyTax && (
-                              <div className="flex justify-between">
+                              <div className="flex justify-between text-muted-foreground">
                                 <span>Tax (10%):</span>
                                 <span>${tax.toFixed(2)}</span>
                               </div>
                             )}
                             
                             <Separator />
-                            <div className="flex justify-between text-xl font-bold">
+                            <div className="flex justify-between text-base sm:text-xl font-bold">
                               <span>Total:</span>
-                              <span>${total.toFixed(2)}</span>
+                              <span className="text-primary">${total.toFixed(2)}</span>
                             </div>
                           </div>
 
-                          <div className="space-y-3">
+                          <div className="space-y-2 sm:space-y-3">
                             <div>
-                              <Label htmlFor="customer">Select Customer</Label>
+                              <Label htmlFor="customer" className="text-xs sm:text-sm">Customer</Label>
                               <div className="flex gap-2">
                                 <Select value={selectedCustomerId || "walk-in"} onValueChange={(value) => setSelectedCustomerId(value === "walk-in" ? "" : value)}>
-                                  <SelectTrigger className="flex-1">
+                                  <SelectTrigger className="flex-1 h-8 sm:h-9 text-xs sm:text-sm">
                                     <SelectValue placeholder="Walk-in customer" />
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="walk-in">Walk-in customer</SelectItem>
                                     {customers.map((customer) => (
                                       <SelectItem key={customer.id} value={customer.id}>
-                                        {customer.name} {customer.phone && `- ${customer.phone}`}
+                                        {customer.name}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -705,41 +711,43 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
                                   type="button"
                                   variant="outline"
                                   size="icon"
+                                  className="h-8 w-8 sm:h-9 sm:w-9"
                                   onClick={() => setShowAddCustomer(true)}
                                   title="Add new customer"
                                 >
-                                  <UserPlus className="h-4 w-4" />
+                                  <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
                                 </Button>
                               </div>
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                             <Button
                               onClick={() => processPayment('cash')}
                               disabled={isProcessing}
-                              className="w-full"
+                              className="w-full h-9 sm:h-10 text-xs sm:text-sm"
                             >
-                              <Banknote className="mr-2 h-4 w-4" />
-                              Cash
+                              <Banknote className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                              <span className="hidden sm:inline">Cash</span>
+                              <span className="sm:hidden">$</span>
                             </Button>
                             <Button
                               onClick={() => processPayment('card')}
                               disabled={isProcessing}
                               variant="secondary"
-                              className="w-full"
+                              className="w-full h-9 sm:h-10 text-xs sm:text-sm"
                             >
-                              <CreditCard className="mr-2 h-4 w-4" />
-                              Card
+                              <CreditCard className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                              <span className="hidden sm:inline">Card</span>
                             </Button>
                             <Button
                               onClick={() => setShowMobileMoneyDialog(true)}
                               disabled={isProcessing || cart.length === 0}
                               variant="outline"
-                              className="w-full bg-green-50 hover:bg-green-100 border-green-200 text-green-700 dark:bg-green-950 dark:hover:bg-green-900 dark:border-green-800 dark:text-green-300"
+                              className="w-full h-9 sm:h-10 text-xs sm:text-sm bg-success/10 hover:bg-success/20 border-success/30 text-success"
                             >
-                              <Smartphone className="mr-2 h-4 w-4" />
-                              Mobile
+                              <Smartphone className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                              <span className="hidden sm:inline">Mobile</span>
                             </Button>
                           </div>
                         </>
@@ -749,23 +757,23 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center py-8">
-                <Card className="w-full max-w-2xl">
-                  <CardHeader className="text-center">
-                    <div className="mx-auto w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mb-4">
-                      <CheckCircle className="h-6 w-6 text-white" />
+              <div className="flex items-center justify-center py-4 sm:py-8">
+                <Card className="w-full max-w-2xl shadow-card">
+                  <CardHeader className="text-center p-4 sm:p-6">
+                    <div className="mx-auto w-10 h-10 sm:w-12 sm:h-12 bg-success rounded-full flex items-center justify-center mb-3 sm:mb-4">
+                      <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-success-foreground" />
                     </div>
-                    <CardTitle className="text-2xl">Payment Successful!</CardTitle>
+                    <CardTitle className="text-lg sm:text-2xl">Payment Successful!</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div ref={receiptRef} className="p-6 bg-muted rounded-lg border">
+                  <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-6 pt-0">
+                    <div ref={receiptRef} className="p-3 sm:p-6 bg-muted rounded-lg border max-h-[40vh] overflow-y-auto">
                       {(() => {
                         try {
                           const receipt = JSON.parse(paymentCode);
                           return (
-                             <div className="space-y-4 font-mono text-sm">
-                              <div className="text-center border-b pb-4">
-                                <h2 className="text-xl font-bold">{receipt.businessName}</h2>
+                             <div className="space-y-3 sm:space-y-4 font-mono text-xs sm:text-sm">
+                              <div className="text-center border-b pb-3 sm:pb-4">
+                                <h2 className="text-base sm:text-xl font-bold">{receipt.businessName}</h2>
                                 {receipt.businessAddress && <p className="text-xs">{receipt.businessAddress}</p>}
                                 {(receipt.businessCity || receipt.businessCountry) && (
                                   <p className="text-xs">
@@ -776,42 +784,42 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
                                 {receipt.businessEmail && <p className="text-xs">Email: {receipt.businessEmail}</p>}
                               </div>
                               
-                              <div className="space-y-1">
+                              <div className="space-y-1 text-xs">
                                 <div className="flex justify-between">
-                                  <span>Receipt #:</span>
-                                  <span className="font-bold">{receipt.saleNumber}</span>
+                                  <span className="text-muted-foreground">Receipt #:</span>
+                                  <span className="font-bold truncate ml-2 max-w-[150px] sm:max-w-none">{receipt.saleNumber}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                  <span>Date:</span>
+                                  <span className="text-muted-foreground">Date:</span>
                                   <span>{receipt.date}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                  <span>Customer:</span>
+                                  <span className="text-muted-foreground">Customer:</span>
                                   <span>{receipt.customerName}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                  <span>Payment:</span>
+                                  <span className="text-muted-foreground">Payment:</span>
                                   <span className="uppercase">{receipt.paymentMethod}</span>
                                 </div>
                               </div>
 
                               <div className="border-t border-b py-2">
-                                <h3 className="font-bold mb-2">Items</h3>
+                                <h3 className="font-bold mb-2 text-xs sm:text-sm">Items</h3>
                                 {receipt.items.map((item: CartItem, idx: number) => (
                                   <div key={idx} className="flex justify-between text-xs">
-                                    <span>{item.name} x{item.quantity}</span>
+                                    <span className="truncate mr-2">{item.name} x{item.quantity}</span>
                                     <span>${(item.price * item.quantity).toFixed(2)}</span>
                                   </div>
                                 ))}
                               </div>
 
-                              <div className="space-y-1">
+                              <div className="space-y-1 text-xs">
                                 <div className="flex justify-between">
                                   <span>Subtotal:</span>
                                   <span>${receipt.subtotal.toFixed(2)}</span>
                                 </div>
                                 {receipt.discount > 0 && (
-                                  <div className="flex justify-between text-green-600">
+                                  <div className="flex justify-between text-success">
                                     <span>Discount:</span>
                                     <span>-${receipt.discount.toFixed(2)}</span>
                                   </div>
@@ -820,15 +828,15 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
                                   <span>Tax ({receipt.taxRate}):</span>
                                   <span>${receipt.tax.toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between font-bold text-base border-t pt-1">
+                                <div className="flex justify-between font-bold text-sm sm:text-base border-t pt-1">
                                   <span>TOTAL:</span>
-                                  <span>${receipt.total.toFixed(2)}</span>
+                                  <span className="text-primary">${receipt.total.toFixed(2)}</span>
                                 </div>
                               </div>
 
-                              <div className="text-center border-t pt-4 text-xs">
+                              <div className="text-center border-t pt-3 sm:pt-4 text-xs">
                                 <p className="font-bold">Thank you for your business!</p>
-                                <p>We appreciate your purchase</p>
+                                <p className="text-muted-foreground">We appreciate your purchase</p>
                               </div>
                             </div>
                           );
@@ -838,26 +846,26 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
                       })()}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2">
-                      <Button onClick={printReceipt} variant="outline" className="w-full">
-                        <Printer className="mr-2 h-4 w-4" />
-                        Print
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                      <Button onClick={printReceipt} variant="outline" className="w-full h-8 sm:h-10 text-xs sm:text-sm">
+                        <Printer className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="hidden sm:inline">Print</span>
                       </Button>
-                      <Button onClick={exportReceipt} variant="outline" className="w-full">
-                        <Download className="mr-2 h-4 w-4" />
-                        Export
+                      <Button onClick={exportReceipt} variant="outline" className="w-full h-8 sm:h-10 text-xs sm:text-sm">
+                        <Download className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="hidden sm:inline">Export</span>
                       </Button>
-                      <Button onClick={viewSaleDetails} variant="outline" className="w-full">
-                        <Eye className="mr-2 h-4 w-4" />
-                        Details
+                      <Button onClick={viewSaleDetails} variant="outline" className="w-full h-8 sm:h-10 text-xs sm:text-sm">
+                        <Eye className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                        <span className="hidden sm:inline">Details</span>
                       </Button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button onClick={handleNewSale} className="w-full">
+                    <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                      <Button onClick={handleNewSale} className="w-full h-9 sm:h-10 text-sm">
                         New Sale
                       </Button>
-                      <Button onClick={onClose} variant="outline" className="w-full">
+                      <Button onClick={onClose} variant="outline" className="w-full h-9 sm:h-10 text-sm">
                         Close
                       </Button>
                     </div>
@@ -881,21 +889,21 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
 
       {/* Mobile Money Payment Dialog */}
       <Dialog open={showMobileMoneyDialog} onOpenChange={setShowMobileMoneyDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[95vw] max-w-md mx-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Smartphone className="h-5 w-5 text-green-600" />
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Smartphone className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
               Mobile Money Payment
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs sm:text-sm">
               Pay TZS {Math.round(total * 2500).toLocaleString()} using mobile money
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
             <div className="space-y-2">
-              <Label htmlFor="provider">Select Provider</Label>
+              <Label htmlFor="provider" className="text-sm">Select Provider</Label>
               <Select value={mobileMoneyProvider} onValueChange={setMobileMoneyProvider}>
-                <SelectTrigger>
+                <SelectTrigger className="h-9 sm:h-10">
                   <SelectValue placeholder="Select provider" />
                 </SelectTrigger>
                 <SelectContent>
@@ -908,17 +916,17 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <div className="flex gap-2">
-                <div className="flex items-center px-3 border rounded-l-md bg-muted">
-                  <span className="text-sm text-muted-foreground">+255</span>
+              <Label htmlFor="phone" className="text-sm">Phone Number</Label>
+              <div className="flex">
+                <div className="flex items-center px-2 sm:px-3 border border-r-0 rounded-l-md bg-muted">
+                  <span className="text-xs sm:text-sm text-muted-foreground">+255</span>
                 </div>
                 <Input
                   id="phone"
                   placeholder="712345678"
                   value={mobileMoneyPhone}
                   onChange={(e) => setMobileMoneyPhone(e.target.value.replace(/\D/g, ''))}
-                  className="rounded-l-none"
+                  className="rounded-l-none h-9 sm:h-10"
                   maxLength={9}
                 />
               </div>
@@ -927,14 +935,14 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
               </p>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowMobileMoneyDialog(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setShowMobileMoneyDialog(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button 
               onClick={processMobileMoneyPayment} 
               disabled={isMobileMoneyProcessing || mobileMoneyPhone.length < 9}
-              className="bg-green-600 hover:bg-green-700"
+              className="w-full sm:w-auto bg-success hover:bg-success/90"
             >
               {isMobileMoneyProcessing ? (
                 <>

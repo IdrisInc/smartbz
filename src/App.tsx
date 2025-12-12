@@ -29,6 +29,7 @@ import NotFound from "./pages/NotFound";
 import Trunker from "./pages/Trunker";
 import CashRegisters from "./pages/CashRegisters";
 import ExpenseCategories from "./pages/ExpenseCategories";
+import PaymentHistory from "./pages/PaymentHistory";
 import PendingApprovals from "./pages/PendingApprovals";
 
 // Super Admin Pages
@@ -79,6 +80,7 @@ function App() {
                     <Route path="reports" element={<Reports />} />
                     <Route path="settings" element={<Settings />} />
                     <Route path="branches" element={<Branches />} />
+                    <Route path="payment-history" element={<PaymentHistory />} />
                     <Route path="trunker" element={<Trunker />} />
                     
                     {/* Super Admin Routes */}
