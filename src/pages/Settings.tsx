@@ -10,6 +10,7 @@ import { LogsSettings } from '@/components/Settings/LogsSettings';
 import { SubscriptionSettings } from '@/components/Settings/SubscriptionSettings';
 import { RolesPermissionsTab } from '@/components/Settings/RolesPermissionsTab';
 import { EmailTemplateSettings } from '@/components/Settings/EmailTemplateSettings';
+import { PaymentMethodSettings } from '@/components/Settings/PaymentMethodSettings';
 import { BranchManagement } from '@/components/Organization/BranchManagement';
 import { AdminUserRegistration } from '@/components/Admin/AdminUserRegistration';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -32,6 +33,7 @@ export default function Settings() {
             <TabsTrigger value="business">Business</TabsTrigger>
             <TabsTrigger value="subscription">Subscription</TabsTrigger>
             <TabsTrigger value="tax">Tax & Currency</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="features">Features</TabsTrigger>
             <TabsTrigger value="users">Users & Roles</TabsTrigger>
             <TabsTrigger value="branches">Branches</TabsTrigger>
@@ -55,6 +57,10 @@ export default function Settings() {
 
         <TabsContent value="tax">
           <TaxSettings />
+        </TabsContent>
+
+        <TabsContent value="payments">
+          <PaymentMethodSettings />
         </TabsContent>
 
         <TabsContent value="features">

@@ -376,10 +376,7 @@ export default function Sales() {
                         </div>
                       <div className="text-right space-y-1">
                           <div className="text-2xl font-bold">${sale.total_amount?.toLocaleString() || '0'}</div>
-                          <div className="flex gap-1 justify-end">
-                            <Badge variant={sale.payment_status === 'paid' ? 'default' : 'secondary'}>
-                              {sale.payment_status || 'pending'}
-                            </Badge>
+                          <div className="flex gap-1 justify-end flex-wrap">
                             <Badge 
                               variant={
                                 sale.confirmation_status === 'confirmed' ? 'default' : 
@@ -390,7 +387,8 @@ export default function Sales() {
                               {sale.confirmation_status === 'confirmed' && <Check className="h-3 w-3 mr-1" />}
                               {sale.confirmation_status === 'rejected' && <X className="h-3 w-3 mr-1" />}
                               {sale.confirmation_status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
-                              {sale.confirmation_status || 'pending'}
+                              {sale.confirmation_status === 'confirmed' ? 'Approved' : 
+                               sale.confirmation_status === 'rejected' ? 'Rejected' : 'Pending Approval'}
                             </Badge>
                           </div>
                         </div>
