@@ -17,8 +17,44 @@ interface TransactionEmailRequest {
   organizationId: string;
 }
 
+interface EmailTemplate {
+  subject: string;
+  header_text: string | null;
+  footer_text: string | null;
+  primary_color: string;
+  logo_url: string | null;
+  show_business_details: boolean;
+  show_items_table: boolean;
+  custom_message: string | null;
+  is_active: boolean;
+}
+
+const defaultTemplates: Record<string, EmailTemplate> = {
+  sale_confirmation: {
+    subject: 'Receipt for your purchase - {{sale_number}}',
+    header_text: 'Thank you for your purchase!',
+    footer_text: 'If you have any questions about this transaction, please contact us.',
+    primary_color: '#3b82f6',
+    logo_url: null,
+    show_business_details: true,
+    show_items_table: true,
+    custom_message: null,
+    is_active: true
+  },
+  purchase_order: {
+    subject: 'Purchase Order {{po_number}} from {{business_name}}',
+    header_text: 'Please find below the details of our purchase order:',
+    footer_text: 'Please confirm receipt of this order.',
+    primary_color: '#10b981',
+    logo_url: null,
+    show_business_details: true,
+    show_items_table: true,
+    custom_message: null,
+    is_active: true
+  }
+};
+
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -53,11 +89,32 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Failed to fetch organization details');
     }
 
+    // Get email template
+    const templateType = type === 'sale' ? 'sale_confirmation' : 'purchase_order';
+    const { data: customTemplate } = await supabaseAdmin
+      .from('email_templates')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('template_type', templateType)
+      .single();
+
+    const template: EmailTemplate = customTemplate || defaultTemplates[templateType];
+
+    // Check if template is active
+    if (!template.is_active) {
+      console.log(`Email template ${templateType} is disabled for organization ${organizationId}`);
+      return new Response(JSON.stringify({ success: false, message: 'Email notifications disabled' }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     let emailHtml = '';
-    let subject = '';
+    let subject = template.subject;
+
+    const primaryColor = template.primary_color || '#3b82f6';
 
     if (type === 'sale') {
-      // Get sale details
       const { data: sale, error: saleError } = await supabaseAdmin
         .from('sales')
         .select(`
@@ -82,88 +139,35 @@ const handler = async (req: Request): Promise<Response> => {
         throw new Error('Failed to fetch sale details');
       }
 
-      subject = `Receipt for your purchase - ${sale.sale_number || 'Sale'}`;
-      
-      const itemsHtml = sale.sale_items?.map((item: any) => `
+      // Replace template variables
+      subject = subject
+        .replace('{{sale_number}}', sale.sale_number || 'Sale')
+        .replace('{{business_name}}', org.name)
+        .replace('{{customer_name}}', recipientName);
+
+      const itemsHtml = template.show_items_table ? sale.sale_items?.map((item: any) => `
         <tr>
           <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.products?.name || 'Product'}</td>
           <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
           <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$${item.unit_price?.toFixed(2)}</td>
           <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$${item.total_amount?.toFixed(2)}</td>
         </tr>
-      `).join('') || '';
+      `).join('') : '';
 
-      emailHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { text-align: center; padding: 20px 0; border-bottom: 2px solid #333; }
-            .content { padding: 20px 0; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th { background-color: #f5f5f5; padding: 12px 8px; text-align: left; }
-            .total-row { font-weight: bold; background-color: #f9f9f9; }
-            .footer { text-align: center; padding: 20px 0; border-top: 1px solid #eee; color: #666; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1 style="margin: 0; color: #333;">${org.name}</h1>
-              ${org.address ? `<p style="margin: 5px 0;">${org.address}${org.city ? `, ${org.city}` : ''}</p>` : ''}
-              ${org.phone ? `<p style="margin: 5px 0;">Phone: ${org.phone}</p>` : ''}
-              ${org.email ? `<p style="margin: 5px 0;">Email: ${org.email}</p>` : ''}
-            </div>
-            
-            <div class="content">
-              <h2>Thank you for your purchase, ${recipientName}!</h2>
-              <p><strong>Receipt Number:</strong> ${sale.sale_number || 'N/A'}</p>
-              <p><strong>Date:</strong> ${new Date(sale.sale_date).toLocaleDateString()}</p>
-              <p><strong>Payment Method:</strong> ${sale.payment_method || 'N/A'}</p>
-              
-              <table>
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th style="text-align: center;">Qty</th>
-                    <th style="text-align: right;">Price</th>
-                    <th style="text-align: right;">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${itemsHtml}
-                  ${sale.discount_amount ? `
-                    <tr>
-                      <td colspan="3" style="padding: 8px; text-align: right;">Discount:</td>
-                      <td style="padding: 8px; text-align: right;">-$${sale.discount_amount.toFixed(2)}</td>
-                    </tr>
-                  ` : ''}
-                  ${sale.tax_amount ? `
-                    <tr>
-                      <td colspan="3" style="padding: 8px; text-align: right;">Tax:</td>
-                      <td style="padding: 8px; text-align: right;">$${sale.tax_amount.toFixed(2)}</td>
-                    </tr>
-                  ` : ''}
-                  <tr class="total-row">
-                    <td colspan="3" style="padding: 12px 8px; text-align: right;">Total:</td>
-                    <td style="padding: 12px 8px; text-align: right;">$${sale.total_amount?.toFixed(2)}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            
-            <div class="footer">
-              <p>Thank you for your business!</p>
-              <p>If you have any questions about this transaction, please contact us.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
+      emailHtml = generateEmailHtml({
+        org,
+        template,
+        primaryColor,
+        recipientName,
+        referenceNumber: sale.sale_number || 'N/A',
+        date: new Date(sale.sale_date).toLocaleDateString(),
+        paymentMethod: sale.payment_method,
+        itemsHtml,
+        discountAmount: sale.discount_amount,
+        taxAmount: sale.tax_amount,
+        totalAmount: sale.total_amount
+      });
     } else if (type === 'purchase') {
-      // Get purchase order details
       const { data: po, error: poError } = await supabaseAdmin
         .from('purchase_orders')
         .select(`
@@ -188,79 +192,33 @@ const handler = async (req: Request): Promise<Response> => {
         throw new Error('Failed to fetch purchase order details');
       }
 
-      subject = `Purchase Order ${po.po_number} from ${org.name}`;
+      // Replace template variables
+      subject = subject
+        .replace('{{po_number}}', po.po_number)
+        .replace('{{business_name}}', org.name)
+        .replace('{{customer_name}}', recipientName);
 
-      const itemsHtml = po.purchase_order_items?.map((item: any) => `
+      const itemsHtml = template.show_items_table ? po.purchase_order_items?.map((item: any) => `
         <tr>
           <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.products?.name || 'Product'}</td>
           <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
           <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$${item.unit_price?.toFixed(2)}</td>
           <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">$${item.total_amount?.toFixed(2)}</td>
         </tr>
-      `).join('') || '';
+      `).join('') : '';
 
-      emailHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { text-align: center; padding: 20px 0; border-bottom: 2px solid #333; }
-            .content { padding: 20px 0; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th { background-color: #f5f5f5; padding: 12px 8px; text-align: left; }
-            .total-row { font-weight: bold; background-color: #f9f9f9; }
-            .footer { text-align: center; padding: 20px 0; border-top: 1px solid #eee; color: #666; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1 style="margin: 0; color: #333;">${org.name}</h1>
-              ${org.address ? `<p style="margin: 5px 0;">${org.address}${org.city ? `, ${org.city}` : ''}</p>` : ''}
-              ${org.phone ? `<p style="margin: 5px 0;">Phone: ${org.phone}</p>` : ''}
-              ${org.email ? `<p style="margin: 5px 0;">Email: ${org.email}</p>` : ''}
-            </div>
-            
-            <div class="content">
-              <h2>Purchase Order</h2>
-              <p>Dear ${recipientName},</p>
-              <p>Please find below the details of our purchase order:</p>
-              
-              <p><strong>PO Number:</strong> ${po.po_number}</p>
-              <p><strong>Order Date:</strong> ${new Date(po.order_date).toLocaleDateString()}</p>
-              ${po.expected_date ? `<p><strong>Expected Delivery:</strong> ${new Date(po.expected_date).toLocaleDateString()}</p>` : ''}
-              
-              <table>
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th style="text-align: center;">Qty</th>
-                    <th style="text-align: right;">Unit Price</th>
-                    <th style="text-align: right;">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${itemsHtml}
-                  <tr class="total-row">
-                    <td colspan="3" style="padding: 12px 8px; text-align: right;">Total:</td>
-                    <td style="padding: 12px 8px; text-align: right;">$${po.total_amount?.toFixed(2)}</td>
-                  </tr>
-                </tbody>
-              </table>
-              
-              ${po.notes ? `<p><strong>Notes:</strong> ${po.notes}</p>` : ''}
-            </div>
-            
-            <div class="footer">
-              <p>Please confirm receipt of this order.</p>
-              <p>For any questions, please contact us at ${org.email || 'our office'}.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
+      emailHtml = generateEmailHtml({
+        org,
+        template,
+        primaryColor,
+        recipientName,
+        referenceNumber: po.po_number,
+        date: new Date(po.order_date).toLocaleDateString(),
+        expectedDate: po.expected_date ? new Date(po.expected_date).toLocaleDateString() : null,
+        itemsHtml,
+        totalAmount: po.total_amount,
+        notes: po.notes
+      });
     }
 
     const emailResponse = await resend.emails.send({
@@ -287,5 +245,108 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 };
+
+function generateEmailHtml(params: {
+  org: any;
+  template: EmailTemplate;
+  primaryColor: string;
+  recipientName: string;
+  referenceNumber: string;
+  date: string;
+  paymentMethod?: string | null;
+  expectedDate?: string | null;
+  itemsHtml: string;
+  discountAmount?: number | null;
+  taxAmount?: number | null;
+  totalAmount: number;
+  notes?: string | null;
+}): string {
+  const { org, template, primaryColor, recipientName, referenceNumber, date, paymentMethod, expectedDate, itemsHtml, discountAmount, taxAmount, totalAmount, notes } = params;
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; padding: 20px 0; border-bottom: 2px solid ${primaryColor}; }
+        .content { padding: 20px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th { background-color: #f5f5f5; padding: 12px 8px; text-align: left; }
+        .total-row { font-weight: bold; background-color: #f9f9f9; }
+        .footer { text-align: center; padding: 20px 0; border-top: 1px solid #eee; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          ${template.logo_url ? `<img src="${template.logo_url}" alt="${org.name}" style="max-height: 60px; margin-bottom: 10px;">` : ''}
+          <h1 style="margin: 0; color: ${primaryColor};">${org.name}</h1>
+          ${template.show_business_details ? `
+            ${org.address ? `<p style="margin: 5px 0; color: #666; font-size: 14px;">${org.address}${org.city ? `, ${org.city}` : ''}</p>` : ''}
+            ${org.phone ? `<p style="margin: 5px 0; color: #666; font-size: 14px;">Phone: ${org.phone}</p>` : ''}
+            ${org.email ? `<p style="margin: 5px 0; color: #666; font-size: 14px;">Email: ${org.email}</p>` : ''}
+          ` : ''}
+        </div>
+        
+        <div class="content">
+          <h2 style="color: #333;">${template.header_text || ''}, ${recipientName}!</h2>
+          
+          ${template.custom_message ? `<p style="color: #666; margin-bottom: 20px;">${template.custom_message}</p>` : ''}
+          
+          <p><strong>Reference:</strong> ${referenceNumber}</p>
+          <p><strong>Date:</strong> ${date}</p>
+          ${paymentMethod ? `<p><strong>Payment Method:</strong> ${paymentMethod}</p>` : ''}
+          ${expectedDate ? `<p><strong>Expected Delivery:</strong> ${expectedDate}</p>` : ''}
+          
+          ${template.show_items_table && itemsHtml ? `
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th style="text-align: center;">Qty</th>
+                  <th style="text-align: right;">Price</th>
+                  <th style="text-align: right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+                ${discountAmount ? `
+                  <tr>
+                    <td colspan="3" style="padding: 8px; text-align: right;">Discount:</td>
+                    <td style="padding: 8px; text-align: right;">-$${discountAmount.toFixed(2)}</td>
+                  </tr>
+                ` : ''}
+                ${taxAmount ? `
+                  <tr>
+                    <td colspan="3" style="padding: 8px; text-align: right;">Tax:</td>
+                    <td style="padding: 8px; text-align: right;">$${taxAmount.toFixed(2)}</td>
+                  </tr>
+                ` : ''}
+                <tr class="total-row">
+                  <td colspan="3" style="padding: 12px 8px; text-align: right;">Total:</td>
+                  <td style="padding: 12px 8px; text-align: right;">$${totalAmount?.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+          ` : `
+            <p style="font-size: 18px; font-weight: bold; color: ${primaryColor};">Total: $${totalAmount?.toFixed(2)}</p>
+          `}
+          
+          ${notes ? `<p><strong>Notes:</strong> ${notes}</p>` : ''}
+        </div>
+        
+        <div class="footer">
+          <p>${template.footer_text || 'Thank you for your business!'}</p>
+          ${org.email ? `<p>For any questions, please contact us at ${org.email}</p>` : ''}
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
 
 serve(handler);

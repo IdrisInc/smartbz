@@ -349,6 +349,65 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          created_at: string
+          custom_message: string | null
+          footer_text: string | null
+          header_text: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          organization_id: string
+          primary_color: string | null
+          show_business_details: boolean | null
+          show_items_table: boolean | null
+          subject: string
+          template_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custom_message?: string | null
+          footer_text?: string | null
+          header_text?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          organization_id: string
+          primary_color?: string | null
+          show_business_details?: boolean | null
+          show_items_table?: boolean | null
+          subject: string
+          template_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custom_message?: string | null
+          footer_text?: string | null
+          header_text?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          organization_id?: string
+          primary_color?: string | null
+          show_business_details?: boolean | null
+          show_items_table?: boolean | null
+          subject?: string
+          template_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           branch_id: string | null
