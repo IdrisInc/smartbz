@@ -9,12 +9,14 @@ import { UserSettings } from '@/components/Settings/UserSettings';
 import { LogsSettings } from '@/components/Settings/LogsSettings';
 import { SubscriptionSettings } from '@/components/Settings/SubscriptionSettings';
 import { RolesPermissionsTab } from '@/components/Settings/RolesPermissionsTab';
+import { EmailTemplateSettings } from '@/components/Settings/EmailTemplateSettings';
 import { BranchManagement } from '@/components/Organization/BranchManagement';
 import { AdminUserRegistration } from '@/components/Admin/AdminUserRegistration';
 import { useUserRole } from '@/hooks/useUserRole';
 
 export default function Settings() {
   const { userRole } = useUserRole();
+  const isBusinessOwnerOrAdmin = userRole === 'business_owner' || userRole === 'super_admin';
   
   return (
     <div className="space-y-6">
@@ -26,7 +28,7 @@ export default function Settings() {
       </div>
 
         <Tabs defaultValue="business" className="space-y-4">
-          <TabsList className={`grid w-full ${userRole === 'super_admin' ? 'grid-cols-9' : 'grid-cols-8'}`}>
+          <TabsList className="flex flex-wrap gap-1">
             <TabsTrigger value="business">Business</TabsTrigger>
             <TabsTrigger value="subscription">Subscription</TabsTrigger>
             <TabsTrigger value="tax">Tax & Currency</TabsTrigger>
@@ -34,6 +36,9 @@ export default function Settings() {
             <TabsTrigger value="users">Users & Roles</TabsTrigger>
             <TabsTrigger value="branches">Branches</TabsTrigger>
             <TabsTrigger value="permissions">Permissions</TabsTrigger>
+            {isBusinessOwnerOrAdmin && (
+              <TabsTrigger value="email">Email Templates</TabsTrigger>
+            )}
             <TabsTrigger value="logs">System Logs</TabsTrigger>
             {userRole === 'super_admin' && (
               <TabsTrigger value="admin">Admin</TabsTrigger>
@@ -68,6 +73,12 @@ export default function Settings() {
           <RolesPermissionsTab />
         </TabsContent>
 
+        {isBusinessOwnerOrAdmin && (
+          <TabsContent value="email">
+            <EmailTemplateSettings />
+          </TabsContent>
+        )}
+
           <TabsContent value="logs">
             <LogsSettings />
           </TabsContent>
@@ -81,3 +92,4 @@ export default function Settings() {
     </div>
   );
 }
+
