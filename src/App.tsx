@@ -29,6 +29,7 @@ import NotFound from "./pages/NotFound";
 import Trunker from "./pages/Trunker";
 import CashRegisters from "./pages/CashRegisters";
 import ExpenseCategories from "./pages/ExpenseCategories";
+import PendingApprovals from "./pages/PendingApprovals";
 
 // Super Admin Pages
 import SuperAdminOwners from "./pages/SuperAdminOwners";
@@ -67,6 +68,7 @@ function App() {
                   }>
                     <Route index element={<Dashboard />} />
                     <Route path="sales" element={<Sales />} />
+                    <Route path="pending-approvals" element={<PendingApprovals />} />
                     <Route path="products" element={<Products />} />
                     <Route path="inventory" element={<Inventory />} />
                     <Route path="contacts" element={<Contacts />} />
