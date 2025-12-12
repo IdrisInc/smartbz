@@ -43,3 +43,9 @@ verify_jwt = false
 
 [functions.send-transaction-email]
 verify_jwt = true
+
+[functions.clickpesa-payment]
+verify_jwt = true
+
+[functions.clickpesa-callback]
+verify_jwt = false

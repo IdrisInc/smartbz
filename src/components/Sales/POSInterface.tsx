@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
-import { Search, ShoppingCart, CreditCard, Banknote, Copy, CheckCircle, Mail, Phone, UserPlus, Printer, Download, Eye } from 'lucide-react';
+import { Search, ShoppingCart, CreditCard, Banknote, Copy, CheckCircle, Mail, Phone, UserPlus, Printer, Download, Eye, Smartphone, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -50,6 +50,10 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
   const [discountAmount, setDiscountAmount] = useState(0);
   const [businessSettings, setBusinessSettings] = useState<any>(null);
   const [completedSaleId, setCompletedSaleId] = useState<string>('');
+  const [showMobileMoneyDialog, setShowMobileMoneyDialog] = useState(false);
+  const [mobileMoneyPhone, setMobileMoneyPhone] = useState('');
+  const [mobileMoneyProvider, setMobileMoneyProvider] = useState('MPESA');
+  const [isMobileMoneyProcessing, setIsMobileMoneyProcessing] = useState(false);
   const receiptRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { currentOrganization } = useOrganization();
@@ -274,6 +278,117 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
       });
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const processMobileMoneyPayment = async () => {
+    if (cart.length === 0 || !mobileMoneyPhone || mobileMoneyPhone.length < 9) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid phone number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsMobileMoneyProcessing(true);
+
+    try {
+      const saleNumber = generateSaleNumber();
+      const selectedCustomer = selectedCustomerId ? customers.find(c => c.id === selectedCustomerId) : null;
+      const customerName = selectedCustomer?.name || 'Walk-in Customer';
+
+      // Create sale record first (pending status)
+      const { data: saleData, error: saleError } = await supabase
+        .from('sales')
+        .insert({
+          organization_id: currentOrganization?.id,
+          contact_id: selectedCustomerId || null,
+          sale_number: saleNumber,
+          total_amount: total,
+          tax_amount: tax,
+          discount_amount: discountAmount,
+          payment_status: 'pending',
+          payment_method: 'mobile_money',
+        })
+        .select()
+        .single();
+
+      if (saleError) throw saleError;
+
+      // Create sale items
+      const saleItems = cart.map(item => ({
+        sale_id: saleData.id,
+        product_id: item.id,
+        quantity: item.quantity,
+        unit_price: item.price,
+        total_amount: item.price * item.quantity,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('sale_items')
+        .insert(saleItems);
+
+      if (itemsError) throw itemsError;
+
+      // Initiate ClickPesa payment
+      const { data, error: paymentError } = await supabase.functions.invoke('clickpesa-payment', {
+        body: {
+          amount: Math.round(total * 2500), // Convert to TZS (approximate rate)
+          phone: `255${mobileMoneyPhone}`,
+          provider: mobileMoneyProvider,
+          reference: saleNumber,
+          description: `Payment for ${saleNumber}`,
+          paymentType: 'sale',
+          organizationId: currentOrganization?.id,
+          saleId: saleData.id,
+        },
+      });
+
+      if (paymentError) throw paymentError;
+
+      if (data.success) {
+        toast({
+          title: "Payment Request Sent",
+          description: data.message || "Check your phone for the USSD prompt to complete payment",
+        });
+
+        // Update product stock (optimistic - could be reverted if payment fails)
+        for (const item of cart) {
+          const { data: productData, error: fetchError } = await supabase
+            .from('products')
+            .select('stock_quantity')
+            .eq('id', item.id)
+            .single();
+
+          if (fetchError) throw fetchError;
+
+          const newStock = productData.stock_quantity - item.quantity;
+          await supabase
+            .from('products')
+            .update({ stock_quantity: newStock })
+            .eq('id', item.id);
+        }
+
+        // Generate receipt
+        const receipt = generateReceipt(saleData.id, saleNumber, customerName);
+        receipt.paymentMethod = `Mobile Money (${mobileMoneyProvider})`;
+        setPaymentCode(JSON.stringify(receipt, null, 2));
+        setCompletedSaleId(saleData.id);
+        setShowMobileMoneyDialog(false);
+        setShowPaymentCode(true);
+      } else {
+        throw new Error(data.error || 'Payment initiation failed');
+      }
+    } catch (error: any) {
+      console.error('Mobile money payment error:', error);
+      toast({
+        variant: "destructive",
+        title: "Payment Failed",
+        description: error.message || "There was an error processing the mobile money payment.",
+      });
+    } finally {
+      setIsMobileMoneyProcessing(false);
     }
   };
 
@@ -599,14 +714,14 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-3 gap-2">
                             <Button
                               onClick={() => processPayment('cash')}
                               disabled={isProcessing}
                               className="w-full"
                             >
                               <Banknote className="mr-2 h-4 w-4" />
-                              Pay with Cash
+                              Cash
                             </Button>
                             <Button
                               onClick={() => processPayment('card')}
@@ -615,7 +730,16 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
                               className="w-full"
                             >
                               <CreditCard className="mr-2 h-4 w-4" />
-                              Pay with Card
+                              Card
+                            </Button>
+                            <Button
+                              onClick={() => setShowMobileMoneyDialog(true)}
+                              disabled={isProcessing || cart.length === 0}
+                              variant="outline"
+                              className="w-full bg-green-50 hover:bg-green-100 border-green-200 text-green-700 dark:bg-green-950 dark:hover:bg-green-900 dark:border-green-800 dark:text-green-300"
+                            >
+                              <Smartphone className="mr-2 h-4 w-4" />
+                              Mobile
                             </Button>
                           </div>
                         </>
@@ -754,6 +878,79 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
           }}
         />
       )}
+
+      {/* Mobile Money Payment Dialog */}
+      <Dialog open={showMobileMoneyDialog} onOpenChange={setShowMobileMoneyDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Smartphone className="h-5 w-5 text-green-600" />
+              Mobile Money Payment
+            </DialogTitle>
+            <DialogDescription>
+              Pay TZS {Math.round(total * 2500).toLocaleString()} using mobile money
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="provider">Select Provider</Label>
+              <Select value={mobileMoneyProvider} onValueChange={setMobileMoneyProvider}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MPESA">M-Pesa (Vodacom)</SelectItem>
+                  <SelectItem value="TIGOPESA">Tigo Pesa (Mixx by Yas)</SelectItem>
+                  <SelectItem value="AIRTELMONEY">Airtel Money</SelectItem>
+                  <SelectItem value="HALOPESA">Halopesa</SelectItem>
+                  <SelectItem value="EZYPESA">EzyPesa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <div className="flex gap-2">
+                <div className="flex items-center px-3 border rounded-l-md bg-muted">
+                  <span className="text-sm text-muted-foreground">+255</span>
+                </div>
+                <Input
+                  id="phone"
+                  placeholder="712345678"
+                  value={mobileMoneyPhone}
+                  onChange={(e) => setMobileMoneyPhone(e.target.value.replace(/\D/g, ''))}
+                  className="rounded-l-none"
+                  maxLength={9}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Enter phone number without the country code
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMobileMoneyDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={processMobileMoneyPayment} 
+              disabled={isMobileMoneyProcessing || mobileMoneyPhone.length < 9}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isMobileMoneyProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Phone className="h-4 w-4 mr-2" />
+                  Send Payment Request
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
