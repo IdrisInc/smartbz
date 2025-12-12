@@ -1619,6 +1619,9 @@ export type Database = {
       sales: {
         Row: {
           branch_id: string | null
+          confirmation_status: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
           contact_id: string | null
           created_at: string
           discount_amount: number | null
@@ -1628,6 +1631,7 @@ export type Database = {
           organization_id: string
           payment_method: string | null
           payment_status: string | null
+          rejection_reason: string | null
           sale_date: string
           sale_number: string | null
           tax_amount: number | null
@@ -1636,6 +1640,9 @@ export type Database = {
         }
         Insert: {
           branch_id?: string | null
+          confirmation_status?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           contact_id?: string | null
           created_at?: string
           discount_amount?: number | null
@@ -1645,6 +1652,7 @@ export type Database = {
           organization_id: string
           payment_method?: string | null
           payment_status?: string | null
+          rejection_reason?: string | null
           sale_date?: string
           sale_number?: string | null
           tax_amount?: number | null
@@ -1653,6 +1661,9 @@ export type Database = {
         }
         Update: {
           branch_id?: string | null
+          confirmation_status?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           contact_id?: string | null
           created_at?: string
           discount_amount?: number | null
@@ -1662,6 +1673,7 @@ export type Database = {
           organization_id?: string
           payment_method?: string | null
           payment_status?: string | null
+          rejection_reason?: string | null
           sale_date?: string
           sale_number?: string | null
           tax_amount?: number | null
