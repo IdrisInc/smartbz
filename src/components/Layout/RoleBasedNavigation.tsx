@@ -25,7 +25,8 @@ import {
   Tag,
   FolderOpen,
   DollarSign,
-  CheckSquare
+  CheckSquare,
+  Smartphone
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -65,6 +66,7 @@ export function useRoleBasedNavigation() {
     { title: "Expense Categories", url: "/expense-categories", icon: FolderOpen, requiredPermission: 'canManageExpenses' },
     { title: "Cash Registers", url: "/cash-registers", icon: DollarSign, requiredPermission: 'canProcessSales' },
     { title: "Contacts", url: "/contacts", icon: Users, requiredPermission: 'canManageContacts' },
+    { title: "Payment History", url: "/payment-history", icon: Smartphone, requiredPermission: 'canManageFinances' },
     { title: "Reports", url: "/reports", icon: TrendingUp, requiredPermission: 'canViewReports' },
     { title: "Trunker", url: "/trunker", icon: FileText, requiredPermission: 'canViewLogs' },
     { title: "Settings", url: "/settings", icon: Settings, requiredPermission: 'canManageSettings' },
