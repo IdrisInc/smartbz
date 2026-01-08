@@ -31,6 +31,9 @@ import CashRegisters from "./pages/CashRegisters";
 import ExpenseCategories from "./pages/ExpenseCategories";
 import PaymentHistory from "./pages/PaymentHistory";
 import PendingApprovals from "./pages/PendingApprovals";
+import FAQ from "./pages/FAQ";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 
 // Super Admin Pages
 import SuperAdminOwners from "./pages/SuperAdminOwners";
@@ -54,7 +57,10 @@ function App() {
             <OrganizationProvider>
               <OnboardingProvider>
                 <Routes>
-                  <Route path="/auth" element={<Auth />} />
+                <Route path="/auth" element={<Auth />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
                   <Route path="/onboarding" element={
                     <ProtectedRoute>
                       <Onboarding />

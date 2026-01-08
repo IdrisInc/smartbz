@@ -4,7 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { BusinessOwnersManagement } from './BusinessOwnersManagement';
-import { Building2, Users, CreditCard, Activity, TrendingUp, AlertTriangle } from 'lucide-react';
+import { FeatureConfigTab } from './FeatureConfigTab';
+import { FooterLinksTab } from './FooterLinksTab';
+import { Building2, Users, CreditCard, Activity, TrendingUp, AlertTriangle, Settings, Link } from 'lucide-react';
 
 interface DashboardStats {
   totalOrganizations: number;
@@ -171,9 +173,11 @@ export function SuperAdminDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="business-owners">Business Owners</TabsTrigger>
+          <TabsTrigger value="features">Feature Config</TabsTrigger>
+          <TabsTrigger value="footer-links">Footer Links</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
@@ -216,6 +220,14 @@ export function SuperAdminDashboard() {
 
         <TabsContent value="business-owners">
           <BusinessOwnersManagement />
+        </TabsContent>
+
+        <TabsContent value="features">
+          <FeatureConfigTab />
+        </TabsContent>
+
+        <TabsContent value="footer-links">
+          <FooterLinksTab />
         </TabsContent>
 
         <TabsContent value="analytics">
