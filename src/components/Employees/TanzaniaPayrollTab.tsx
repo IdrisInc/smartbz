@@ -473,7 +473,7 @@ export function TanzaniaPayrollTab({ onRefresh }: PayrollTabProps) {
         </TabsContent>
 
         <TabsContent value="reports">
-          <PayrollReportsTab payrollData={payrollData} totals={totals} />
+          <PayrollReportsTab />
         </TabsContent>
       </Tabs>
 

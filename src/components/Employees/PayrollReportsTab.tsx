@@ -1,36 +1,126 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, FileText, Building2, Users, Briefcase } from 'lucide-react';
-import { formatTZS, PayrollResult } from '@/lib/payrollCalculator';
+import { Download, FileText, Building2, Users, Briefcase, Loader2 } from 'lucide-react';
+import { formatTZS, calculatePayroll, PayrollResult } from '@/lib/payrollCalculator';
 import { useExportUtils } from '@/hooks/useExportUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 
-interface PayrollReportsTabProps {
-  payrollData: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    position: string;
-    payrollResult: PayrollResult;
-  }[];
-  totals: {
-    gross: number;
-    paye: number;
-    nssfEmployee: number;
-    nssfEmployer: number;
-    wcf: number;
-    sdl: number;
-    net: number;
-    deductions: number;
-  };
+interface PayrollData {
+  id: string;
+  firstName: string;
+  lastName: string;
+  position: string;
+  payrollResult: PayrollResult;
 }
 
-export function PayrollReportsTab({ payrollData, totals }: PayrollReportsTabProps) {
+interface Totals {
+  gross: number;
+  paye: number;
+  nssfEmployee: number;
+  nssfEmployer: number;
+  wcf: number;
+  sdl: number;
+  net: number;
+  deductions: number;
+}
+
+export function PayrollReportsTab() {
   const { exportToCSV } = useExportUtils();
   const { currentOrganization } = useOrganization();
   const currentMonth = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+  const [loading, setLoading] = useState(true);
+  const [payrollData, setPayrollData] = useState<PayrollData[]>([]);
+  const [totals, setTotals] = useState<Totals>({
+    gross: 0,
+    paye: 0,
+    nssfEmployee: 0,
+    nssfEmployer: 0,
+    wcf: 0,
+    sdl: 0,
+    net: 0,
+    deductions: 0,
+  });
+
+  useEffect(() => {
+    if (currentOrganization) {
+      fetchPayrollData();
+    }
+  }, [currentOrganization]);
+
+  const fetchPayrollData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch employees with payroll details
+      const { data: employees, error } = await supabase
+        .from('employees')
+        .select(`
+          id, first_name, last_name, position, salary,
+          employee_payroll_details (
+            basic_salary, housing_allowance, transport_allowance, other_allowances
+          )
+        `)
+        .eq('organization_id', currentOrganization?.id)
+        .eq('status', 'active');
+
+      if (error) throw error;
+
+      const employeeCount = employees?.length || 0;
+      const processedData: PayrollData[] = [];
+      let newTotals: Totals = {
+        gross: 0,
+        paye: 0,
+        nssfEmployee: 0,
+        nssfEmployer: 0,
+        wcf: 0,
+        sdl: 0,
+        net: 0,
+        deductions: 0,
+      };
+
+      for (const emp of employees || []) {
+        const payrollDetails = emp.employee_payroll_details?.[0];
+        const basicSalary = payrollDetails?.basic_salary || emp.salary || 0;
+        
+        if (basicSalary > 0) {
+          const result = calculatePayroll({
+            basicSalary,
+            housingAllowance: payrollDetails?.housing_allowance || 0,
+            transportAllowance: payrollDetails?.transport_allowance || 0,
+            otherAllowances: payrollDetails?.other_allowances || 0,
+            totalEmployees: employeeCount,
+          });
+
+          processedData.push({
+            id: emp.id,
+            firstName: emp.first_name,
+            lastName: emp.last_name,
+            position: emp.position || 'Staff',
+            payrollResult: result,
+          });
+
+          newTotals.gross += result.grossSalary;
+          newTotals.paye += result.paye;
+          newTotals.nssfEmployee += result.nssfEmployee;
+          newTotals.nssfEmployer += result.nssfEmployer;
+          newTotals.wcf += result.wcfEmployer;
+          newTotals.sdl += result.sdlEmployer;
+          newTotals.net += result.netSalary;
+          newTotals.deductions += result.totalDeductions;
+        }
+      }
+
+      setPayrollData(processedData);
+      setTotals(newTotals);
+    } catch (error) {
+      console.error('Error fetching payroll data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const exportTRAReport = () => {
     const data = payrollData.map(emp => ({
@@ -41,7 +131,6 @@ export function PayrollReportsTab({ payrollData, totals }: PayrollReportsTabProp
       'PAYE (TZS)': emp.payrollResult.paye,
     }));
     
-    // Add totals row
     data.push({
       'Employee Name': 'TOTAL',
       'Gross Salary (TZS)': totals.gross,
@@ -90,6 +179,28 @@ export function PayrollReportsTab({ payrollData, totals }: PayrollReportsTabProp
     
     exportToCSV(data, `SDL_WCF_Report_${currentMonth.replace(' ', '_')}`);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (payrollData.length === 0) {
+    return (
+      <Card>
+        <CardContent className="text-center py-12">
+          <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Payroll Data</h3>
+          <p className="text-muted-foreground">
+            Set up employee payroll details in the Tanzania Payroll tab to generate reports.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">

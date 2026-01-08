@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { PayrollTab } from '@/components/Employees/PayrollTab';
+import { TanzaniaPayrollTab } from '@/components/Employees/TanzaniaPayrollTab';
+import { PayrollReportsTab } from '@/components/Employees/PayrollReportsTab';
 import { AttendanceTab } from '@/components/Employees/AttendanceTab';
 import { PerformanceTab } from '@/components/Employees/PerformanceTab';
 import { EmployeeDialog } from '@/components/Employees/EmployeeDialog';
@@ -261,9 +262,10 @@ export default function Employees() {
       </div>
 
       <Tabs defaultValue="employees" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="employees">Employee Directory</TabsTrigger>
-          <TabsTrigger value="payroll">Payroll</TabsTrigger>
+          <TabsTrigger value="payroll">Tanzania Payroll</TabsTrigger>
+          <TabsTrigger value="reports">Payroll Reports</TabsTrigger>
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
         </TabsList>
@@ -382,7 +384,11 @@ export default function Employees() {
         </TabsContent>
 
         <TabsContent value="payroll">
-          <PayrollTab onRefresh={fetchEmployees} />
+          <TanzaniaPayrollTab />
+        </TabsContent>
+
+        <TabsContent value="reports">
+          <PayrollReportsTab />
         </TabsContent>
 
         <TabsContent value="attendance">

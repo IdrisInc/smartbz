@@ -6,6 +6,7 @@ import { CheckCircle2, Building2, MapPin, Users } from 'lucide-react';
 import { BusinessRegistrationStep } from './BusinessRegistrationStep';
 import { BranchRegistrationStep } from './BranchRegistrationStep';
 import { OnboardingComplete } from './OnboardingComplete';
+import { OnboardingFooter } from './OnboardingFooter';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -92,15 +93,35 @@ export function OnboardingFlow() {
   const progress = (completedSteps.length / steps.length) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-hero p-4 overflow-hidden relative">
+    <div className="min-h-screen bg-gradient-hero flex flex-col overflow-hidden relative">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-20 w-32 h-32 bg-primary/10 rounded-full animate-float"></div>
         <div className="absolute bottom-20 right-20 w-24 h-24 bg-primary-glow/10 rounded-full animate-float" style={{animationDelay: '1s'}}></div>
         <div className="absolute top-1/2 right-1/4 w-16 h-16 bg-primary/5 rounded-full animate-float" style={{animationDelay: '2s'}}></div>
+        {/* Decorative images/patterns */}
+        <div className="absolute top-10 right-10 w-48 h-48 opacity-20">
+          <svg viewBox="0 0 200 200" className="w-full h-full text-primary">
+            <defs>
+              <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="currentColor" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="currentColor" stopOpacity="0.1" />
+              </linearGradient>
+            </defs>
+            <circle cx="100" cy="100" r="80" fill="url(#grad1)" />
+            <circle cx="100" cy="100" r="60" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 5" />
+            <circle cx="100" cy="100" r="40" fill="none" stroke="currentColor" strokeWidth="1" />
+          </svg>
+        </div>
+        <div className="absolute bottom-32 left-10 w-36 h-36 opacity-15">
+          <svg viewBox="0 0 100 100" className="w-full h-full text-primary">
+            <rect x="10" y="10" width="80" height="80" rx="10" fill="currentColor" fillOpacity="0.2" />
+            <rect x="25" y="25" width="50" height="50" rx="5" fill="none" stroke="currentColor" strokeWidth="2" />
+          </svg>
+        </div>
       </div>
       
-      <div className="max-w-4xl mx-auto space-y-8 relative z-10">
+      <div className="flex-1 max-w-4xl mx-auto space-y-8 relative z-10 p-4 sm:p-6 lg:p-8">
         {/* Enhanced Header */}
         <div className="text-center space-y-6 animate-fade-in">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-primary rounded-full mb-4 animate-glow">
@@ -207,6 +228,9 @@ export function OnboardingFlow() {
           )}
         </div>
       </div>
+      
+      {/* Footer */}
+      <OnboardingFooter />
     </div>
   );
 }
