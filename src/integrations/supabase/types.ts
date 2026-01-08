@@ -408,6 +408,75 @@ export type Database = {
           },
         ]
       }
+      employee_payroll_details: {
+        Row: {
+          bank_account_number: string | null
+          bank_branch: string | null
+          bank_name: string | null
+          basic_salary: number | null
+          created_at: string
+          employee_id: string
+          employment_type: string | null
+          housing_allowance: number | null
+          id: string
+          nssf_number: string | null
+          organization_id: string
+          other_allowances: number | null
+          tin_number: string | null
+          transport_allowance: number | null
+          updated_at: string
+        }
+        Insert: {
+          bank_account_number?: string | null
+          bank_branch?: string | null
+          bank_name?: string | null
+          basic_salary?: number | null
+          created_at?: string
+          employee_id: string
+          employment_type?: string | null
+          housing_allowance?: number | null
+          id?: string
+          nssf_number?: string | null
+          organization_id: string
+          other_allowances?: number | null
+          tin_number?: string | null
+          transport_allowance?: number | null
+          updated_at?: string
+        }
+        Update: {
+          bank_account_number?: string | null
+          bank_branch?: string | null
+          bank_name?: string | null
+          basic_salary?: number | null
+          created_at?: string
+          employee_id?: string
+          employment_type?: string | null
+          housing_allowance?: number | null
+          id?: string
+          nssf_number?: string | null
+          organization_id?: string
+          other_allowances?: number | null
+          tin_number?: string | null
+          transport_allowance?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_payroll_details_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_payroll_details_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           branch_id: string | null
@@ -567,6 +636,114 @@ export type Database = {
           },
         ]
       }
+      faqs: {
+        Row: {
+          answer: string
+          category: string | null
+          created_at: string
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          category?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          category?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          question?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      feature_configs: {
+        Row: {
+          basic_enabled: boolean | null
+          category: string | null
+          created_at: string
+          description: string | null
+          enterprise_enabled: boolean | null
+          feature_key: string
+          feature_name: string
+          free_enabled: boolean | null
+          id: string
+          premium_enabled: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          basic_enabled?: boolean | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          enterprise_enabled?: boolean | null
+          feature_key: string
+          feature_name: string
+          free_enabled?: boolean | null
+          id?: string
+          premium_enabled?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          basic_enabled?: boolean | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          enterprise_enabled?: boolean | null
+          feature_key?: string
+          feature_name?: string
+          free_enabled?: boolean | null
+          id?: string
+          premium_enabled?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      footer_links: {
+        Row: {
+          category: string | null
+          created_at: string
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       inventory_movements: {
         Row: {
           created_at: string
@@ -693,6 +870,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      legal_pages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          last_updated_by: string | null
+          page_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          last_updated_by?: string | null
+          page_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          last_updated_by?: string | null
+          page_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -979,6 +1186,197 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_config: {
+        Row: {
+          config_key: string
+          config_value: Json
+          created_at: string
+          description: string | null
+          id: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          config_key: string
+          config_value: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          config_key?: string
+          config_value?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_config_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_runs: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          period_month: number
+          period_year: number
+          processed_at: string | null
+          processed_by: string | null
+          status: string | null
+          total_gross: number | null
+          total_net: number | null
+          total_nssf_employee: number | null
+          total_nssf_employer: number | null
+          total_paye: number | null
+          total_sdl: number | null
+          total_wcf: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          period_month: number
+          period_year: number
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string | null
+          total_gross?: number | null
+          total_net?: number | null
+          total_nssf_employee?: number | null
+          total_nssf_employer?: number | null
+          total_paye?: number | null
+          total_sdl?: number | null
+          total_wcf?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          period_month?: number
+          period_year?: number
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string | null
+          total_gross?: number | null
+          total_net?: number | null
+          total_nssf_employee?: number | null
+          total_nssf_employer?: number | null
+          total_paye?: number | null
+          total_sdl?: number | null
+          total_wcf?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_runs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payslips: {
+        Row: {
+          basic_salary: number | null
+          created_at: string
+          employee_id: string
+          gross_salary: number | null
+          housing_allowance: number | null
+          id: string
+          net_salary: number | null
+          nssf_employee: number | null
+          nssf_employer: number | null
+          organization_id: string
+          other_allowances: number | null
+          other_deductions: number | null
+          paye: number | null
+          payroll_run_id: string
+          sdl_employer: number | null
+          taxable_income: number | null
+          total_deductions: number | null
+          transport_allowance: number | null
+          wcf_employer: number | null
+        }
+        Insert: {
+          basic_salary?: number | null
+          created_at?: string
+          employee_id: string
+          gross_salary?: number | null
+          housing_allowance?: number | null
+          id?: string
+          net_salary?: number | null
+          nssf_employee?: number | null
+          nssf_employer?: number | null
+          organization_id: string
+          other_allowances?: number | null
+          other_deductions?: number | null
+          paye?: number | null
+          payroll_run_id: string
+          sdl_employer?: number | null
+          taxable_income?: number | null
+          total_deductions?: number | null
+          transport_allowance?: number | null
+          wcf_employer?: number | null
+        }
+        Update: {
+          basic_salary?: number | null
+          created_at?: string
+          employee_id?: string
+          gross_salary?: number | null
+          housing_allowance?: number | null
+          id?: string
+          net_salary?: number | null
+          nssf_employee?: number | null
+          nssf_employer?: number | null
+          organization_id?: string
+          other_allowances?: number | null
+          other_deductions?: number | null
+          paye?: number | null
+          payroll_run_id?: string
+          sdl_employer?: number | null
+          taxable_income?: number | null
+          total_deductions?: number | null
+          transport_allowance?: number | null
+          wcf_employer?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payslips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payslips_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payslips_payroll_run_id_fkey"
+            columns: ["payroll_run_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_runs"
             referencedColumns: ["id"]
           },
         ]
