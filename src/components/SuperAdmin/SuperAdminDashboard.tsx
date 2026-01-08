@@ -6,7 +6,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { BusinessOwnersManagement } from './BusinessOwnersManagement';
 import { FeatureConfigTab } from './FeatureConfigTab';
 import { FooterLinksTab } from './FooterLinksTab';
-import { Building2, Users, CreditCard, Activity, TrendingUp, AlertTriangle, Settings, Link } from 'lucide-react';
+import { ModuleConfigTab } from './ModuleConfigTab';
+import { OnboardingContentTab } from './OnboardingContentTab';
+import { Building2, Users, CreditCard, Activity, TrendingUp, AlertTriangle, Settings, Link, Blocks, FileText } from 'lucide-react';
 
 interface DashboardStats {
   totalOrganizations: number;
@@ -176,8 +178,10 @@ export function SuperAdminDashboard() {
         <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="business-owners">Business Owners</TabsTrigger>
-          <TabsTrigger value="features">Feature Config</TabsTrigger>
-          <TabsTrigger value="footer-links">Footer Links</TabsTrigger>
+          <TabsTrigger value="modules">Modules</TabsTrigger>
+          <TabsTrigger value="features">Features</TabsTrigger>
+          <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
+          <TabsTrigger value="footer-links">Footer</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
@@ -222,8 +226,16 @@ export function SuperAdminDashboard() {
           <BusinessOwnersManagement />
         </TabsContent>
 
+        <TabsContent value="modules">
+          <ModuleConfigTab />
+        </TabsContent>
+
         <TabsContent value="features">
           <FeatureConfigTab />
+        </TabsContent>
+
+        <TabsContent value="onboarding">
+          <OnboardingContentTab />
         </TabsContent>
 
         <TabsContent value="footer-links">
