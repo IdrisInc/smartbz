@@ -901,6 +901,65 @@ export type Database = {
         }
         Relationships: []
       }
+      module_configs: {
+        Row: {
+          basic_enabled: boolean | null
+          created_at: string
+          description: string | null
+          display_order: number | null
+          enterprise_enabled: boolean | null
+          free_enabled: boolean | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          module_key: string
+          module_name: string
+          parent_module_id: string | null
+          premium_enabled: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          basic_enabled?: boolean | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          enterprise_enabled?: boolean | null
+          free_enabled?: boolean | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          module_key: string
+          module_name: string
+          parent_module_id?: string | null
+          premium_enabled?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          basic_enabled?: boolean | null
+          created_at?: string
+          description?: string | null
+          display_order?: number | null
+          enterprise_enabled?: boolean | null
+          free_enabled?: boolean | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          module_key?: string
+          module_name?: string
+          parent_module_id?: string | null
+          premium_enabled?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_configs_parent_module_id_fkey"
+            columns: ["parent_module_id"]
+            isOneToOne: false
+            referencedRelation: "module_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           action_url: string | null
@@ -947,6 +1006,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      onboarding_content: {
+        Row: {
+          content: string | null
+          content_key: string
+          created_at: string
+          display_order: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          metadata: Json | null
+          subtitle: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          content?: string | null
+          content_key: string
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          metadata?: Json | null
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string | null
+          content_key?: string
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          metadata?: Json | null
+          subtitle?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       organization_memberships: {
         Row: {
