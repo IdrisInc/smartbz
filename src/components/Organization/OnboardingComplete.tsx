@@ -13,21 +13,21 @@ export function OnboardingComplete() {
       icon: BarChart3,
       title: 'Start Managing',
       description: 'Begin tracking sales, inventory, and more',
-      action: () => navigate('/'),
+      action: () => navigate('/dashboard'),
       buttonText: 'Go to Dashboard'
     },
     {
       icon: Users,
       title: 'Explore Features',
       description: 'Discover sales, inventory, and reporting tools',
-      action: () => navigate('/sales'),
+      action: () => navigate('/dashboard/sales'),
       buttonText: 'Explore Sales'
     },
     {
       icon: Settings,
       title: 'Learn More',
       description: 'Get familiar with the system',
-      action: () => navigate('/products'),
+      action: () => navigate('/dashboard/products'),
       buttonText: 'View Products'
     }
   ];
@@ -99,7 +99,7 @@ export function OnboardingComplete() {
               Ready to start managing your business?
             </p>
             <Button 
-              onClick={() => navigate('/')} 
+              onClick={() => navigate('/dashboard')}
               size="lg"
               className="transition-all duration-200 hover:scale-105"
             >

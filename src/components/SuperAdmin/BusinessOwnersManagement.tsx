@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, CheckCircle, XCircle, AlertCircle, Monitor } from 'lucide-react';
+import { createSystemNotification, NotificationTemplates } from '@/lib/notificationService';
 
 interface BusinessOwner {
   id: string;
@@ -169,6 +170,32 @@ export function BusinessOwnersManagement() {
           .eq('id', selectedOwner.organization_id);
 
         if (updateError) throw updateError;
+
+        // Send notification based on action type
+        let notification;
+        if (actionType === 'approve' || actionType === 'activate') {
+          notification = NotificationTemplates.organizationApproved(selectedOwner.organization_name || 'Your organization');
+        } else if (actionType === 'suspend') {
+          notification = NotificationTemplates.organizationSuspended(selectedOwner.organization_name || 'Organization', actionNotes);
+        }
+        
+        if (notification) {
+          // Get the user_id from the business owner
+          const { data: membershipData } = await supabase
+            .from('organization_memberships')
+            .select('user_id')
+            .eq('organization_id', selectedOwner.organization_id)
+            .eq('role', 'business_owner')
+            .single();
+          
+          if (membershipData) {
+            await createSystemNotification({
+              ...notification,
+              userId: membershipData.user_id,
+              organizationId: selectedOwner.organization_id
+            });
+          }
+        }
       }
 
       toast({

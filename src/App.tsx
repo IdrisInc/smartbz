@@ -56,8 +56,8 @@ function App() {
             <OrganizationProvider>
               <OnboardingProvider>
                 <Routes>
-                  {/* Public routes */}
-                  <Route path="/welcome" element={<LandingPage />} />
+                  {/* Public routes - Landing page is the default */}
+                  <Route path="/" element={<LandingPage />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/faq" element={<FAQ />} />
                   <Route path="/privacy" element={<Privacy />} />
@@ -71,7 +71,7 @@ function App() {
                   } />
                   
                   {/* Dashboard routes - requires auth and org */}
-                  <Route path="/" element={
+                  <Route path="/dashboard" element={
                     <ProtectedRoute>
                       <OnboardingGuard>
                         <DashboardLayout />

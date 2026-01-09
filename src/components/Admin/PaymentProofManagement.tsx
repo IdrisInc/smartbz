@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Eye, Check, X } from 'lucide-react';
+import { createSystemNotification, NotificationTemplates } from '@/lib/notificationService';
 
 interface PaymentProof {
   id: string;
@@ -139,6 +140,14 @@ export function PaymentProofManagement() {
 
       if (insertError) throw insertError;
 
+      // Send notification to the user
+      const notification = NotificationTemplates.paymentApproved(proof.plan);
+      await createSystemNotification({
+        ...notification,
+        userId: proof.user_id,
+        organizationId: proof.organization_id
+      });
+
       toast({
         title: 'Payment approved',
         description: `Activation code generated: ${codeData}`,
@@ -184,6 +193,14 @@ export function PaymentProofManagement() {
         .eq('id', proof.id);
 
       if (error) throw error;
+
+      // Send notification to the user
+      const notification = NotificationTemplates.paymentRejected(adminNotes);
+      await createSystemNotification({
+        ...notification,
+        userId: proof.user_id,
+        organizationId: proof.organization_id
+      });
 
       toast({
         title: 'Payment rejected',

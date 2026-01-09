@@ -11,6 +11,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { SubscriptionModal } from './SubscriptionModal';
+import { createSystemNotification, NotificationTemplates } from '@/lib/notificationService';
 
 const businessSectors = [
   { value: 'retail', label: 'Retail' },
@@ -74,6 +75,14 @@ export function BusinessRegistrationStep({ onComplete }: BusinessRegistrationSte
       
       if (newOrg) {
         setCreatedOrgId(newOrg.id);
+        
+        // Notify super admins about the new organization
+        const notification = NotificationTemplates.organizationCreated(formData.name.trim());
+        await createSystemNotification({
+          ...notification,
+          // No specific userId - this notification goes to super admins (user_id = null)
+        });
+        
         setShowSubscriptionModal(true);
       }
     } catch (error) {
