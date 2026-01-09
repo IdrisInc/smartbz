@@ -8,6 +8,9 @@ import { OnboardingComplete } from './OnboardingComplete';
 import { OnboardingFooter } from './OnboardingFooter';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
+import dashboardPreview from '@/assets/dashboard-preview.png';
+import teamCollaboration from '@/assets/team-collaboration.png';
+import retailPos from '@/assets/retail-pos.png';
 
 const steps = [
   {
@@ -95,18 +98,28 @@ export function OnboardingFlow() {
         <div className="absolute top-1/2 right-1/4 w-16 h-16 bg-primary/5 rounded-full blur-xl animate-float" style={{animationDelay: '2s'}}></div>
       </div>
       
-      <div className="flex-1 max-w-4xl mx-auto space-y-8 relative z-10 p-4 sm:p-6 lg:p-8">
-        {/* Enhanced Header */}
-        <div className="text-center space-y-6 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-primary rounded-full mb-4 animate-glow shadow-glow">
-            <Building2 className="h-10 w-10 text-white" />
+      <div className="flex-1 max-w-6xl mx-auto space-y-8 relative z-10 p-4 sm:p-6 lg:p-8">
+        {/* Hero Section with Image */}
+        <div className="grid lg:grid-cols-2 gap-8 items-center animate-fade-in">
+          <div className="text-center lg:text-left space-y-6">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-primary rounded-full mb-4 animate-glow shadow-glow">
+              <Building2 className="h-10 w-10 text-white" />
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+              Set Up Your Business
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-2xl">
+              Let's get your organization ready in just a few simple steps.
+            </p>
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-            Set Up Your Business
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Let's get your organization ready in just a few simple steps.
-          </p>
+          <div className="hidden lg:block relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary-glow/20 rounded-2xl blur-xl"></div>
+            <img 
+              src={dashboardPreview} 
+              alt="Dashboard Preview" 
+              className="relative rounded-2xl shadow-elegant border border-white/10 hover:scale-105 transition-transform duration-500"
+            />
+          </div>
         </div>
 
         {/* Enhanced Progress */}
@@ -187,17 +200,47 @@ export function OnboardingFlow() {
           })}
         </div>
 
-        {/* Step Content */}
-        <div className="animate-slide-in-right">
-          {currentStep === 1 && (
-            <BusinessRegistrationStep onComplete={() => handleStepComplete(1)} />
-          )}
-          {currentStep === 2 && (
-            <BranchRegistrationStep onComplete={() => handleStepComplete(2)} />
-          )}
-          {currentStep === 3 && (
-            <OnboardingComplete />
-          )}
+        {/* Step Content with Side Image */}
+        <div className="grid lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 animate-slide-in-right">
+            {currentStep === 1 && (
+              <BusinessRegistrationStep onComplete={() => handleStepComplete(1)} />
+            )}
+            {currentStep === 2 && (
+              <BranchRegistrationStep onComplete={() => handleStepComplete(2)} />
+            )}
+            {currentStep === 3 && (
+              <OnboardingComplete />
+            )}
+          </div>
+          
+          {/* Side Images */}
+          <div className="hidden lg:flex flex-col gap-6">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent rounded-xl blur-lg group-hover:blur-xl transition-all"></div>
+              <img 
+                src={teamCollaboration} 
+                alt="Team Collaboration" 
+                className="relative rounded-xl shadow-soft border border-white/10 hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute bottom-4 left-4 right-4 bg-background/80 backdrop-blur-sm rounded-lg p-3">
+                <p className="text-sm font-medium text-foreground">Team Collaboration</p>
+                <p className="text-xs text-muted-foreground">Work together seamlessly</p>
+              </div>
+            </div>
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-glow/20 to-transparent rounded-xl blur-lg group-hover:blur-xl transition-all"></div>
+              <img 
+                src={retailPos} 
+                alt="Point of Sale" 
+                className="relative rounded-xl shadow-soft border border-white/10 hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute bottom-4 left-4 right-4 bg-background/80 backdrop-blur-sm rounded-lg p-3">
+                <p className="text-sm font-medium text-foreground">Modern POS System</p>
+                <p className="text-xs text-muted-foreground">Streamlined sales experience</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       
