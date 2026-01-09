@@ -12,6 +12,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/components/Auth/AuthProvider';
 
+// Import images
+import dashboardPreview from '@/assets/dashboard-preview.png';
+import teamCollaboration from '@/assets/team-collaboration.png';
+import retailPos from '@/assets/retail-pos.png';
+
 const sectors = [
   { id: 'retail', name: 'Retail', icon: ShoppingCart, color: 'from-blue-500 to-blue-600', description: 'Shops, supermarkets, boutiques' },
   { id: 'manufacturing', name: 'Manufacturing', icon: Package, color: 'from-orange-500 to-orange-600', description: 'Production & factories' },
@@ -271,30 +276,13 @@ export default function LandingPage() {
               </div>
 
               <div className="relative animate-slide-in-right">
-                {/* Dashboard Preview Mockup */}
+                {/* Dashboard Preview Image */}
                 <div className="relative rounded-2xl overflow-hidden shadow-elegant border border-border/50">
-                  <div className="bg-gradient-to-br from-card to-muted p-6 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-destructive"></div>
-                      <div className="w-3 h-3 rounded-full bg-warning"></div>
-                      <div className="w-3 h-3 rounded-full bg-success"></div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      {[
-                        { label: 'Revenue', value: 'TZS 12.5M' },
-                        { label: 'Orders', value: '324' },
-                        { label: 'Customers', value: '89' },
-                      ].map((stat) => (
-                        <div key={stat.label} className="bg-background/50 rounded-lg p-4">
-                          <p className="text-xs text-muted-foreground">{stat.label}</p>
-                          <p className="text-lg font-bold">{stat.value}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="h-32 bg-background/50 rounded-lg flex items-center justify-center">
-                      <BarChart3 className="h-16 w-16 text-muted-foreground/30" />
-                    </div>
-                  </div>
+                  <img 
+                    src={dashboardPreview} 
+                    alt="BizWiz Dashboard Preview" 
+                    className="w-full h-auto"
+                  />
                 </div>
                 
                 {/* Floating cards */}
@@ -320,6 +308,89 @@ export default function LandingPage() {
                       <p className="text-xs text-muted-foreground">3 items low</p>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Team Section */}
+        <section className="container mx-auto px-4 py-16 lg:py-24 bg-muted/30">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div className="order-2 lg:order-1 animate-slide-in-left">
+                <div className="relative rounded-2xl overflow-hidden shadow-elegant">
+                  <img 
+                    src={teamCollaboration} 
+                    alt="Team Collaboration" 
+                    className="w-full h-auto"
+                  />
+                </div>
+              </div>
+              <div className="order-1 lg:order-2 space-y-6 animate-slide-in-right">
+                <Badge variant="secondary">Trusted by Businesses</Badge>
+                <h2 className="text-3xl sm:text-4xl font-bold">
+                  Built for Tanzanian Businesses
+                </h2>
+                <p className="text-muted-foreground text-lg">
+                  Join hundreds of businesses across Tanzania who trust BizWiz to manage their operations. From small retailers to large enterprises, we've got you covered.
+                </p>
+                <div className="grid grid-cols-2 gap-4 pt-4">
+                  <div className="bg-background rounded-lg p-4 shadow-soft">
+                    <p className="text-3xl font-bold text-primary">500+</p>
+                    <p className="text-sm text-muted-foreground">Active Businesses</p>
+                  </div>
+                  <div className="bg-background rounded-lg p-4 shadow-soft">
+                    <p className="text-3xl font-bold text-primary">15+</p>
+                    <p className="text-sm text-muted-foreground">Industry Sectors</p>
+                  </div>
+                  <div className="bg-background rounded-lg p-4 shadow-soft">
+                    <p className="text-3xl font-bold text-primary">99.9%</p>
+                    <p className="text-sm text-muted-foreground">Uptime</p>
+                  </div>
+                  <div className="bg-background rounded-lg p-4 shadow-soft">
+                    <p className="text-3xl font-bold text-primary">24/7</p>
+                    <p className="text-sm text-muted-foreground">Support</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Retail Feature Section */}
+        <section className="container mx-auto px-4 py-16 lg:py-24">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div className="space-y-6 animate-slide-in-left">
+                <Badge variant="secondary">Point of Sale</Badge>
+                <h2 className="text-3xl sm:text-4xl font-bold">
+                  Modern POS for Your Store
+                </h2>
+                <p className="text-muted-foreground text-lg">
+                  Our intuitive point-of-sale system makes transactions fast and easy. Track sales in real-time, manage inventory on the go, and serve customers faster.
+                </p>
+                <ul className="space-y-3">
+                  {[
+                    'Fast barcode scanning',
+                    'Multiple payment methods',
+                    'Receipt printing & email',
+                    'Offline mode support'
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-center gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-success" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="animate-slide-in-right">
+                <div className="relative rounded-2xl overflow-hidden shadow-elegant">
+                  <img 
+                    src={retailPos} 
+                    alt="Retail POS System" 
+                    className="w-full h-auto"
+                  />
                 </div>
               </div>
             </div>

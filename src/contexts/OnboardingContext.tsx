@@ -1,7 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@/components/Auth/AuthProvider';
 import { useOrganization } from './OrganizationContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OnboardingContextType {
   needsOnboarding: boolean;
@@ -19,6 +19,23 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   const checkOnboardingStatus = async () => {
     if (!user || loading) return;
     
+    // Check if user is a super admin - they don't need onboarding
+    try {
+      const { data: superAdminCheck } = await supabase
+        .from('organization_memberships')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'super_admin')
+        .maybeSingle();
+
+      if (superAdminCheck) {
+        setNeedsOnboarding(false);
+        return;
+      }
+    } catch (error) {
+      console.error('Error checking super admin status:', error);
+    }
+    
     // If user has no organizations, they need onboarding
     const hasOrganizations = organizations && organizations.length > 0;
     
@@ -32,7 +49,6 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     const currentOrg = organizations[0];
     if (currentOrg) {
       try {
-        const { supabase } = await import('@/integrations/supabase/client');
         const { data: branches, error } = await supabase
           .from('branches')
           .select('id')
