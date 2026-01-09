@@ -15,6 +15,9 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { BusinessOwnersManagement } from './BusinessOwnersManagement';
 import { AnalyticsTab } from './AnalyticsTab';
+import { ModuleConfigTab } from './ModuleConfigTab';
+import { FooterLinksTab } from './FooterLinksTab';
+import { OnboardingContentTab } from './OnboardingContentTab';
 import { 
   Building2, 
   Users, 
@@ -344,10 +347,13 @@ export function SuperAdminDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="businesses">Businesses</TabsTrigger>
           <TabsTrigger value="owners">Business Owners</TabsTrigger>
+          <TabsTrigger value="modules">Modules</TabsTrigger>
+          <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
+          <TabsTrigger value="footer">Footer</TabsTrigger>
           <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
@@ -515,6 +521,18 @@ export function SuperAdminDashboard() {
 
         <TabsContent value="owners">
           <BusinessOwnersManagement />
+        </TabsContent>
+
+        <TabsContent value="modules">
+          <ModuleConfigTab />
+        </TabsContent>
+
+        <TabsContent value="onboarding">
+          <OnboardingContentTab />
+        </TabsContent>
+
+        <TabsContent value="footer">
+          <FooterLinksTab />
         </TabsContent>
 
         <TabsContent value="subscriptions">
