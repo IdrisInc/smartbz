@@ -208,10 +208,10 @@ export default function LandingPage() {
             <div className="text-center mb-12 animate-fade-in">
               <Badge variant="secondary" className="mb-4">Industry Solutions</Badge>
               <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-                {onboardingContent.sectors_intro?.title || 'Built for Every Industry'}
+                {onboardingContent.sectors_intro?.title || 'Configure for Your Industry'}
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                {onboardingContent.sectors_intro?.content || 'Whether you\'re in retail, manufacturing, healthcare, or any other sector, BizWiz adapts to your unique business needs.'}
+                {onboardingContent.sectors_intro?.content || 'Select your business sector during setup to get industry-specific product categories, custom fields, and tailored dashboard metrics.'}
               </p>
             </div>
 
@@ -232,6 +232,12 @@ export default function LandingPage() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+            
+            {/* Sector Features Note */}
+            <div className="mt-8 text-center text-sm text-muted-foreground">
+              <p>Each sector includes tailored product categories, custom fields, and industry-specific dashboard metrics.</p>
+              <p className="mt-1">Core features like Sales, Inventory, and Payroll work across all industries.</p>
             </div>
           </div>
         </section>
