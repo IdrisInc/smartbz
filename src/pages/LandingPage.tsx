@@ -56,11 +56,8 @@ export default function LandingPage() {
   }, []);
 
   // If user is already logged in, redirect to dashboard
-  useEffect(() => {
-    if (user) {
-      navigate('/');
-    }
-  }, [user, navigate]);
+  // Don't auto-redirect - let users explore the landing page even if logged in
+  // They can click to go to dashboard
 
   const fetchOnboardingContent = async () => {
     try {
@@ -111,13 +108,22 @@ export default function LandingPage() {
             <span className="text-xl font-bold">BizWiz</span>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={handleLogin}>
-              <LogIn className="mr-2 h-4 w-4" />
-              Login
-            </Button>
-            <Button onClick={handleGetStarted} className="bg-gradient-primary hover:opacity-90">
-              Get Started
-            </Button>
+            {user ? (
+              <Button onClick={() => navigate('/dashboard')} className="bg-gradient-primary hover:opacity-90">
+                Go to Dashboard
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={handleLogin}>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login
+                </Button>
+                <Button onClick={handleGetStarted} className="bg-gradient-primary hover:opacity-90">
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>

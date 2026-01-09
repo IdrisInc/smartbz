@@ -34,7 +34,7 @@ export function AppSidebar() {
 
   const isMobile = useIsMobile();
   const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '/';
+    if (path === '/dashboard') return location.pathname === '/dashboard';
     return location.pathname.startsWith(path);
   };
 

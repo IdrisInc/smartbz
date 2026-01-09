@@ -42,43 +42,43 @@ export function useRoleBasedNavigation() {
 
   // Super Admin Navigation - always full access
   const superAdminItems: NavigationItem[] = [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard },
-    { title: "Owners", url: "/super-admin/owners", icon: Crown },
-    { title: "Businesses", url: "/super-admin/businesses", icon: Building2 },
-    { title: "Branches", url: "/super-admin/branches", icon: GitBranch },
-    { title: "Staff", url: "/super-admin/staff", icon: UserCog },
-    { title: "Subscriptions", url: "/super-admin/subscriptions", icon: CreditCard },
-    { title: "Reports", url: "/super-admin/reports", icon: BarChart3 },
-    { title: "Trunker", url: "/trunker", icon: FileText },
-    { title: "Settings", url: "/settings", icon: Settings },
+    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+    { title: "Owners", url: "/dashboard/super-admin/owners", icon: Crown },
+    { title: "Businesses", url: "/dashboard/super-admin/businesses", icon: Building2 },
+    { title: "Branches", url: "/dashboard/super-admin/branches", icon: GitBranch },
+    { title: "Staff", url: "/dashboard/super-admin/staff", icon: UserCog },
+    { title: "Subscriptions", url: "/dashboard/super-admin/subscriptions", icon: CreditCard },
+    { title: "Reports", url: "/dashboard/super-admin/reports", icon: BarChart3 },
+    { title: "Trunker", url: "/dashboard/trunker", icon: FileText },
+    { title: "Settings", url: "/dashboard/settings", icon: Settings },
   ];
 
   // All possible navigation items with their required permissions
   const allNavigationItems: NavigationItem[] = [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard },
-    { title: "Branches", url: "/branches", icon: GitBranch, requiredPermission: 'canManageBranches' },
-    { title: "Employees", url: "/employees", icon: UserCheck, requiredPermission: 'canManageEmployees' },
-    { title: "Products", url: "/products", icon: Package, requiredPermission: 'canManageProducts' },
-    { title: "Inventory", url: "/inventory", icon: Store, requiredPermission: 'canManageInventory' },
-    { title: "Sales", url: "/sales", icon: ShoppingCart, requiredPermission: 'canProcessSales' },
-    { title: "Pending Approvals", url: "/pending-approvals", icon: CheckSquare },
-    { title: "Finance", url: "/finance", icon: Wallet, requiredPermission: 'canManageFinances' },
-    { title: "Expense Categories", url: "/expense-categories", icon: FolderOpen, requiredPermission: 'canManageExpenses' },
-    { title: "Cash Registers", url: "/cash-registers", icon: DollarSign, requiredPermission: 'canProcessSales' },
-    { title: "Contacts", url: "/contacts", icon: Users, requiredPermission: 'canManageContacts' },
-    { title: "Payment History", url: "/payment-history", icon: Smartphone, requiredPermission: 'canManageFinances' },
-    { title: "Reports", url: "/reports", icon: TrendingUp, requiredPermission: 'canViewReports' },
-    { title: "Trunker", url: "/trunker", icon: FileText, requiredPermission: 'canViewLogs' },
-    { title: "Settings", url: "/settings", icon: Settings, requiredPermission: 'canManageSettings' },
+    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+    { title: "Branches", url: "/dashboard/branches", icon: GitBranch, requiredPermission: 'canManageBranches' },
+    { title: "Employees", url: "/dashboard/employees", icon: UserCheck, requiredPermission: 'canManageEmployees' },
+    { title: "Products", url: "/dashboard/products", icon: Package, requiredPermission: 'canManageProducts' },
+    { title: "Inventory", url: "/dashboard/inventory", icon: Store, requiredPermission: 'canManageInventory' },
+    { title: "Sales", url: "/dashboard/sales", icon: ShoppingCart, requiredPermission: 'canProcessSales' },
+    { title: "Pending Approvals", url: "/dashboard/pending-approvals", icon: CheckSquare },
+    { title: "Finance", url: "/dashboard/finance", icon: Wallet, requiredPermission: 'canManageFinances' },
+    { title: "Expense Categories", url: "/dashboard/expense-categories", icon: FolderOpen, requiredPermission: 'canManageExpenses' },
+    { title: "Cash Registers", url: "/dashboard/cash-registers", icon: DollarSign, requiredPermission: 'canProcessSales' },
+    { title: "Contacts", url: "/dashboard/contacts", icon: Users, requiredPermission: 'canManageContacts' },
+    { title: "Payment History", url: "/dashboard/payment-history", icon: Smartphone, requiredPermission: 'canManageFinances' },
+    { title: "Reports", url: "/dashboard/reports", icon: TrendingUp, requiredPermission: 'canViewReports' },
+    { title: "Trunker", url: "/dashboard/trunker", icon: FileText, requiredPermission: 'canViewLogs' },
+    { title: "Settings", url: "/dashboard/settings", icon: Settings, requiredPermission: 'canManageSettings' },
   ];
 
   // Filter navigation items based on permissions
   const filterByPermissions = (items: NavigationItem[]): NavigationItem[] => {
-    if (!permissions) return [{ title: "Dashboard", url: "/", icon: LayoutDashboard }];
+    if (!permissions) return [{ title: "Dashboard", url: "/dashboard", icon: LayoutDashboard }];
     
     return items.filter(item => {
       // Dashboard is always visible
-      if (item.url === "/") return true;
+      if (item.url === "/dashboard") return true;
       
       // If no permission required, show the item
       if (!item.requiredPermission) return true;
