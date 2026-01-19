@@ -349,6 +349,95 @@ export type Database = {
           },
         ]
       }
+      credit_notes: {
+        Row: {
+          amount: number
+          applied_date: string | null
+          contact_id: string | null
+          created_at: string
+          credit_note_number: string
+          id: string
+          issued_date: string
+          note_type: string
+          notes: string | null
+          organization_id: string
+          purchase_return_id: string | null
+          reason: string | null
+          sale_return_id: string | null
+          status: string | null
+          tax_amount: number | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          applied_date?: string | null
+          contact_id?: string | null
+          created_at?: string
+          credit_note_number: string
+          id?: string
+          issued_date?: string
+          note_type: string
+          notes?: string | null
+          organization_id: string
+          purchase_return_id?: string | null
+          reason?: string | null
+          sale_return_id?: string | null
+          status?: string | null
+          tax_amount?: number | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          applied_date?: string | null
+          contact_id?: string | null
+          created_at?: string
+          credit_note_number?: string
+          id?: string
+          issued_date?: string
+          note_type?: string
+          notes?: string | null
+          organization_id?: string
+          purchase_return_id?: string | null
+          reason?: string | null
+          sale_return_id?: string | null
+          status?: string | null
+          tax_amount?: number | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_notes_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_purchase_return_id_fkey"
+            columns: ["purchase_return_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_returns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_notes_sale_return_id_fkey"
+            columns: ["sale_return_id"]
+            isOneToOne: false
+            referencedRelation: "sale_returns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_templates: {
         Row: {
           created_at: string
@@ -1843,30 +1932,45 @@ export type Database = {
       }
       purchase_return_items: {
         Row: {
+          condition: string | null
           created_at: string
+          discount_amount: number | null
           id: string
           product_id: string
           purchase_return_id: string
           quantity: number
+          tax_amount: number | null
+          tax_rate: number | null
           total_amount: number
+          unit: string | null
           unit_price: number
         }
         Insert: {
+          condition?: string | null
           created_at?: string
+          discount_amount?: number | null
           id?: string
           product_id: string
           purchase_return_id: string
           quantity: number
+          tax_amount?: number | null
+          tax_rate?: number | null
           total_amount: number
+          unit?: string | null
           unit_price: number
         }
         Update: {
+          condition?: string | null
           created_at?: string
+          discount_amount?: number | null
           id?: string
           product_id?: string
           purchase_return_id?: string
           quantity?: number
+          tax_amount?: number | null
+          tax_rate?: number | null
           total_amount?: number
+          unit?: string | null
           unit_price?: number
         }
         Relationships: [
@@ -2082,30 +2186,45 @@ export type Database = {
       }
       sale_return_items: {
         Row: {
+          condition: string | null
           created_at: string
+          discount_amount: number | null
           id: string
           product_id: string
           quantity: number
           sale_return_id: string
+          tax_amount: number | null
+          tax_rate: number | null
           total_amount: number
+          unit: string | null
           unit_price: number
         }
         Insert: {
+          condition?: string | null
           created_at?: string
+          discount_amount?: number | null
           id?: string
           product_id: string
           quantity: number
           sale_return_id: string
+          tax_amount?: number | null
+          tax_rate?: number | null
           total_amount: number
+          unit?: string | null
           unit_price: number
         }
         Update: {
+          condition?: string | null
           created_at?: string
+          discount_amount?: number | null
           id?: string
           product_id?: string
           quantity?: number
           sale_return_id?: string
+          tax_amount?: number | null
+          tax_rate?: number | null
           total_amount?: number
+          unit?: string | null
           unit_price?: number
         }
         Relationships: [
@@ -2130,11 +2249,14 @@ export type Database = {
           branch_id: string | null
           contact_id: string | null
           created_at: string
+          credit_note_id: string | null
           id: string
           notes: string | null
           organization_id: string
           reason: string | null
           refund_amount: number | null
+          refund_reason: string | null
+          refund_type: string | null
           return_date: string
           return_number: string
           sale_id: string | null
@@ -2146,11 +2268,14 @@ export type Database = {
           branch_id?: string | null
           contact_id?: string | null
           created_at?: string
+          credit_note_id?: string | null
           id?: string
           notes?: string | null
           organization_id: string
           reason?: string | null
           refund_amount?: number | null
+          refund_reason?: string | null
+          refund_type?: string | null
           return_date?: string
           return_number: string
           sale_id?: string | null
@@ -2162,11 +2287,14 @@ export type Database = {
           branch_id?: string | null
           contact_id?: string | null
           created_at?: string
+          credit_note_id?: string | null
           id?: string
           notes?: string | null
           organization_id?: string
           reason?: string | null
           refund_amount?: number | null
+          refund_reason?: string | null
+          refund_type?: string | null
           return_date?: string
           return_number?: string
           sale_id?: string | null
