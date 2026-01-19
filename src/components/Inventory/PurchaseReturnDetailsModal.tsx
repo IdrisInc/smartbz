@@ -83,20 +83,34 @@ export function PurchaseReturnDetailsModal({ returnId, open, onOpenChange, onSuc
 
       if (updateError) throw updateError;
 
-      // Decrease inventory for all returned items (they're going back to supplier)
+      // Decrease inventory based on item condition
       for (const item of returnItems) {
-        // Decrease stock
         const { data: product } = await supabase
           .from('products')
-          .select('stock_quantity')
+          .select('stock_quantity, defective_quantity')
           .eq('id', item.product_id)
           .single();
         
         if (product) {
-          await supabase
-            .from('products')
-            .update({ stock_quantity: Math.max(0, (product.stock_quantity || 0) - item.quantity) })
-            .eq('id', item.product_id);
+          // Defective/damaged items: decrease from defective_quantity first if available
+          if (item.condition === 'defective' || item.condition === 'damaged') {
+            const defectiveToRemove = Math.min(item.quantity, product.defective_quantity || 0);
+            const stockToRemove = item.quantity - defectiveToRemove;
+            
+            await supabase
+              .from('products')
+              .update({ 
+                defective_quantity: Math.max(0, (product.defective_quantity || 0) - defectiveToRemove),
+                stock_quantity: Math.max(0, (product.stock_quantity || 0) - stockToRemove)
+              })
+              .eq('id', item.product_id);
+          } else {
+            // Good condition or excess items: decrease from stock_quantity
+            await supabase
+              .from('products')
+              .update({ stock_quantity: Math.max(0, (product.stock_quantity || 0) - item.quantity) })
+              .eq('id', item.product_id);
+          }
         }
 
         // Log inventory movement

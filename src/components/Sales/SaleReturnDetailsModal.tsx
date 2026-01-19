@@ -116,17 +116,31 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
         });
       }
 
-      // Log damaged/defective items (not added to stock)
+      // Move damaged/defective items to defective_quantity (not sellable stock)
       const damagedItems = returnItems.filter(item => item.condition !== 'good');
       for (const item of damagedItems) {
+        // Add to defective_quantity instead of stock_quantity
+        const { data: product } = await supabase
+          .from('products')
+          .select('defective_quantity')
+          .eq('id', item.product_id)
+          .single();
+        
+        if (product) {
+          await supabase
+            .from('products')
+            .update({ defective_quantity: (product.defective_quantity || 0) + item.quantity })
+            .eq('id', item.product_id);
+        }
+
         await supabase.from('inventory_movements').insert({
           organization_id: currentOrganization.id,
           product_id: item.product_id,
-          movement_type: 'sale_return_damaged',
-          quantity: 0,
+          movement_type: 'sale_return_defective',
+          quantity: item.quantity,
           reference_type: 'sale_return',
           reference_id: returnId,
-          notes: `Sale return approved - ${item.condition} item, not added to stock`
+          notes: `Sale return approved - ${item.condition} item, added to defective inventory`
         });
       }
 

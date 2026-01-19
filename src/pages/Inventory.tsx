@@ -552,24 +552,44 @@ export default function Inventory() {
                   <Card key={item.id}>
                     <CardHeader>
                       <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-lg">{item.name}</CardTitle>
-                          <CardDescription>
-                            SKU: {item.sku || 'N/A'} | Category: {item.category || 'Uncategorized'}
-                          </CardDescription>
+                        <div className="flex gap-4">
+                          {item.image_url && (
+                            <img 
+                              src={item.image_url} 
+                              alt={item.name}
+                              className="w-16 h-16 object-cover rounded-md"
+                            />
+                          )}
+                          <div>
+                            <CardTitle className="text-lg">{item.name}</CardTitle>
+                            <CardDescription>
+                              SKU: {item.sku || 'N/A'} | Category: {item.category || 'Uncategorized'}
+                            </CardDescription>
+                          </div>
                         </div>
-                        <Badge 
-                          variant={(item.stock_quantity || 0) <= (item.min_stock_level || 0) ? 'destructive' : 'default'}
-                        >
-                          {(item.stock_quantity || 0) <= (item.min_stock_level || 0) ? 'Low Stock' : 'In Stock'}
-                        </Badge>
+                        <div className="flex gap-2">
+                          {(item.defective_quantity || 0) > 0 && (
+                            <Badge variant="outline" className="text-yellow-600 border-yellow-500">
+                              {item.defective_quantity} Defective
+                            </Badge>
+                          )}
+                          <Badge 
+                            variant={(item.stock_quantity || 0) <= (item.min_stock_level || 0) ? 'destructive' : 'default'}
+                          >
+                            {(item.stock_quantity || 0) <= (item.min_stock_level || 0) ? 'Low Stock' : 'In Stock'}
+                          </Badge>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
                         <div>
-                          <div className="text-xs sm:text-sm text-muted-foreground">Current Stock</div>
-                          <div className="text-base sm:text-lg font-semibold">{item.stock_quantity || 0}</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground">Sellable Stock</div>
+                          <div className="text-base sm:text-lg font-semibold">{(item.stock_quantity || 0) - (item.defective_quantity || 0)}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs sm:text-sm text-muted-foreground">Total Stock</div>
+                          <div className="text-base sm:text-lg">{item.stock_quantity || 0}</div>
                         </div>
                         <div>
                           <div className="text-xs sm:text-sm text-muted-foreground">Min Stock Level</div>
