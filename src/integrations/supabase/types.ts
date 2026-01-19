@@ -1645,6 +1645,54 @@ export type Database = {
           },
         ]
       }
+      product_stock: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          product_id: string
+          quantity: number
+          status: string
+          updated_at: string
+          warehouse_location: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          product_id: string
+          quantity?: number
+          status?: string
+          updated_at?: string
+          warehouse_location?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          product_id?: string
+          quantity?: number
+          status?: string
+          updated_at?: string
+          warehouse_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_stock_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_stock_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_taxes: {
         Row: {
           created_at: string
@@ -2410,6 +2458,163 @@ export type Database = {
           },
         ]
       }
+      stock_adjustments: {
+        Row: {
+          adjustment_number: string
+          adjustment_type: string
+          approval_status: string | null
+          approved_by: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          performed_by: string | null
+          product_id: string
+          quantity: number
+          reason: string | null
+          reference_id: string | null
+          reference_type: string | null
+          to_status: string
+          updated_at: string
+          warehouse_location: string | null
+        }
+        Insert: {
+          adjustment_number: string
+          adjustment_type: string
+          approval_status?: string | null
+          approved_by?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          performed_by?: string | null
+          product_id: string
+          quantity: number
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          to_status: string
+          updated_at?: string
+          warehouse_location?: string | null
+        }
+        Update: {
+          adjustment_number?: string
+          adjustment_type?: string
+          approval_status?: string | null
+          approved_by?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          performed_by?: string | null
+          product_id?: string
+          quantity?: number
+          reason?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          to_status?: string
+          updated_at?: string
+          warehouse_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_adjustments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_audit_log: {
+        Row: {
+          action: string
+          adjustment_id: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          ip_address: unknown
+          organization_id: string
+          performed_by: string | null
+          product_id: string
+          quantity_after: number
+          quantity_before: number
+          quantity_change: number
+          reference_id: string | null
+          reference_type: string | null
+          to_status: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          adjustment_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          ip_address?: unknown
+          organization_id: string
+          performed_by?: string | null
+          product_id: string
+          quantity_after: number
+          quantity_before: number
+          quantity_change: number
+          reference_id?: string | null
+          reference_type?: string | null
+          to_status?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          adjustment_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          ip_address?: unknown
+          organization_id?: string
+          performed_by?: string | null
+          product_id?: string
+          quantity_after?: number
+          quantity_before?: number
+          quantity_change?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          to_status?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_audit_log_adjustment_id_fkey"
+            columns: ["adjustment_id"]
+            isOneToOne: false
+            referencedRelation: "stock_adjustments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_audit_log_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_audit_log_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       super_admin_actions: {
         Row: {
           action_details: Json | null
@@ -2558,6 +2763,12 @@ export type Database = {
         | "consulting"
         | "non_profit"
         | "other"
+      stock_status:
+        | "available"
+        | "reserved"
+        | "damaged"
+        | "returned_qc"
+        | "scrap"
       subscription_plan: "free" | "basic" | "premium" | "enterprise"
       user_role:
         | "super_admin"
@@ -2711,6 +2922,13 @@ export const Constants = {
         "consulting",
         "non_profit",
         "other",
+      ],
+      stock_status: [
+        "available",
+        "reserved",
+        "damaged",
+        "returned_qc",
+        "scrap",
       ],
       subscription_plan: ["free", "basic", "premium", "enterprise"],
       user_role: [

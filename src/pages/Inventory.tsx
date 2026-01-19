@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Package, TrendingDown, AlertTriangle, Loader2, FileText, RotateCcw, ClipboardList, Check, Eye, ArrowRight, History, Printer, Download, Mail } from 'lucide-react';
+import { Plus, Search, Package, TrendingDown, AlertTriangle, Loader2, FileText, RotateCcw, ClipboardList, Check, Eye, ArrowRight, History, Printer, Download, Mail, Settings2, Ban, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { PurchaseOrderForm } from '@/components/Inventory/PurchaseOrderForm';
 import { PurchaseReturnDialog } from '@/components/Inventory/PurchaseReturnDialog';
 import { QuotationDialog } from '@/components/Inventory/QuotationDialog';
+import { StockByStatusCard } from '@/components/Inventory/StockByStatusCard';
+import { StockAdjustmentsTable } from '@/components/Inventory/StockAdjustmentsTable';
+import { StockAuditLog } from '@/components/Inventory/StockAuditLog';
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -497,10 +500,18 @@ export default function Inventory() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="flex flex-wrap h-auto gap-1">
           <TabsTrigger value="overview">
             <Package className="h-4 w-4 mr-2" />
             Overview
+          </TabsTrigger>
+          <TabsTrigger value="stock-status">
+            <Settings2 className="h-4 w-4 mr-2" />
+            Stock Status
+          </TabsTrigger>
+          <TabsTrigger value="adjustments">
+            <Ban className="h-4 w-4 mr-2" />
+            Adjustments
           </TabsTrigger>
           <TabsTrigger value="orders">
             <FileText className="h-4 w-4 mr-2" />
@@ -514,9 +525,9 @@ export default function Inventory() {
             <ClipboardList className="h-4 w-4 mr-2" />
             Quotations
           </TabsTrigger>
-          <TabsTrigger value="movements">
+          <TabsTrigger value="audit-log">
             <History className="h-4 w-4 mr-2" />
-            Movements
+            Audit Log
           </TabsTrigger>
         </TabsList>
 
@@ -616,6 +627,16 @@ export default function Inventory() {
               )}
             </div>
           )}
+        </TabsContent>
+
+        {/* Stock by Status Tab */}
+        <TabsContent value="stock-status" className="space-y-4">
+          <StockByStatusCard />
+        </TabsContent>
+
+        {/* Stock Adjustments Tab */}
+        <TabsContent value="adjustments" className="space-y-4">
+          <StockAdjustmentsTable />
         </TabsContent>
 
         <TabsContent value="orders" className="space-y-4">
@@ -827,10 +848,15 @@ export default function Inventory() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="movements" className="space-y-4">
+        {/* Audit Log Tab */}
+        <TabsContent value="audit-log" className="space-y-4">
+          <StockAuditLog />
+        </TabsContent>
+
+        <TabsContent value="movements" className="space-y-4 hidden">
           <Card>
             <CardHeader>
-              <CardTitle>Inventory Movements</CardTitle>
+              <CardTitle>Inventory Movements (Legacy)</CardTitle>
               <CardDescription>Track incoming and outgoing stock movements</CardDescription>
             </CardHeader>
             <CardContent>
