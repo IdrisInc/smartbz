@@ -29,6 +29,7 @@ export function ProductForm({ onClose }: ProductFormProps) {
     name: '',
     sku: '',
     category: '',
+    brand_id: '',
     type: 'product',
     price: '',
     cost: '',
@@ -50,16 +51,19 @@ export function ProductForm({ onClose }: ProductFormProps) {
   const [uploading, setUploading] = useState(false);
   
   const [categories, setCategories] = useState<any[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
   const [units, setUnits] = useState<any[]>([]);
   const [taxes, setTaxes] = useState<any[]>([]);
   
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [showBrandDialog, setShowBrandDialog] = useState(false);
   const [showUnitDialog, setShowUnitDialog] = useState(false);
   const [showTaxDialog, setShowTaxDialog] = useState(false);
   
   useEffect(() => {
     if (currentOrganization?.id) {
       fetchCategories();
+      fetchBrands();
       fetchUnits();
       fetchTaxes();
     }
@@ -73,6 +77,16 @@ export function ProductForm({ onClose }: ProductFormProps) {
       .eq('is_active', true)
       .order('name');
     setCategories(data || []);
+  };
+
+  const fetchBrands = async () => {
+    const { data } = await supabase
+      .from('product_brands')
+      .select('*')
+      .eq('organization_id', currentOrganization!.id)
+      .eq('is_active', true)
+      .order('name');
+    setBrands(data || []);
   };
   
   const fetchUnits = async () => {
@@ -167,6 +181,7 @@ export function ProductForm({ onClose }: ProductFormProps) {
         name: product.name,
         sku: product.sku,
         category: product.category,
+        brand_id: product.brand_id || null,
         price: parseFloat(product.price) || 0,
         cost: parseFloat(product.cost) || 0,
         unit: product.unit,
@@ -320,6 +335,31 @@ export function ProductForm({ onClose }: ProductFormProps) {
                     variant="outline" 
                     size="icon"
                     onClick={() => setShowCategoryDialog(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="brand">Brand</Label>
+                <div className="flex gap-2">
+                  <Select value={product.brand_id} onValueChange={(value) => setProduct({...product, brand_id: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select brand" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {brands.map((brand) => (
+                        <SelectItem key={brand.id} value={brand.id}>
+                          {brand.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => setShowBrandDialog(true)}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -581,6 +621,14 @@ export function ProductForm({ onClose }: ProductFormProps) {
         onSuccess={() => {
           fetchCategories();
           setShowCategoryDialog(false);
+        }}
+      />
+      <BrandDialog
+        open={showBrandDialog}
+        onOpenChange={setShowBrandDialog}
+        onSuccess={() => {
+          fetchBrands();
+          setShowBrandDialog(false);
         }}
       />
       <UnitDialog
