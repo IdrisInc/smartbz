@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InvoicesTab } from '@/components/Finance/InvoicesTab';
 import { ExpensesTab } from '@/components/Finance/ExpensesTab';
 import { ReportsTab } from '@/components/Finance/ReportsTab';
+import { CreditNotesTab } from '@/components/Finance/CreditNotesTab';
 import { RevenueTrendChart } from '@/components/Finance/RevenueTrendChart';
 import { ExpenseBreakdownChart } from '@/components/Finance/ExpenseBreakdownChart';
 import { supabase } from '@/integrations/supabase/client';
@@ -153,10 +154,11 @@ export default function Finance() {
       )}
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
           <TabsTrigger value="expenses">Expenses</TabsTrigger>
+          <TabsTrigger value="credit-notes">Credit Notes</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
@@ -189,6 +191,10 @@ export default function Finance() {
 
         <TabsContent value="expenses">
           <ExpensesTab />
+        </TabsContent>
+
+        <TabsContent value="credit-notes">
+          <CreditNotesTab />
         </TabsContent>
 
         <TabsContent value="reports">

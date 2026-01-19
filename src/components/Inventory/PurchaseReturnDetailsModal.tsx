@@ -9,14 +9,14 @@ import { Loader2, CheckCircle, XCircle, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
-interface SaleReturnDetailsModalProps {
+interface PurchaseReturnDetailsModalProps {
   returnId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }
 
-export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess }: SaleReturnDetailsModalProps) {
+export function PurchaseReturnDetailsModal({ returnId, open, onOpenChange, onSuccess }: PurchaseReturnDetailsModalProps) {
   const [loading, setLoading] = useState(false);
   const [approving, setApproving] = useState(false);
   const [returnData, setReturnData] = useState<any>(null);
@@ -35,14 +35,11 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
       setLoading(true);
       
       const { data: returnInfo, error: returnError } = await supabase
-        .from('sale_returns')
+        .from('purchase_returns')
         .select(`
           *,
-          sales(
-            sale_number,
-            contacts(name, phone, email),
-            employees(first_name, last_name)
-          )
+          purchase_orders(po_number),
+          contacts:supplier_id(name, phone, email)
         `)
         .eq('id', returnId)
         .single();
@@ -50,12 +47,12 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
       if (returnError) throw returnError;
 
       const { data: items, error: itemsError } = await supabase
-        .from('sale_return_items')
+        .from('purchase_return_items')
         .select(`
           *,
           products(name, sku, unit, product_brands(name))
         `)
-        .eq('sale_return_id', returnId);
+        .eq('purchase_return_id', returnId);
 
       if (itemsError) throw itemsError;
 
@@ -80,17 +77,15 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
     try {
       // Update return status
       const { error: updateError } = await supabase
-        .from('sale_returns')
+        .from('purchase_returns')
         .update({ status: 'approved' })
         .eq('id', returnId);
 
       if (updateError) throw updateError;
 
-      // Update inventory for good condition items only
-      const goodConditionItems = returnItems.filter(item => item.condition === 'good');
-      
-      for (const item of goodConditionItems) {
-        // Add stock back
+      // Decrease inventory for all returned items (they're going back to supplier)
+      for (const item of returnItems) {
+        // Decrease stock
         const { data: product } = await supabase
           .from('products')
           .select('stock_quantity')
@@ -100,7 +95,7 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
         if (product) {
           await supabase
             .from('products')
-            .update({ stock_quantity: (product.stock_quantity || 0) + item.quantity })
+            .update({ stock_quantity: Math.max(0, (product.stock_quantity || 0) - item.quantity) })
             .eq('id', item.product_id);
         }
 
@@ -108,58 +103,34 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
         await supabase.from('inventory_movements').insert({
           organization_id: currentOrganization.id,
           product_id: item.product_id,
-          movement_type: 'sale_return',
-          quantity: item.quantity,
-          reference_type: 'sale_return',
+          movement_type: 'purchase_return',
+          quantity: -item.quantity,
+          reference_type: 'purchase_return',
           reference_id: returnId,
-          notes: `Sale return approved - Good condition item returned to stock`
+          notes: `Purchase return approved - ${item.condition} item returned to supplier`
         });
       }
 
-      // Log damaged/defective items (not added to stock)
-      const damagedItems = returnItems.filter(item => item.condition !== 'good');
-      for (const item of damagedItems) {
-        await supabase.from('inventory_movements').insert({
-          organization_id: currentOrganization.id,
-          product_id: item.product_id,
-          movement_type: 'sale_return_damaged',
-          quantity: 0,
-          reference_type: 'sale_return',
-          reference_id: returnId,
-          notes: `Sale return approved - ${item.condition} item, not added to stock`
-        });
-      }
-
-      // Create credit note if refund > 0
-      if (returnData.refund_amount > 0) {
-        const creditNoteNumber = `CN-${Date.now().toString().slice(-8)}`;
-        
-        await supabase.from('credit_notes').insert({
-          organization_id: currentOrganization.id,
-          credit_note_number: creditNoteNumber,
-          contact_id: returnData.sales?.contact_id || null,
-          sale_return_id: returnId,
-          note_type: 'sales',
-          amount: returnData.refund_amount,
-          tax_amount: returnItems.reduce((sum, item) => sum + (Number(item.tax_amount) || 0), 0),
-          total_amount: returnData.refund_amount,
-          status: 'issued',
-          reason: returnData.refund_type === 'partial' 
-            ? `Partial refund: ${returnData.refund_reason || 'Per agreement'}`
-            : 'Full refund for returned items',
-          notes: returnData.notes,
-        });
-
-        // Update sale return with credit note reference
-        await supabase
-          .from('sale_returns')
-          .update({ credit_note_id: creditNoteNumber })
-          .eq('id', returnId);
-      }
+      // Create debit note (credit note for purchases)
+      const creditNoteNumber = `DN-${Date.now().toString().slice(-8)}`;
+      
+      await supabase.from('credit_notes').insert({
+        organization_id: currentOrganization.id,
+        credit_note_number: creditNoteNumber,
+        contact_id: returnData.supplier_id || null,
+        purchase_return_id: returnId,
+        note_type: 'purchase',
+        amount: returnData.total_amount,
+        tax_amount: returnItems.reduce((sum, item) => sum + (Number(item.tax_amount) || 0), 0),
+        total_amount: returnData.total_amount,
+        status: 'issued',
+        reason: returnData.reason || 'Items returned to supplier',
+        notes: returnData.notes,
+      });
 
       toast({
         title: "Success",
-        description: `Return approved. ${goodConditionItems.length} item(s) added to inventory. Credit note created.`,
+        description: `Return approved. ${returnItems.length} item(s) removed from inventory. Debit note created.`,
       });
 
       onSuccess?.();
@@ -179,7 +150,7 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
   const handleRejectReturn = async () => {
     try {
       const { error } = await supabase
-        .from('sale_returns')
+        .from('purchase_returns')
         .update({ status: 'rejected' })
         .eq('id', returnId);
 
@@ -203,19 +174,26 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
   };
 
   const getConditionBadge = (condition: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive'> = {
-      good: 'default',
-      damaged: 'destructive',
+    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
       defective: 'destructive',
+      damaged: 'destructive',
+      excess: 'secondary',
+      wrong_item: 'outline',
     };
-    return <Badge variant={variants[condition] || 'secondary'}>{condition}</Badge>;
+    const labels: Record<string, string> = {
+      defective: 'Defective',
+      damaged: 'Damaged',
+      excess: 'Excess Stock',
+      wrong_item: 'Wrong Item',
+    };
+    return <Badge variant={variants[condition] || 'secondary'}>{labels[condition] || condition}</Badge>;
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Sale Return Details</DialogTitle>
+          <DialogTitle>Purchase Return Details</DialogTitle>
         </DialogHeader>
 
         {loading ? (
@@ -230,7 +208,7 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
                 <div>
                   <h3 className="font-semibold text-lg">{returnData.return_number}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {returnData.sales?.sale_number && `Original Sale: ${returnData.sales.sale_number}`}
+                    {returnData.purchase_orders?.po_number && `Original PO: ${returnData.purchase_orders.po_number}`}
                   </p>
                 </div>
                 <Badge variant={
@@ -247,14 +225,10 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
                   <p className="text-muted-foreground">Return Date</p>
                   <p className="font-medium">{new Date(returnData.return_date).toLocaleDateString()}</p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Refund Type</p>
-                  <p className="font-medium capitalize">{returnData.refund_type || 'Full'}</p>
-                </div>
-                {returnData.sales?.contacts && (
+                {returnData.contacts && (
                   <div>
-                    <p className="text-muted-foreground">Customer</p>
-                    <p className="font-medium">{returnData.sales.contacts.name}</p>
+                    <p className="text-muted-foreground">Supplier</p>
+                    <p className="font-medium">{returnData.contacts.name}</p>
                   </div>
                 )}
                 {returnData.reason && (
@@ -270,7 +244,7 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
 
             {/* Return Items Table */}
             <div className="space-y-3">
-              <h4 className="font-semibold">Returned Items</h4>
+              <h4 className="font-semibold">Return Items</h4>
               <div className="border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
@@ -308,7 +282,7 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
                         <TableCell className="text-right">{Number(item.tax_rate || 0).toFixed(1)}%</TableCell>
                         <TableCell className="text-right">${Number(item.tax_amount || 0).toFixed(2)}</TableCell>
                         <TableCell className="text-right font-medium">${Number(item.total_amount).toFixed(2)}</TableCell>
-                        <TableCell>{getConditionBadge(item.condition || 'good')}</TableCell>
+                        <TableCell>{getConditionBadge(item.condition || 'defective')}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -326,16 +300,9 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
                   Inventory Impact Preview
                 </h4>
                 <div className="text-sm space-y-1">
-                  {returnItems.filter(i => i.condition === 'good').length > 0 && (
-                    <p className="text-green-600">
-                      ✓ {returnItems.filter(i => i.condition === 'good').reduce((sum, i) => sum + i.quantity, 0)} items in good condition will be added to inventory
-                    </p>
-                  )}
-                  {returnItems.filter(i => i.condition !== 'good').length > 0 && (
-                    <p className="text-orange-600">
-                      ⚠ {returnItems.filter(i => i.condition !== 'good').reduce((sum, i) => sum + i.quantity, 0)} damaged/defective items will NOT be added to inventory
-                    </p>
-                  )}
+                  <p className="text-orange-600">
+                    ⚠ {returnItems.reduce((sum, i) => sum + i.quantity, 0)} items will be removed from inventory (returned to supplier)
+                  </p>
                 </div>
               </div>
             )}
@@ -343,18 +310,9 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
             {/* Totals */}
             <div className="space-y-2">
               <div className="flex justify-between text-lg">
-                <span className="font-semibold">Total Amount:</span>
+                <span className="font-semibold">Total Return Amount:</span>
                 <span className="font-bold">${Number(returnData.total_amount).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-lg">
-                <span className="font-semibold">Refund Amount:</span>
-                <span className="font-bold text-primary">${Number(returnData.refund_amount || 0).toFixed(2)}</span>
-              </div>
-              {returnData.refund_reason && (
-                <div className="text-sm text-muted-foreground">
-                  Refund Reason: {returnData.refund_reason}
-                </div>
-              )}
             </div>
 
             {/* Actions */}
@@ -370,7 +328,7 @@ export function SaleReturnDetailsModal({ returnId, open, onOpenChange, onSuccess
                   ) : (
                     <CheckCircle className="h-4 w-4 mr-2" />
                   )}
-                  Approve Return & Create Credit Note
+                  Approve Return & Create Debit Note
                 </Button>
                 <Button
                   onClick={handleRejectReturn}
