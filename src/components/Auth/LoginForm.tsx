@@ -6,18 +6,54 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from './AuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const { signIn } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isForgotPassword) {
+      if (!email) {
+        toast({
+          variant: "destructive",
+          title: "Validation Error",
+          description: "Please enter your email address.",
+        });
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth?reset=true`,
+        });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "Check your email",
+          description: "We've sent you a password reset link.",
+        });
+        setIsForgotPassword(false);
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message || "Failed to send reset email.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
     if (!email || !password) {
       toast({
         variant: "destructive",
@@ -30,19 +66,11 @@ export function LoginForm() {
     setIsLoading(true);
 
     try {
-      if (isSignUp) {
-        await signUp(email, password);
-        toast({
-          title: "Account created",
-          description: "Please check your email to verify your account.",
-        });
-      } else {
-        await signIn(email, password);
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully signed in.",
-        });
-      }
+      await signIn(email, password);
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully signed in.",
+      });
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -58,10 +86,10 @@ export function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>{isSignUp ? 'Create Account' : 'Sign In'}</CardTitle>
+          <CardTitle>{isForgotPassword ? 'Reset Password' : 'Sign In'}</CardTitle>
           <CardDescription>
-            {isSignUp 
-              ? 'Enter your details to create a new account'
+            {isForgotPassword 
+              ? 'Enter your email to receive a password reset link'
               : 'Enter your credentials to access your account'
             }
           </CardDescription>
@@ -79,36 +107,38 @@ export function LoginForm() {
                 placeholder="Enter your email"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Enter your password"
-                minLength={6}
-              />
-            </div>
+            {!isForgotPassword && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Enter your password"
+                  minLength={6}
+                />
+              </div>
+            )}
             <Button 
               type="submit" 
               className="w-full" 
               disabled={isLoading}
             >
-              {isLoading ? 'Loading...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+              {isLoading ? 'Loading...' : (isForgotPassword ? 'Send Reset Link' : 'Sign In')}
             </Button>
           </form>
           
           <div className="mt-4 text-center">
             <button
               type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
+              onClick={() => setIsForgotPassword(!isForgotPassword)}
               className="text-sm text-primary hover:underline"
             >
-              {isSignUp 
-                ? 'Already have an account? Sign in'
-                : "Don't have an account? Sign up"
+              {isForgotPassword 
+                ? 'Back to sign in'
+                : 'Forgot your password?'
               }
             </button>
           </div>

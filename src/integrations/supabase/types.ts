@@ -1708,6 +1708,7 @@ export type Database = {
           category: string | null
           cost: number | null
           created_at: string
+          defective_quantity: number | null
           description: string | null
           id: string
           image_url: string | null
@@ -1726,6 +1727,7 @@ export type Database = {
           category?: string | null
           cost?: number | null
           created_at?: string
+          defective_quantity?: number | null
           description?: string | null
           id?: string
           image_url?: string | null
@@ -1744,6 +1746,7 @@ export type Database = {
           category?: string | null
           cost?: number | null
           created_at?: string
+          defective_quantity?: number | null
           description?: string | null
           id?: string
           image_url?: string | null

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { User, Settings, Shield } from 'lucide-react';
+import { User, Settings, Shield, Lock } from 'lucide-react';
 
 interface UserProfileModalProps {
   open: boolean;
@@ -20,6 +20,12 @@ export function UserProfileModal({ open, onClose }: UserProfileModalProps) {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [savingPassword, setSavingPassword] = useState(false);
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
 
@@ -108,6 +114,52 @@ export function UserProfileModal({ open, onClose }: UserProfileModalProps) {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Password updated successfully"
+      });
+      
+      setPasswordData({ newPassword: '', confirmPassword: '' });
+      setShowPasswordChange(false);
+    } catch (error: any) {
+      console.error('Error updating password:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update password",
+        variant: "destructive"
+      });
+    } finally {
+      setSavingPassword(false);
     }
   };
 
@@ -220,6 +272,58 @@ export function UserProfileModal({ open, onClose }: UserProfileModalProps) {
                   />
                 </div>
               </CardContent>
+            </Card>
+
+            {/* Password Change Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Lock className="h-4 w-4" />
+                    Password
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowPasswordChange(!showPasswordChange)}
+                  >
+                    {showPasswordChange ? 'Cancel' : 'Change Password'}
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              {showPasswordChange && (
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="newPassword">New Password</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                      placeholder="Enter new password"
+                      minLength={6}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      placeholder="Confirm new password"
+                      minLength={6}
+                    />
+                  </div>
+                  <Button 
+                    onClick={handlePasswordChange} 
+                    disabled={savingPassword}
+                    className="w-full"
+                  >
+                    {savingPassword ? 'Updating...' : 'Update Password'}
+                  </Button>
+                </CardContent>
+              )}
             </Card>
 
             <div className="flex justify-end gap-2">
