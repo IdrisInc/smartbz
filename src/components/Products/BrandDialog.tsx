@@ -1,27 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 
+interface Brand {
+  id: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+}
+
 interface BrandDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  editBrand?: Brand | null;
 }
 
-export function BrandDialog({ open, onOpenChange, onSuccess }: BrandDialogProps) {
+export function BrandDialog({ open, onOpenChange, onSuccess, editBrand }: BrandDialogProps) {
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    is_active: true,
   });
+
+  useEffect(() => {
+    if (open) {
+      if (editBrand) {
+        setFormData({
+          name: editBrand.name,
+          description: editBrand.description || '',
+          is_active: editBrand.is_active,
+        });
+      } else {
+        setFormData({ name: '', description: '', is_active: true });
+      }
+    }
+  }, [open, editBrand]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,28 +53,36 @@ export function BrandDialog({ open, onOpenChange, onSuccess }: BrandDialogProps)
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('product_brands')
-        .insert({
-          organization_id: currentOrganization.id,
-          name: formData.name,
-          description: formData.description,
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Brand created successfully",
-      });
-      setFormData({ name: '', description: '' });
+      if (editBrand) {
+        const { error } = await supabase
+          .from('product_brands')
+          .update({
+            name: formData.name,
+            description: formData.description || null,
+            is_active: formData.is_active,
+          })
+          .eq('id', editBrand.id);
+        if (error) throw error;
+        toast({ title: "Success", description: "Brand updated successfully" });
+      } else {
+        const { error } = await supabase
+          .from('product_brands')
+          .insert({
+            organization_id: currentOrganization.id,
+            name: formData.name,
+            description: formData.description || null,
+          });
+        if (error) throw error;
+        toast({ title: "Success", description: "Brand created successfully" });
+      }
+      
       onSuccess();
       onOpenChange(false);
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to create brand",
+        description: `Failed to ${editBrand ? 'update' : 'create'} brand`,
       });
     } finally {
       setLoading(false);
@@ -61,7 +93,7 @@ export function BrandDialog({ open, onOpenChange, onSuccess }: BrandDialogProps)
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add New Brand</DialogTitle>
+          <DialogTitle>{editBrand ? 'Edit Brand' : 'Add New Brand'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -81,12 +113,22 @@ export function BrandDialog({ open, onOpenChange, onSuccess }: BrandDialogProps)
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
           </div>
+          {editBrand && (
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="is_active"
+                checked={formData.is_active}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+              />
+              <Label htmlFor="is_active">Active</Label>
+            </div>
+          )}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Brand'}
+              {loading ? 'Saving...' : editBrand ? 'Save Changes' : 'Create Brand'}
             </Button>
           </div>
         </form>
