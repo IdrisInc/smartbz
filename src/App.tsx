@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/components/Auth/AuthProvider";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/Auth/ProtectedRoute";
 import { DashboardLayout } from "@/components/Layout/DashboardLayout";
 import { OnboardingGuard } from "@/components/Organization/OnboardingGuard";
@@ -48,69 +50,73 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <OrganizationProvider>
-              <OnboardingProvider>
-                <Routes>
-                  {/* Public routes - Landing page is the default */}
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/faq" element={<FAQ />} />
-                  <Route path="/privacy" element={<Privacy />} />
-                  <Route path="/terms" element={<Terms />} />
-                  
-                  {/* Onboarding - requires auth but not org */}
-                  <Route path="/onboarding" element={
-                    <ProtectedRoute>
-                      <Onboarding />
-                    </ProtectedRoute>
-                  } />
-                  
-                  {/* Dashboard routes - requires auth and org */}
-                  <Route path="/dashboard" element={
-                    <ProtectedRoute>
-                      <OnboardingGuard>
-                        <DashboardLayout />
-                      </OnboardingGuard>
-                    </ProtectedRoute>
-                  }>
-                    <Route index element={<Dashboard />} />
-                    <Route path="sales" element={<Sales />} />
-                    <Route path="pending-approvals" element={<PendingApprovals />} />
-                    <Route path="products" element={<Products />} />
-                    <Route path="inventory" element={<Inventory />} />
-                    <Route path="contacts" element={<Contacts />} />
-                    <Route path="employees" element={<Employees />} />
-                    <Route path="finance" element={<Finance />} />
-                    <Route path="expense-categories" element={<ExpenseCategories />} />
-                    <Route path="cash-registers" element={<CashRegisters />} />
-                    <Route path="reports" element={<Reports />} />
-                    <Route path="settings" element={<Settings />} />
-                    <Route path="branches" element={<Branches />} />
-                    <Route path="payment-history" element={<PaymentHistory />} />
-                    <Route path="trunker" element={<Trunker />} />
-                    
-                    {/* Super Admin Routes */}
-                    <Route path="super-admin/owners" element={<SuperAdminOwners />} />
-                    <Route path="super-admin/businesses" element={<SuperAdminBusinesses />} />
-                    <Route path="super-admin/branches" element={<SuperAdminBranches />} />
-                    <Route path="super-admin/staff" element={<SuperAdminStaff />} />
-                    <Route path="super-admin/subscriptions" element={<SuperAdminSubscriptions />} />
-                    <Route path="super-admin/reports" element={<SuperAdminReports />} />
-                    <Route path="super-admin/payments" element={<SuperAdminPayments />} />
-                  </Route>
-                  
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </OnboardingProvider>
-            </OrganizationProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AuthProvider>
+                <OrganizationProvider>
+                  <OnboardingProvider>
+                    <Routes>
+                      {/* Public routes - Landing page is the default */}
+                      <Route path="/" element={<LandingPage />} />
+                      <Route path="/auth" element={<Auth />} />
+                      <Route path="/faq" element={<FAQ />} />
+                      <Route path="/privacy" element={<Privacy />} />
+                      <Route path="/terms" element={<Terms />} />
+                      
+                      {/* Onboarding - requires auth but not org */}
+                      <Route path="/onboarding" element={
+                        <ProtectedRoute>
+                          <Onboarding />
+                        </ProtectedRoute>
+                      } />
+                      
+                      {/* Dashboard routes - requires auth and org */}
+                      <Route path="/dashboard" element={
+                        <ProtectedRoute>
+                          <OnboardingGuard>
+                            <DashboardLayout />
+                          </OnboardingGuard>
+                        </ProtectedRoute>
+                      }>
+                        <Route index element={<Dashboard />} />
+                        <Route path="sales" element={<Sales />} />
+                        <Route path="pending-approvals" element={<PendingApprovals />} />
+                        <Route path="products" element={<Products />} />
+                        <Route path="inventory" element={<Inventory />} />
+                        <Route path="contacts" element={<Contacts />} />
+                        <Route path="employees" element={<Employees />} />
+                        <Route path="finance" element={<Finance />} />
+                        <Route path="expense-categories" element={<ExpenseCategories />} />
+                        <Route path="cash-registers" element={<CashRegisters />} />
+                        <Route path="reports" element={<Reports />} />
+                        <Route path="settings" element={<Settings />} />
+                        <Route path="branches" element={<Branches />} />
+                        <Route path="payment-history" element={<PaymentHistory />} />
+                        <Route path="trunker" element={<Trunker />} />
+                        
+                        {/* Super Admin Routes */}
+                        <Route path="super-admin/owners" element={<SuperAdminOwners />} />
+                        <Route path="super-admin/businesses" element={<SuperAdminBusinesses />} />
+                        <Route path="super-admin/branches" element={<SuperAdminBranches />} />
+                        <Route path="super-admin/staff" element={<SuperAdminStaff />} />
+                        <Route path="super-admin/subscriptions" element={<SuperAdminSubscriptions />} />
+                        <Route path="super-admin/reports" element={<SuperAdminReports />} />
+                        <Route path="super-admin/payments" element={<SuperAdminPayments />} />
+                      </Route>
+                      
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </OnboardingProvider>
+                </OrganizationProvider>
+              </AuthProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </LanguageProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
