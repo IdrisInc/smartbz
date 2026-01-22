@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Bell, User, LogOut } from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/components/Auth/AuthProvider';
@@ -9,6 +8,8 @@ import { useNavigate } from 'react-router-dom';
 import { OrganizationSelector } from '@/components/Organization/OrganizationSelector';
 import { NotificationCenter } from '@/components/Notifications/NotificationCenter';
 import { UserProfileModal } from '@/components/UserProfile/UserProfileModal';
+import { GlobalSearch } from '@/components/Layout/GlobalSearch';
+import { LanguageThemeSelector } from '@/components/Layout/LanguageThemeSelector';
 
 export function DashboardHeader() {
   const { signOut, user } = useAuth();
@@ -38,12 +39,19 @@ export function DashboardHeader() {
       <div className="flex h-16 items-center px-4 gap-4">
         <SidebarTrigger />
         
+        {/* Global Search */}
+        <GlobalSearch />
+        
         <div className="flex-1" />
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <OrganizationSelector />
+          
+          {/* Language and Theme */}
+          <LanguageThemeSelector />
+          
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">{user?.email}</span>
+            <span className="text-sm text-muted-foreground hidden md:block">{user?.email}</span>
             <NotificationCenter />
             <Button variant="ghost" size="icon" onClick={() => setShowProfile(true)}>
               <User className="h-4 w-4" />
