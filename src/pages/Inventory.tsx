@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PurchaseOrderForm } from '@/components/Inventory/PurchaseOrderForm';
 import { PurchaseReturnDialog } from '@/components/Inventory/PurchaseReturnDialog';
+import { PurchaseOrderPrintView } from '@/components/Inventory/PurchaseOrderPrintView';
 import { QuotationDialog } from '@/components/Inventory/QuotationDialog';
 import { StockByStatusCard } from '@/components/Inventory/StockByStatusCard';
 import { StockAdjustmentsTable } from '@/components/Inventory/StockAdjustmentsTable';
@@ -19,6 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 import { useExportUtils } from '@/hooks/useExportUtils';
+import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 import { formatDistanceToNow, format } from 'date-fns';
 
 export default function Inventory() {
@@ -52,9 +54,12 @@ export default function Inventory() {
   const [loadingQuotations, setLoadingQuotations] = useState(true);
   const [loadingMovements, setLoadingMovements] = useState(true);
   
+  const [showPOPrint, setShowPOPrint] = useState(false);
+  
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
   const { exportToCSV } = useExportUtils();
+  const { businessSettings } = useBusinessSettings();
 
   useEffect(() => {
     if (currentOrganization) {
@@ -1107,6 +1112,17 @@ export default function Inventory() {
                   <p className="text-sm border rounded p-2">{selectedPO.notes}</p>
                 </div>
               )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button variant="outline" onClick={() => setShowPODetails(false)}>
+                  Close
+                </Button>
+                <Button variant="outline" onClick={() => setShowPOPrint(true)}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
@@ -1280,6 +1296,14 @@ export default function Inventory() {
         open={showQuotationDialog}
         onOpenChange={setShowQuotationDialog}
         onSuccess={fetchQuotations}
+      />
+
+      {/* Purchase Order Print View */}
+      <PurchaseOrderPrintView
+        open={showPOPrint}
+        onOpenChange={setShowPOPrint}
+        purchaseOrder={selectedPO}
+        businessSettings={businessSettings}
       />
       </div>
     </ProtectedRoute>
