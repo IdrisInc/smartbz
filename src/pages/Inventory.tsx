@@ -333,6 +333,54 @@ export default function Inventory() {
     }
   };
 
+  const handleApproveReturn = async (returnId: string) => {
+    try {
+      const { error } = await supabase
+        .from('purchase_returns')
+        .update({ status: 'approved' })
+        .eq('id', returnId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Purchase return approved",
+      });
+      fetchPurchaseReturns();
+    } catch (error) {
+      console.error('Error approving return:', error);
+      toast({
+        title: "Error",
+        description: "Failed to approve return",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectReturn = async (returnId: string) => {
+    try {
+      const { error } = await supabase
+        .from('purchase_returns')
+        .update({ status: 'rejected' })
+        .eq('id', returnId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Purchase return rejected",
+      });
+      fetchPurchaseReturns();
+    } catch (error) {
+      console.error('Error rejecting return:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reject return",
+        variant: "destructive",
+      });
+    }
+  };
+
   const viewQuotationDetails = async (quotation: any) => {
     try {
       const { data: items, error } = await supabase
@@ -761,13 +809,35 @@ export default function Inventory() {
                         </TableCell>
                         <TableCell className="text-sm">{ret.reason || '-'}</TableCell>
                         <TableCell>
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={() => viewReturnDetails(ret)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => viewReturnDetails(ret)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {ret.status === 'pending' && (
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  variant="default"
+                                  onClick={() => handleApproveReturn(ret.id)}
+                                >
+                                  <Check className="h-4 w-4 mr-1" />
+                                  Approve
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive"
+                                  onClick={() => handleRejectReturn(ret.id)}
+                                >
+                                  <Ban className="h-4 w-4 mr-1" />
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

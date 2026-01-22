@@ -172,43 +172,52 @@ export type Database = {
           address: string | null
           business_name: string
           city: string | null
+          closing_time: string | null
           country: string | null
           created_at: string
           email: string | null
           id: string
           logo_url: string | null
+          opening_time: string | null
           organization_id: string
           phone: string | null
           timezone: string | null
           updated_at: string
+          working_days: string[] | null
         }
         Insert: {
           address?: string | null
           business_name: string
           city?: string | null
+          closing_time?: string | null
           country?: string | null
           created_at?: string
           email?: string | null
           id?: string
           logo_url?: string | null
+          opening_time?: string | null
           organization_id: string
           phone?: string | null
           timezone?: string | null
           updated_at?: string
+          working_days?: string[] | null
         }
         Update: {
           address?: string | null
           business_name?: string
           city?: string | null
+          closing_time?: string | null
           country?: string | null
           created_at?: string
           email?: string | null
           id?: string
           logo_url?: string | null
+          opening_time?: string | null
           organization_id?: string
           phone?: string | null
           timezone?: string | null
           updated_at?: string
+          working_days?: string[] | null
         }
         Relationships: []
       }
@@ -355,6 +364,8 @@ export type Database = {
           applied_date: string | null
           contact_id: string | null
           created_at: string
+          created_by: string | null
+          created_by_name: string | null
           credit_note_number: string
           id: string
           issued_date: string
@@ -374,6 +385,8 @@ export type Database = {
           applied_date?: string | null
           contact_id?: string | null
           created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
           credit_note_number: string
           id?: string
           issued_date?: string
@@ -393,6 +406,8 @@ export type Database = {
           applied_date?: string | null
           contact_id?: string | null
           created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
           credit_note_number?: string
           id?: string
           issued_date?: string
@@ -837,6 +852,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          created_by_name: string | null
           id: string
           movement_type: string
           notes: string | null
@@ -849,6 +865,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          created_by_name?: string | null
           id?: string
           movement_type: string
           notes?: string | null
@@ -861,6 +878,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          created_by_name?: string | null
           id?: string
           movement_type?: string
           notes?: string | null
@@ -1918,6 +1936,8 @@ export type Database = {
         Row: {
           branch_id: string | null
           created_at: string
+          created_by: string | null
+          created_by_name: string | null
           expected_date: string | null
           id: string
           notes: string | null
@@ -1932,6 +1952,8 @@ export type Database = {
         Insert: {
           branch_id?: string | null
           created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
           expected_date?: string | null
           id?: string
           notes?: string | null
@@ -1946,6 +1968,8 @@ export type Database = {
         Update: {
           branch_id?: string | null
           created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
           expected_date?: string | null
           id?: string
           notes?: string | null
@@ -2043,8 +2067,12 @@ export type Database = {
       }
       purchase_returns: {
         Row: {
+          approved_by: string | null
+          approved_by_name: string | null
           branch_id: string | null
           created_at: string
+          created_by: string | null
+          created_by_name: string | null
           id: string
           notes: string | null
           organization_id: string
@@ -2058,8 +2086,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approved_by?: string | null
+          approved_by_name?: string | null
           branch_id?: string | null
           created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
           id?: string
           notes?: string | null
           organization_id: string
@@ -2073,8 +2105,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approved_by?: string | null
+          approved_by_name?: string | null
           branch_id?: string | null
           created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
           id?: string
           notes?: string | null
           organization_id?: string
@@ -2297,9 +2333,13 @@ export type Database = {
       }
       sale_returns: {
         Row: {
+          approved_by: string | null
+          approved_by_name: string | null
           branch_id: string | null
           contact_id: string | null
           created_at: string
+          created_by: string | null
+          created_by_name: string | null
           credit_note_id: string | null
           id: string
           notes: string | null
@@ -2316,9 +2356,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approved_by?: string | null
+          approved_by_name?: string | null
           branch_id?: string | null
           contact_id?: string | null
           created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
           credit_note_id?: string | null
           id?: string
           notes?: string | null
@@ -2335,9 +2379,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approved_by?: string | null
+          approved_by_name?: string | null
           branch_id?: string | null
           contact_id?: string | null
           created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
           credit_note_id?: string | null
           id?: string
           notes?: string | null
@@ -2371,6 +2419,7 @@ export type Database = {
           confirmed_by: string | null
           contact_id: string | null
           created_at: string
+          created_by_name: string | null
           discount_amount: number | null
           employee_id: string | null
           id: string
@@ -2392,6 +2441,7 @@ export type Database = {
           confirmed_by?: string | null
           contact_id?: string | null
           created_at?: string
+          created_by_name?: string | null
           discount_amount?: number | null
           employee_id?: string | null
           id?: string
@@ -2413,6 +2463,7 @@ export type Database = {
           confirmed_by?: string | null
           contact_id?: string | null
           created_at?: string
+          created_by_name?: string | null
           discount_amount?: number | null
           employee_id?: string | null
           id?: string
@@ -2464,12 +2515,14 @@ export type Database = {
           adjustment_type: string
           approval_status: string | null
           approved_by: string | null
+          approved_by_name: string | null
           created_at: string
           from_status: string | null
           id: string
           notes: string | null
           organization_id: string
           performed_by: string | null
+          performed_by_name: string | null
           product_id: string
           quantity: number
           reason: string | null
@@ -2484,12 +2537,14 @@ export type Database = {
           adjustment_type: string
           approval_status?: string | null
           approved_by?: string | null
+          approved_by_name?: string | null
           created_at?: string
           from_status?: string | null
           id?: string
           notes?: string | null
           organization_id: string
           performed_by?: string | null
+          performed_by_name?: string | null
           product_id: string
           quantity: number
           reason?: string | null
@@ -2504,12 +2559,14 @@ export type Database = {
           adjustment_type?: string
           approval_status?: string | null
           approved_by?: string | null
+          approved_by_name?: string | null
           created_at?: string
           from_status?: string | null
           id?: string
           notes?: string | null
           organization_id?: string
           performed_by?: string | null
+          performed_by_name?: string | null
           product_id?: string
           quantity?: number
           reason?: string | null
@@ -2546,6 +2603,7 @@ export type Database = {
           ip_address: unknown
           organization_id: string
           performed_by: string | null
+          performed_by_name: string | null
           product_id: string
           quantity_after: number
           quantity_before: number
@@ -2564,6 +2622,7 @@ export type Database = {
           ip_address?: unknown
           organization_id: string
           performed_by?: string | null
+          performed_by_name?: string | null
           product_id: string
           quantity_after: number
           quantity_before: number
@@ -2582,6 +2641,7 @@ export type Database = {
           ip_address?: unknown
           organization_id?: string
           performed_by?: string | null
+          performed_by_name?: string | null
           product_id?: string
           quantity_after?: number
           quantity_before?: number

@@ -4,10 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 import { Loader2 } from 'lucide-react';
+import { BusinessHoursSettings } from './BusinessHoursSettings';
 
 export function BusinessSettings() {
   const { businessSettings, loading, saveBusinessSettings } = useBusinessSettings();
@@ -115,6 +115,7 @@ export function BusinessSettings() {
                       <SelectItem value="Europe/London">London</SelectItem>
                       <SelectItem value="Europe/Paris">Paris</SelectItem>
                       <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
+                      <SelectItem value="Africa/Dar_es_Salaam">East Africa Time</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -154,6 +155,8 @@ export function BusinessSettings() {
           )}
         </CardContent>
       </Card>
+
+      <BusinessHoursSettings />
     </div>
   );
 }
