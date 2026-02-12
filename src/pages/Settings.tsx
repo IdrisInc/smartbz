@@ -12,6 +12,7 @@ import { PaymentMethodSettings } from '@/components/Settings/PaymentMethodSettin
 import { BranchManagement } from '@/components/Organization/BranchManagement';
 import { AdminUserRegistration } from '@/components/Admin/AdminUserRegistration';
 import { ModuleConfigTab } from '@/components/SuperAdmin/ModuleConfigTab';
+import { AppearanceSettings } from '@/components/Settings/AppearanceSettings';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -26,13 +27,14 @@ export default function Settings() {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">{t('settings.title')}</h2>
         <p className="text-muted-foreground">
-          Configure your business settings and feature preferences
+          {t('settings.appearance.desc')}
         </p>
       </div>
 
       <Tabs defaultValue="business" className="space-y-4">
         <TabsList className="flex flex-wrap gap-1">
           <TabsTrigger value="business">{t('settings.business')}</TabsTrigger>
+          <TabsTrigger value="appearance">{t('settings.appearance')}</TabsTrigger>
           <TabsTrigger value="subscription">{t('settings.subscription')}</TabsTrigger>
           <TabsTrigger value="tax">{t('settings.tax')}</TabsTrigger>
           <TabsTrigger value="payments">{t('settings.payments')}</TabsTrigger>
@@ -47,13 +49,17 @@ export default function Settings() {
           {isSuperAdmin && (
             <>
               <TabsTrigger value="modules">{t('settings.modules')}</TabsTrigger>
-              <TabsTrigger value="admin">Admin</TabsTrigger>
+              <TabsTrigger value="admin">{t('settings.admin')}</TabsTrigger>
             </>
           )}
         </TabsList>
 
         <TabsContent value="business">
           <BusinessSettings />
+        </TabsContent>
+
+        <TabsContent value="appearance">
+          <AppearanceSettings />
         </TabsContent>
 
         <TabsContent value="subscription">
