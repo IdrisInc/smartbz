@@ -36,6 +36,7 @@ import FAQ from "./pages/FAQ";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Install from "./pages/Install";
+import SectorShowcase from "./pages/SectorShowcase";
 
 // Super Admin Pages
 import SuperAdminOwners from "./pages/SuperAdminOwners";
@@ -68,6 +69,7 @@ function App() {
                       <Route path="/privacy" element={<Privacy />} />
                       <Route path="/terms" element={<Terms />} />
                       <Route path="/install" element={<Install />} />
+                      <Route path="/industries" element={<SectorShowcase />} />
                       
                       {/* Onboarding - requires auth but not org */}
                       <Route path="/onboarding" element={

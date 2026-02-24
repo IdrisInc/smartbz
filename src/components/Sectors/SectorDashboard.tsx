@@ -2,15 +2,10 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useSectorFeatures } from '@/hooks/useSectorFeatures';
+import { SectorModulePreview } from '@/components/Sectors/SectorModulePreview';
 import { 
-  TrendingUp, 
-  Users, 
-  Package, 
-  DollarSign, 
-  Activity,
-  Calendar,
-  Target,
-  BarChart3
+  TrendingUp, Users, Package, DollarSign, Activity,
+  Calendar, Target, BarChart3, CheckCircle2
 } from 'lucide-react';
 
 const getMetricIcon = (metric: string) => {
@@ -47,6 +42,7 @@ export function SectorDashboard() {
   }
 
   const metrics = getDashboardMetrics();
+  const sectorId = sectorConfig.id;
 
   return (
     <div className="space-y-6">
@@ -64,7 +60,7 @@ export function SectorDashboard() {
 
       {/* Sector-Specific Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {metrics.slice(0, 4).map((metric, index) => {
+        {metrics.slice(0, 4).map((metric) => {
           const Icon = getMetricIcon(metric);
           return (
             <Card key={metric}>
@@ -74,22 +70,21 @@ export function SectorDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">--</div>
-                <p className="text-xs text-muted-foreground">
-                  Sector-specific metric
-                </p>
+                <p className="text-xs text-muted-foreground">Sector-specific metric</p>
               </CardContent>
             </Card>
           );
         })}
       </div>
 
+      {/* Sector Module Previews */}
+      <SectorModulePreview sectorId={sectorId} config={sectorConfig} />
+
       {/* Active Features */}
       <Card>
         <CardHeader>
           <CardTitle>Active {sectorConfig.name} Features</CardTitle>
-          <CardDescription>
-            Industry-specific features enabled for your organization
-          </CardDescription>
+          <CardDescription>Industry-specific features enabled for your organization</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
@@ -100,7 +95,7 @@ export function SectorDashboard() {
                   <p className="text-sm text-muted-foreground">{feature.description}</p>
                 </div>
                 <Badge variant="outline" className="text-xs">
-                  Active
+                  <CheckCircle2 className="h-3 w-3 mr-1" /> Active
                 </Badge>
               </div>
             ))}
@@ -113,9 +108,7 @@ export function SectorDashboard() {
         <Card>
           <CardHeader>
             <CardTitle>Additional {sectorConfig.name} Metrics</CardTitle>
-            <CardDescription>
-              Extended metrics specific to your industry
-            </CardDescription>
+            <CardDescription>Extended metrics specific to your industry</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
