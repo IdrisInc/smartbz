@@ -174,9 +174,9 @@ export function OnboardingContentTab() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Onboarding Content</h2>
+          <h2 className="text-2xl font-bold">Onboarding & Showcase Content</h2>
           <p className="text-muted-foreground">
-            Manage the content displayed on the onboarding landing page
+            Manage landing page content and system tour showcase steps
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
@@ -202,10 +202,10 @@ export function OnboardingContentTab() {
                 <Input
                   value={formData.content_key}
                   onChange={(e) => setFormData(prev => ({ ...prev, content_key: e.target.value }))}
-                  placeholder="e.g., hero, features_intro, cta"
+                  placeholder="e.g., hero, tour_dashboard, tour_pos"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Unique identifier used in the code (hero, features_intro, sectors_intro, cta)
+                  Unique key. Use <code className="bg-muted px-1 rounded">tour_</code> prefix for system tour steps (e.g., tour_login, tour_dashboard, tour_products, tour_pos, tour_sales, tour_inventory, tour_finance, tour_employees, tour_settings). Add <code className="bg-muted px-1 rounded">module</code> in metadata JSON to map to a module preview.
                 </p>
               </div>
               <div className="space-y-2">
