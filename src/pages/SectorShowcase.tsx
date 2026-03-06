@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { sectorConfigurations, SectorConfiguration } from '@/config/sectorConfigurations';
 import { SectorModulePreview } from '@/components/Sectors/SectorModulePreview';
+import { SystemDemoTour } from '@/components/Sectors/SystemDemoTour';
 import { useNavigate } from 'react-router-dom';
 
 const sectorIcons: Record<string, React.ElementType> = {
@@ -125,14 +126,20 @@ export default function SectorShowcase() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs defaultValue="system-tour" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="system-tour">System Tour</TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="features">Features</TabsTrigger>
             <TabsTrigger value="modules">Modules</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
+
+          {/* System Tour Tab */}
+          <TabsContent value="system-tour">
+            <SystemDemoTour sectorId={activeSector} sectorName={config.name} />
+          </TabsContent>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
