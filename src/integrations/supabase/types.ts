@@ -269,6 +269,41 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          organization_id: string
+          sender_id: string
+          sender_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          organization_id: string
+          sender_id: string
+          sender_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          organization_id?: string
+          sender_id?: string
+          sender_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       code_redemption_logs: {
         Row: {
           code_id: string
@@ -1075,6 +1110,7 @@ export type Database = {
           message: string
           organization_id: string | null
           read: boolean
+          target_roles: string[] | null
           title: string
           type: string
           updated_at: string
@@ -1087,6 +1123,7 @@ export type Database = {
           message: string
           organization_id?: string | null
           read?: boolean
+          target_roles?: string[] | null
           title: string
           type?: string
           updated_at?: string
@@ -1099,6 +1136,7 @@ export type Database = {
           message?: string
           organization_id?: string | null
           read?: boolean
+          target_roles?: string[] | null
           title?: string
           type?: string
           updated_at?: string
@@ -1155,6 +1193,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      org_module_visibility: {
+        Row: {
+          created_at: string
+          id: string
+          is_visible: boolean
+          module_key: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          module_key: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_visible?: boolean
+          module_key?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_module_visibility_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organization_memberships: {
         Row: {

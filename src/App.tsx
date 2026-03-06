@@ -101,6 +101,7 @@ function App() {
                         <Route path="branches" element={<Branches />} />
                         <Route path="payment-history" element={<PaymentHistory />} />
                         <Route path="trunker" element={<Trunker />} />
+                        <Route path="faq" element={<FAQ />} />
                         
                         {/* Super Admin Routes */}
                         <Route path="super-admin/owners" element={<SuperAdminOwners />} />
