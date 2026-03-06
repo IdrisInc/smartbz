@@ -6,6 +6,7 @@ import { AppSidebar } from '@/components/Layout/AppSidebar';
 import { DashboardHeader } from '@/components/Layout/DashboardHeader';
 import { BusinessPreloader } from '@/components/Preloader/BusinessPreloader';
 import { ClosingTimeAlert } from '@/components/Notifications/ClosingTimeAlert';
+import { OrgChatWidget } from '@/components/Chat/OrgChatWidget';
 
 export function DashboardLayout() {
   return (
@@ -21,6 +22,7 @@ export function DashboardLayout() {
           </div>
         </div>
         <ClosingTimeAlert />
+        <OrgChatWidget />
       </SidebarProvider>
     </BusinessPreloader>
   );

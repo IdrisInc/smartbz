@@ -8,6 +8,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useUserRole } from '@/hooks/useUserRole';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface Notification {
   id: string;
@@ -17,6 +19,7 @@ interface Notification {
   read: boolean;
   created_at: string;
   action_url?: string;
+  target_roles?: string[] | null;
 }
 
 export function NotificationCenter() {
@@ -26,11 +29,12 @@ export function NotificationCenter() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { userRole } = useUserRole();
+  const { currentOrganization } = useOrganization();
 
   useEffect(() => {
     loadNotifications();
     
-    // Set up real-time subscription for new notifications
     const channel = supabase
       .channel('notifications')
       .on('postgres_changes', {
@@ -45,13 +49,11 @@ export function NotificationCenter() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [userRole, currentOrganization]);
 
   const loadNotifications = async () => {
     try {
       setLoading(true);
-      
-      // Fetch notifications for the current user
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -60,35 +62,46 @@ export function NotificationCenter() {
         return;
       }
       
-      // Get notifications for super admins or user-specific notifications
-      const { data: notificationsData, error } = await supabase
+      let query = supabase
         .from('notifications')
         .select('*')
-        .or(`user_id.is.null,user_id.eq.${user.id}`)
         .order('created_at', { ascending: false })
         .limit(50);
 
+      // Super admins see all; others see user-specific or org-specific
+      if (userRole === 'super_admin') {
+        query = query.or(`user_id.is.null,user_id.eq.${user.id}`);
+      } else if (currentOrganization) {
+        query = query.or(`user_id.eq.${user.id},organization_id.eq.${currentOrganization.id}`);
+      } else {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data: notificationsData, error } = await query;
       if (error) throw error;
 
-      const formattedNotifications: Notification[] = (notificationsData || []).map(notification => ({
+      // Filter by target_roles if set
+      const filtered = (notificationsData || []).filter(n => {
+        if (!n.target_roles || n.target_roles.length === 0) return true;
+        if (!userRole) return false;
+        return n.target_roles.includes(userRole);
+      });
+
+      const formattedNotifications: Notification[] = filtered.map(notification => ({
         id: notification.id,
         title: notification.title,
         message: notification.message,
         type: notification.type as 'info' | 'warning' | 'success' | 'error',
         read: notification.read,
         created_at: notification.created_at,
-        action_url: notification.action_url || undefined
+        action_url: notification.action_url || undefined,
+        target_roles: notification.target_roles,
       }));
 
       setNotifications(formattedNotifications);
       setUnreadCount(formattedNotifications.filter(n => !n.read).length);
     } catch (error) {
       console.error('Error loading notifications:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load notifications",
-        variant: "destructive"
-      });
     } finally {
       setLoading(false);
     }
@@ -100,51 +113,28 @@ export function NotificationCenter() {
         .from('notifications')
         .update({ read: true })
         .eq('id', notificationId);
-
       if (error) throw error;
-
-      setNotifications(prev => 
-        prev.map(n => 
-          n.id === notificationId ? { ...n, read: true } : n
-        )
-      );
+      setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error marking notification as read:', error);
-      toast({
-        title: "Error",
-        description: "Failed to mark notification as read",
-        variant: "destructive"
-      });
     }
   };
 
   const markAllAsRead = async () => {
     try {
       const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
-      
       if (unreadIds.length > 0) {
         const { error } = await supabase
           .from('notifications')
           .update({ read: true })
           .in('id', unreadIds);
-
         if (error) throw error;
       }
-
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
-      toast({
-        title: "Success",
-        description: "All notifications marked as read"
-      });
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-      toast({
-        title: "Error",
-        description: "Failed to mark all notifications as read",
-        variant: "destructive"
-      });
+      console.error('Error marking all as read:', error);
     }
   };
 
@@ -154,9 +144,7 @@ export function NotificationCenter() {
         .from('notifications')
         .delete()
         .eq('id', notificationId);
-
       if (error) throw error;
-
       const notification = notifications.find(n => n.id === notificationId);
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
       if (notification && !notification.read) {
@@ -164,24 +152,15 @@ export function NotificationCenter() {
       }
     } catch (error) {
       console.error('Error deleting notification:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete notification",
-        variant: "destructive"
-      });
     }
   };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'success':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'warning':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-      case 'error':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return <Info className="h-4 w-4 text-blue-500" />;
+      case 'success': return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'warning': return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      case 'error': return <AlertCircle className="h-4 w-4 text-red-500" />;
+      default: return <Info className="h-4 w-4 text-blue-500" />;
     }
   };
 
@@ -189,11 +168,9 @@ export function NotificationCenter() {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
     if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays}d ago`;
+    return `${Math.floor(diffInHours / 24)}d ago`;
   };
 
   return (
@@ -202,10 +179,7 @@ export function NotificationCenter() {
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-            >
+            <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
               {unreadCount > 9 ? '9+' : unreadCount}
             </Badge>
           )}
@@ -218,12 +192,7 @@ export function NotificationCenter() {
               <CardTitle className="text-lg">Notifications</CardTitle>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={markAllAsRead}
-                    className="text-xs"
-                  >
+                  <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-xs">
                     Mark all read
                   </Button>
                 )}
@@ -234,65 +203,39 @@ export function NotificationCenter() {
           <CardContent className="p-0">
             <ScrollArea className="h-80">
               {notifications.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  No notifications
-                </div>
+                <div className="p-4 text-center text-muted-foreground">No notifications</div>
               ) : (
                 <div className="space-y-1">
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`p-3 border-b border-border hover:bg-muted/50 transition-colors ${
-                        !notification.read ? 'bg-muted/20' : ''
-                      }`}
+                      className={`p-3 border-b border-border hover:bg-muted/50 transition-colors ${!notification.read ? 'bg-muted/20' : ''}`}
                     >
                       <div className="flex items-start gap-3">
                         {getNotificationIcon(notification.type)}
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center justify-between">
-                            <h4 className="text-sm font-medium leading-none">
-                              {notification.title}
-                            </h4>
+                            <h4 className="text-sm font-medium leading-none">{notification.title}</h4>
                             <div className="flex items-center gap-1">
                               {!notification.read && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6"
-                                  onClick={() => markAsRead(notification.id)}
-                                >
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => markAsRead(notification.id)}>
                                   <Check className="h-3 w-3" />
                                 </Button>
                               )}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6"
-                                onClick={() => deleteNotification(notification.id)}
-                              >
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deleteNotification(notification.id)}>
                                 <X className="h-3 w-3" />
                               </Button>
                             </div>
                           </div>
-                           <p className="text-sm text-muted-foreground">
-                            {notification.message}
-                          </p>
+                          <p className="text-sm text-muted-foreground">{notification.message}</p>
                           <div className="flex items-center justify-between">
-                            <p className="text-xs text-muted-foreground">
-                              {formatTimeAgo(notification.created_at)}
-                            </p>
+                            <p className="text-xs text-muted-foreground">{formatTimeAgo(notification.created_at)}</p>
                             {notification.action_url && (
                               <Button
-                                variant="link"
-                                size="sm"
-                                className="h-6 text-xs p-0"
-                                onClick={() => {
-                                  markAsRead(notification.id);
-                                  setOpen(false);
-                                  navigate(notification.action_url!);
-                                }}
+                                variant="link" size="sm" className="h-6 text-xs p-0"
+                                onClick={() => { markAsRead(notification.id); setOpen(false); navigate(notification.action_url!); }}
                               >
-                                View Request
+                                View
                               </Button>
                             )}
                           </div>

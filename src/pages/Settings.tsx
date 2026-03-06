@@ -13,6 +13,7 @@ import { BranchManagement } from '@/components/Organization/BranchManagement';
 import { AdminUserRegistration } from '@/components/Admin/AdminUserRegistration';
 import { ModuleConfigTab } from '@/components/SuperAdmin/ModuleConfigTab';
 import { AppearanceSettings } from '@/components/Settings/AppearanceSettings';
+import { ModuleVisibilitySettings } from '@/components/Settings/ModuleVisibilitySettings';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -44,6 +45,9 @@ export default function Settings() {
           <TabsTrigger value="permissions">{t('settings.permissions')}</TabsTrigger>
           {isBusinessOwnerOrAdmin && (
             <TabsTrigger value="email">{t('settings.email')}</TabsTrigger>
+          )}
+          {isBusinessOwnerOrAdmin && (
+            <TabsTrigger value="sidebar">Sidebar Modules</TabsTrigger>
           )}
           <TabsTrigger value="logs">{t('settings.logs')}</TabsTrigger>
           {isSuperAdmin && (
@@ -93,6 +97,12 @@ export default function Settings() {
         {isBusinessOwnerOrAdmin && (
           <TabsContent value="email">
             <EmailTemplateSettings />
+          </TabsContent>
+        )}
+
+        {isBusinessOwnerOrAdmin && (
+          <TabsContent value="sidebar">
+            <ModuleVisibilitySettings />
           </TabsContent>
         )}
 
