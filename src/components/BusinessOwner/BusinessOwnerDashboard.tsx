@@ -190,21 +190,22 @@ export function BusinessOwnerDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Business Portfolio</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold">Business Portfolio</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Manage your {organizations.length} business{organizations.length !== 1 ? 'es' : ''} from one dashboard
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <Badge variant="default" className="px-3 py-1">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Badge variant="default" className="px-2 sm:px-3 py-1 text-xs sm:text-sm">
             {currentOrganization?.subscription_plan.charAt(0).toUpperCase() + currentOrganization?.subscription_plan.slice(1)} Plan
           </Badge>
-          <Button onClick={handleCreateBusiness}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Business
+          <Button size="sm" onClick={handleCreateBusiness}>
+            <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Add Business</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         </div>
       </div>
@@ -237,7 +238,7 @@ export function BusinessOwnerDashboard() {
       )}
 
       {/* Portfolio Overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>

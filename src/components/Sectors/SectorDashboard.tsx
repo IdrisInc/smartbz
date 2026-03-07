@@ -45,21 +45,21 @@ export function SectorDashboard() {
   const sectorId = sectorConfig.id;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">{sectorConfig.name} Dashboard</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight">{sectorConfig.name} Dashboard</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Industry-specific metrics and insights for your {sectorConfig.name.toLowerCase()} business
           </p>
         </div>
-        <Badge variant="secondary" className="text-sm">
+        <Badge variant="secondary" className="text-xs sm:text-sm self-start sm:self-auto">
           {features.length} Active Features
         </Badge>
       </div>
 
       {/* Sector-Specific Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.slice(0, 4).map((metric) => {
           const Icon = getMetricIcon(metric);
           return (
@@ -87,7 +87,7 @@ export function SectorDashboard() {
           <CardDescription>Industry-specific features enabled for your organization</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
             {features.map((feature) => (
               <div key={feature.id} className="flex items-start space-x-3 rounded-lg border p-3">
                 <div className="flex-1 space-y-1">
@@ -111,7 +111,7 @@ export function SectorDashboard() {
             <CardDescription>Extended metrics specific to your industry</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {metrics.slice(4).map((metric) => {
                 const Icon = getMetricIcon(metric);
                 return (
