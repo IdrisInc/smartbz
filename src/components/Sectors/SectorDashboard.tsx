@@ -87,7 +87,7 @@ export function SectorDashboard() {
           <CardDescription>Industry-specific features enabled for your organization</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
             {features.map((feature) => (
               <div key={feature.id} className="flex items-start space-x-3 rounded-lg border p-3">
                 <div className="flex-1 space-y-1">
