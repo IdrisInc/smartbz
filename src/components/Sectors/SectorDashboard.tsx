@@ -111,7 +111,7 @@ export function SectorDashboard() {
             <CardDescription>Extended metrics specific to your industry</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {metrics.slice(4).map((metric) => {
                 const Icon = getMetricIcon(metric);
                 return (
