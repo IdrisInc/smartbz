@@ -33,27 +33,34 @@ export function DashboardHeader() {
 
   return (
     <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center px-4 gap-4">
+      <div className="flex h-16 items-center px-2 sm:px-4 gap-2 sm:gap-4">
         <SidebarTrigger />
-        <GlobalSearch />
-        <div className="flex-1" />
-        <div className="flex items-center gap-3">
-          <OrganizationSelector />
+        <div className="hidden sm:block flex-1 max-w-md">
+          <GlobalSearch />
+        </div>
+        <div className="flex-1 sm:hidden" />
+        <div className="flex-1 hidden sm:block" />
+        <div className="flex items-center gap-1 sm:gap-3">
+          <div className="hidden lg:block">
+            <OrganizationSelector />
+          </div>
           
-          <Button variant="outline" size="sm" onClick={() => setShowDemo(true)} className="hidden md:flex items-center gap-1.5">
+          <Button variant="outline" size="sm" onClick={() => setShowDemo(true)} className="hidden lg:flex items-center gap-1.5">
             <Play className="h-3.5 w-3.5" />
             {t('demo.title')}
           </Button>
           
-          <LanguageThemeSelector />
+          <div className="hidden md:block">
+            <LanguageThemeSelector />
+          </div>
           
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground hidden md:block">{user?.email}</span>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <span className="text-sm text-muted-foreground hidden xl:block truncate max-w-[180px]">{user?.email}</span>
             <NotificationCenter />
-            <Button variant="ghost" size="icon" onClick={() => setShowProfile(true)}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => setShowProfile(true)}>
               <User className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleSignOut}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={handleSignOut}>
               <LogOut className="h-4 w-4" />
             </Button>
           </div>

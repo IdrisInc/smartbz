@@ -73,7 +73,7 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className="w-64 bg-sidebar text-sidebar-foreground" collapsible="none">
+    <Sidebar className="bg-sidebar text-sidebar-foreground" collapsible="offcanvas">
       <SidebarContent>
         {/* Header */}
         <div className="p-4">
