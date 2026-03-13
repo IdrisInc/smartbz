@@ -82,9 +82,11 @@ function App() {
                       {/* Dashboard routes - requires auth and org */}
                       <Route path="/dashboard" element={
                         <ProtectedRoute>
-                          <OnboardingGuard>
-                            <DashboardLayout />
-                          </OnboardingGuard>
+                          <MaintenanceGuard>
+                            <OnboardingGuard>
+                              <DashboardLayout />
+                            </OnboardingGuard>
+                          </MaintenanceGuard>
                         </ProtectedRoute>
                       }>
                         <Route index element={<Dashboard />} />
