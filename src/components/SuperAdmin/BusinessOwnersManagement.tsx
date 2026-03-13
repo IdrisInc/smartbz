@@ -225,7 +225,8 @@ export function BusinessOwnersManagement() {
       case 'suspended':
         return <Badge variant="destructive">Suspended</Badge>;
       case 'pending':
-        return <Badge variant="secondary">Pending</Badge>;
+      case 'pending_activation':
+        return <Badge variant="secondary">Pending Activation</Badge>;
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }
