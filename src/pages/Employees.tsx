@@ -262,7 +262,8 @@ export default function Employees() {
       </div>
 
       <Tabs defaultValue="employees" className="space-y-4">
-        <TabsList className="flex-wrap h-auto gap-1">
+        <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+        <TabsList className="inline-flex h-auto gap-1 w-max min-w-full sm:w-auto sm:min-w-0 flex-nowrap">
           <TabsTrigger value="employees">Employee Directory</TabsTrigger>
           <TabsTrigger value="payroll">Tanzania Payroll</TabsTrigger>
           <TabsTrigger value="reports">Payroll Reports</TabsTrigger>
