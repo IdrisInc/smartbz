@@ -14,6 +14,7 @@ import { AdminUserRegistration } from '@/components/Admin/AdminUserRegistration'
 import { ModuleConfigTab } from '@/components/SuperAdmin/ModuleConfigTab';
 import { AppearanceSettings } from '@/components/Settings/AppearanceSettings';
 import { ModuleVisibilitySettings } from '@/components/Settings/ModuleVisibilitySettings';
+import { MaintenanceSettings } from '@/components/Settings/MaintenanceSettings';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 
