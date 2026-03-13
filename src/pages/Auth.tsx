@@ -1,12 +1,23 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/components/Auth/AuthProvider';
 import { LoginForm } from '@/components/Auth/LoginForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+
+const planNames: Record<string, string> = {
+  free: 'Free',
+  basic: 'Basic',
+  premium: 'Premium',
+  enterprise: 'Enterprise',
+};
 
 export default function Auth() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode') || 'login';
+  const selectedPlan = searchParams.get('plan') || '';
 
   useEffect(() => {
     if (user && !loading) {
@@ -30,17 +41,25 @@ export default function Auth() {
           <p className="text-muted-foreground mt-2">
             Complete business management solution
           </p>
+          {mode === 'signup' && selectedPlan && planNames[selectedPlan] && (
+            <Badge variant="secondary" className="mt-3">
+              Selected Plan: {planNames[selectedPlan]}
+            </Badge>
+          )}
         </div>
         
         <Card>
           <CardHeader className="text-center">
-            <CardTitle>Welcome</CardTitle>
+            <CardTitle>{mode === 'signup' ? 'Create Account' : 'Welcome'}</CardTitle>
             <CardDescription>
-              Sign in to your account or create a new one
+              {mode === 'signup'
+                ? 'Register your account to get started. Your account will be activated by an administrator.'
+                : 'Sign in to your account or create a new one'
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <LoginForm />
+            <LoginForm defaultMode={mode === 'signup' ? 'signup' : 'login'} selectedPlan={selectedPlan} />
           </CardContent>
         </Card>
       </div>
