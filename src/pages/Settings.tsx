@@ -14,6 +14,7 @@ import { AdminUserRegistration } from '@/components/Admin/AdminUserRegistration'
 import { ModuleConfigTab } from '@/components/SuperAdmin/ModuleConfigTab';
 import { AppearanceSettings } from '@/components/Settings/AppearanceSettings';
 import { ModuleVisibilitySettings } from '@/components/Settings/ModuleVisibilitySettings';
+import { MaintenanceSettings } from '@/components/Settings/MaintenanceSettings';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -53,6 +54,7 @@ export default function Settings() {
           {isSuperAdmin && (
             <>
               <TabsTrigger value="modules">{t('settings.modules')}</TabsTrigger>
+              <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
               <TabsTrigger value="admin">{t('settings.admin')}</TabsTrigger>
             </>
           )}
@@ -114,6 +116,9 @@ export default function Settings() {
           <>
             <TabsContent value="modules">
               <ModuleConfigTab />
+            </TabsContent>
+            <TabsContent value="maintenance">
+              <MaintenanceSettings />
             </TabsContent>
             <TabsContent value="admin">
               <AdminUserRegistration />
