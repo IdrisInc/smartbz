@@ -117,6 +117,9 @@ export default function Settings() {
             <TabsContent value="modules">
               <ModuleConfigTab />
             </TabsContent>
+            <TabsContent value="maintenance">
+              <MaintenanceSettings />
+            </TabsContent>
             <TabsContent value="admin">
               <AdminUserRegistration />
             </TabsContent>
