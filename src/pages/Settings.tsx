@@ -54,6 +54,7 @@ export default function Settings() {
           {isSuperAdmin && (
             <>
               <TabsTrigger value="modules">{t('settings.modules')}</TabsTrigger>
+              <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
               <TabsTrigger value="admin">{t('settings.admin')}</TabsTrigger>
             </>
           )}
