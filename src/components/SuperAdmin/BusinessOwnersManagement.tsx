@@ -238,6 +238,8 @@ export function BusinessOwnersManagement() {
         return <Badge variant="default" className="bg-purple-500">Premium</Badge>;
       case 'enterprise':
         return <Badge variant="default" className="bg-blue-500">Enterprise</Badge>;
+      case 'basic':
+        return <Badge variant="default" className="bg-amber-500">Basic</Badge>;
       case 'free':
         return <Badge variant="outline">Free</Badge>;
       default:
