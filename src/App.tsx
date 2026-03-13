@@ -11,6 +11,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProtectedRoute } from "@/components/Auth/ProtectedRoute";
 import { DashboardLayout } from "@/components/Layout/DashboardLayout";
 import { OnboardingGuard } from "@/components/Organization/OnboardingGuard";
+import { MaintenanceGuard } from "@/components/Layout/MaintenanceGuard";
 
 // Pages
 import LandingPage from "./pages/LandingPage";
