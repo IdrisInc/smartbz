@@ -327,7 +327,8 @@ export default function Sales() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+        <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+        <TabsList className="inline-flex h-auto gap-1 w-max min-w-full sm:w-auto sm:min-w-0 flex-nowrap">
           <TabsTrigger value="sales">
             <Receipt className="h-4 w-4 mr-2" />
             Sales
@@ -337,6 +338,7 @@ export default function Sales() {
             Sale Returns
           </TabsTrigger>
         </TabsList>
+        </div>
 
         <TabsContent value="sales" className="space-y-4">
           <div className="flex gap-4">

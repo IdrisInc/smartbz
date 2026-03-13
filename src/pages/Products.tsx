@@ -314,7 +314,8 @@ export default function Products() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="flex-wrap h-auto">
+          <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+          <TabsList className="inline-flex h-auto gap-1 w-max min-w-full sm:w-auto sm:min-w-0 flex-nowrap">
             <TabsTrigger value="products">
               <Search className="h-4 w-4 mr-2" />
               Products
@@ -336,6 +337,7 @@ export default function Products() {
               Taxes
             </TabsTrigger>
           </TabsList>
+          </div>
 
           {/* Products Tab */}
           <TabsContent value="products" className="space-y-4">

@@ -225,7 +225,8 @@ export function BusinessOwnersManagement() {
       case 'suspended':
         return <Badge variant="destructive">Suspended</Badge>;
       case 'pending':
-        return <Badge variant="secondary">Pending</Badge>;
+      case 'pending_activation':
+        return <Badge variant="secondary">Pending Activation</Badge>;
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }
@@ -237,6 +238,8 @@ export function BusinessOwnersManagement() {
         return <Badge variant="default" className="bg-purple-500">Premium</Badge>;
       case 'enterprise':
         return <Badge variant="default" className="bg-blue-500">Enterprise</Badge>;
+      case 'basic':
+        return <Badge variant="default" className="bg-amber-500">Basic</Badge>;
       case 'free':
         return <Badge variant="outline">Free</Badge>;
       default:
@@ -298,13 +301,14 @@ export function BusinessOwnersManagement() {
                         <Monitor className="h-4 w-4" />
                       </Button>
                       
-                      {owner.organization_status === 'pending' && (
+                      {(owner.organization_status === 'pending' || owner.organization_status === 'pending_activation') && (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleAction(owner, 'approve')}
+                          title="Activate"
                         >
-                          <CheckCircle className="h-4 w-4" />
+                          <CheckCircle className="h-4 w-4 text-green-500" />
                         </Button>
                       )}
                       

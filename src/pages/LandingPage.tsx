@@ -403,6 +403,62 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Pricing Section */}
+        <section id="pricing" className="container mx-auto px-4 py-16 lg:py-24 bg-muted/30">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <Badge variant="secondary" className="mb-4">Pricing</Badge>
+              <h2 className="text-3xl sm:text-4xl font-bold mb-4">Choose Your Plan</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Select a package that fits your business needs. Start free or go premium for advanced features.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { plan: 'free', name: 'Free', price: '0', period: 'Forever', features: ['1 Business', '1 Branch', '2 Staff', 'Basic Sales & Inventory'], highlight: false },
+                { plan: 'basic', name: 'Basic', price: '29,900', period: '/month', features: ['2 Businesses', '3 Branches each', '10 Staff each', 'Finance & Reports'], highlight: false },
+                { plan: 'premium', name: 'Premium', price: '59,900', period: '/month', features: ['5 Businesses', '10 Branches each', '50 Staff each', 'All Modules + Payroll'], highlight: true },
+                { plan: 'enterprise', name: 'Enterprise', price: '149,900', period: '/month', features: ['Unlimited Businesses', 'Unlimited Branches', 'Unlimited Staff', 'Priority Support + API'], highlight: false },
+              ].map((pkg) => (
+                <Card key={pkg.plan} className={`relative overflow-hidden ${pkg.highlight ? 'border-primary shadow-elegant scale-105' : 'border-border'}`}>
+                  {pkg.highlight && (
+                    <div className="absolute top-0 left-0 right-0 bg-gradient-primary text-white text-center text-xs py-1 font-medium">
+                      Most Popular
+                    </div>
+                  )}
+                  <CardContent className={`pt-8 pb-6 ${pkg.highlight ? 'pt-10' : ''}`}>
+                    <h3 className="text-lg font-bold mb-1">{pkg.name}</h3>
+                    <div className="mb-4">
+                      <span className="text-3xl font-bold">TZS {pkg.price}</span>
+                      <span className="text-sm text-muted-foreground">{pkg.period}</span>
+                    </div>
+                    <ul className="space-y-2 mb-6 text-sm">
+                      {pkg.features.map((f, i) => (
+                        <li key={i} className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-success flex-shrink-0" />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Button
+                      className={`w-full ${pkg.highlight ? 'bg-gradient-primary hover:opacity-90' : ''}`}
+                      variant={pkg.highlight ? 'default' : 'outline'}
+                      onClick={() => navigate(`/auth?mode=signup&plan=${pkg.plan}`)}
+                    >
+                      {pkg.plan === 'free' ? 'Get Started Free' : 'Choose ' + pkg.name}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <p className="text-center text-sm text-muted-foreground mt-8">
+              All paid plans require activation by an administrator after registration. Prices in TZS.
+            </p>
+          </div>
+        </section>
+
         {/* CTA Section */}
         <section className="container mx-auto px-4 py-16 lg:py-24">
           <div className="max-w-4xl mx-auto">

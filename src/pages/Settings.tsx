@@ -34,7 +34,8 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="business" className="space-y-4">
-        <TabsList className="flex flex-wrap gap-1">
+        <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+          <TabsList className="inline-flex h-auto gap-1 w-max min-w-full sm:w-auto sm:min-w-0 flex-nowrap">
           <TabsTrigger value="business">{t('settings.business')}</TabsTrigger>
           <TabsTrigger value="appearance">{t('settings.appearance')}</TabsTrigger>
           <TabsTrigger value="subscription">{t('settings.subscription')}</TabsTrigger>
@@ -58,7 +59,8 @@ export default function Settings() {
               <TabsTrigger value="admin">{t('settings.admin')}</TabsTrigger>
             </>
           )}
-        </TabsList>
+          </TabsList>
+        </div>
 
         <TabsContent value="business">
           <BusinessSettings />

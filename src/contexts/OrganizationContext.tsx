@@ -19,6 +19,7 @@ export interface Organization {
   subscription_plan: 'free' | 'basic' | 'premium' | 'enterprise';
   subscription_end?: string;
   is_active: boolean;
+  status?: string;
   created_at: string;
   updated_at: string;
 }

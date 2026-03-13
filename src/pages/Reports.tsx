@@ -173,12 +173,14 @@ export default function Reports() {
       )}
 
       <Tabs defaultValue="sales" className="space-y-4">
-        <TabsList>
+        <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+        <TabsList className="inline-flex h-auto gap-1 w-max min-w-full sm:w-auto sm:min-w-0 flex-nowrap">
           <TabsTrigger value="sales">Sales Reports</TabsTrigger>
           <TabsTrigger value="inventory">Inventory Reports</TabsTrigger>
           <TabsTrigger value="financial">Financial Reports</TabsTrigger>
           <TabsTrigger value="customer">Customer Analytics</TabsTrigger>
         </TabsList>
+        </div>
 
         <TabsContent value="sales" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">

@@ -553,7 +553,8 @@ export default function Inventory() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="flex flex-wrap h-auto gap-1">
+        <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+        <TabsList className="inline-flex h-auto gap-1 w-max min-w-full sm:w-auto sm:min-w-0 flex-nowrap">
           <TabsTrigger value="overview">
             <Package className="h-4 w-4 mr-2" />
             Overview
@@ -583,6 +584,7 @@ export default function Inventory() {
             Audit Log
           </TabsTrigger>
         </TabsList>
+        </div>
 
         <TabsContent value="overview" className="space-y-4">
           <div className="flex gap-4">
