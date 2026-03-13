@@ -584,6 +584,7 @@ export default function Inventory() {
             Audit Log
           </TabsTrigger>
         </TabsList>
+        </div>
 
         <TabsContent value="overview" className="space-y-4">
           <div className="flex gap-4">

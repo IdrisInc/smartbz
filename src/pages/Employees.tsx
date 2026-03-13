@@ -270,6 +270,7 @@ export default function Employees() {
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
         </TabsList>
+        </div>
 
         <TabsContent value="employees" className="space-y-4">
           <div className="flex gap-4">

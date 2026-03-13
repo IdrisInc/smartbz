@@ -59,7 +59,8 @@ export default function Settings() {
               <TabsTrigger value="admin">{t('settings.admin')}</TabsTrigger>
             </>
           )}
-        </TabsList>
+          </TabsList>
+        </div>
 
         <TabsContent value="business">
           <BusinessSettings />

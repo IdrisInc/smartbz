@@ -338,6 +338,7 @@ export default function Sales() {
             Sale Returns
           </TabsTrigger>
         </TabsList>
+        </div>
 
         <TabsContent value="sales" className="space-y-4">
           <div className="flex gap-4">

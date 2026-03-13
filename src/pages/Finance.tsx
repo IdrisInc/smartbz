@@ -162,6 +162,7 @@ export default function Finance() {
           <TabsTrigger value="credit-notes">Credit Notes</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
+        </div>
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-3 sm:gap-4 grid-cols-1 lg:grid-cols-2">

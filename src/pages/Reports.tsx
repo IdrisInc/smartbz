@@ -180,6 +180,7 @@ export default function Reports() {
           <TabsTrigger value="financial">Financial Reports</TabsTrigger>
           <TabsTrigger value="customer">Customer Analytics</TabsTrigger>
         </TabsList>
+        </div>
 
         <TabsContent value="sales" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">

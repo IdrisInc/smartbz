@@ -337,6 +337,7 @@ export default function Products() {
               Taxes
             </TabsTrigger>
           </TabsList>
+          </div>
 
           {/* Products Tab */}
           <TabsContent value="products" className="space-y-4">
