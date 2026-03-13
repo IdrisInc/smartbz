@@ -301,13 +301,14 @@ export function BusinessOwnersManagement() {
                         <Monitor className="h-4 w-4" />
                       </Button>
                       
-                      {owner.organization_status === 'pending' && (
+                      {(owner.organization_status === 'pending' || owner.organization_status === 'pending_activation') && (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleAction(owner, 'approve')}
+                          title="Activate"
                         >
-                          <CheckCircle className="h-4 w-4" />
+                          <CheckCircle className="h-4 w-4 text-green-500" />
                         </Button>
                       )}
                       
