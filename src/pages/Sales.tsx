@@ -85,8 +85,10 @@ export default function Sales() {
           payment_method,
           sale_date,
           created_at,
+          created_by_name,
           confirmation_status,
           confirmed_at,
+          confirmed_by_name,
           rejection_reason,
           contacts(name)
         `)
