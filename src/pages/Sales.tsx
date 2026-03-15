@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RotateCcw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
