@@ -40,6 +40,7 @@ interface ReturnItem {
 export function SaleReturnDialog({ open, onOpenChange, onSuccess }: SaleReturnDialogProps) {
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+  const { currentUser } = useCurrentUser();
   const [loading, setLoading] = useState(false);
   const [sales, setSales] = useState<any[]>([]);
   const [selectedSaleId, setSelectedSaleId] = useState('');
