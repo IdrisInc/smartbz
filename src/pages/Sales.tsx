@@ -404,9 +404,18 @@ export default function Sales() {
                     </CardHeader>
                     <CardContent>
                       <div className="flex justify-between items-center flex-wrap gap-2">
-                        <div className="flex gap-4 text-sm text-muted-foreground">
+                        <div className="flex gap-4 text-sm text-muted-foreground flex-wrap">
                           <span>Payment: {sale.payment_method || 'Not specified'}</span>
                           <span>Date: {new Date(sale.sale_date || sale.created_at).toLocaleDateString()}</span>
+                          {sale.created_by_name && (
+                            <span>Created by: {sale.created_by_name}</span>
+                          )}
+                          {sale.confirmed_by_name && sale.confirmation_status === 'confirmed' && (
+                            <span>Approved by: {sale.confirmed_by_name}</span>
+                          )}
+                          {sale.confirmed_by_name && sale.confirmation_status === 'rejected' && (
+                            <span className="text-destructive">Rejected by: {sale.confirmed_by_name}</span>
+                          )}
                           {sale.rejection_reason && (
                             <span className="text-destructive">Reason: {sale.rejection_reason}</span>
                           )}
