@@ -131,6 +131,7 @@ export function InvoicesTab() {
                       </TableCell>
                       <TableCell>{new Date(invoice.invoice_date).toLocaleDateString()}</TableCell>
                       <TableCell>{invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A'}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{invoice.created_by_name || '-'}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm">
