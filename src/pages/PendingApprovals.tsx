@@ -120,6 +120,7 @@ export default function PendingApprovals() {
         .update({
           confirmation_status: 'confirmed',
           confirmed_by: user?.id,
+          confirmed_by_name: currentUser?.displayName,
           confirmed_at: new Date().toISOString()
         })
         .in('id', selectedSales);
