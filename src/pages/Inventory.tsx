@@ -443,7 +443,9 @@ export default function Inventory() {
           order_date: new Date().toISOString().split('T')[0],
           total_amount: quotation.total_amount,
           status: 'pending',
-          notes: `Converted from Quotation ${quotation.quotation_number}`
+          notes: `Converted from Quotation ${quotation.quotation_number}`,
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         })
         .select()
         .single();
