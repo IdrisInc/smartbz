@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, ArrowRight } from 'lucide-react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { StockStatusBadge, stockStatusLabels, StockStatusType } from './StockStatusBadge';
 
 interface StockAdjustmentDialogProps {
