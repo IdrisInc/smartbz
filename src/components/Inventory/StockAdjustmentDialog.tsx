@@ -188,6 +188,7 @@ export function StockAdjustmentDialog({ open, onOpenChange, product, onSuccess }
           notes,
           warehouse_location: warehouse,
           performed_by: user?.id,
+          performed_by_name: currentUser?.displayName,
           approval_status: 'approved', // Auto-approve for now
           reference_type: 'manual',
         })
