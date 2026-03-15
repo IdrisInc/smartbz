@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -41,6 +42,7 @@ export default function PendingApprovals() {
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
   const { userRole } = useUserRole();
+  const { currentUser } = useCurrentUser();
   
   const isBusinessOwner = userRole === 'business_owner';
 
@@ -118,6 +120,7 @@ export default function PendingApprovals() {
         .update({
           confirmation_status: 'confirmed',
           confirmed_by: user?.id,
+          confirmed_by_name: currentUser?.displayName,
           confirmed_at: new Date().toISOString()
         })
         .in('id', selectedSales);
@@ -193,6 +196,7 @@ export default function PendingApprovals() {
         .update({
           confirmation_status: 'rejected',
           confirmed_by: user?.id,
+          confirmed_by_name: currentUser?.displayName,
           confirmed_at: new Date().toISOString(),
           rejection_reason: rejectionReason || 'Bulk rejection - no reason provided'
         })

@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { ContactForm } from '@/components/Contacts/ContactForm';
 import { useExportUtils } from '@/hooks/useExportUtils';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 interface POSInterfaceProps {
   onClose: () => void;
@@ -58,6 +59,7 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
   const { toast } = useToast();
   const { currentOrganization } = useOrganization();
   const { exportToCSV } = useExportUtils();
+  const { currentUser } = useCurrentUser();
 
   useEffect(() => {
     if (currentOrganization?.id) {
@@ -217,6 +219,8 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
           discount_amount: discountAmount,
           payment_status: 'paid',
           payment_method: paymentMethod,
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         })
         .select()
         .single();
@@ -310,6 +314,8 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
           discount_amount: discountAmount,
           payment_status: 'pending',
           payment_method: 'mobile_money',
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         })
         .select()
         .single();

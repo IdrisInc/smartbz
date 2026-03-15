@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 interface CreateInvoiceDialogProps {
   trigger?: React.ReactNode;
@@ -33,6 +34,7 @@ export function CreateInvoiceDialog({ trigger }: CreateInvoiceDialogProps) {
 
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+  const { currentUser } = useCurrentUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +53,9 @@ export function CreateInvoiceDialog({ trigger }: CreateInvoiceDialogProps) {
           discount_amount: parseFloat(formData.discount_amount) || 0,
           due_date: dueDate?.toISOString().split('T')[0],
           notes: formData.notes,
-          status: 'draft'
+          status: 'draft',
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         });
 
       if (error) throw error;

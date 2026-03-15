@@ -20,6 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 import { useExportUtils } from '@/hooks/useExportUtils';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 import { formatDistanceToNow, format } from 'date-fns';
 
@@ -60,6 +61,7 @@ export default function Inventory() {
   const { toast } = useToast();
   const { exportToCSV } = useExportUtils();
   const { businessSettings } = useBusinessSettings();
+  const { currentUser } = useCurrentUser();
 
   useEffect(() => {
     if (currentOrganization) {
@@ -441,7 +443,9 @@ export default function Inventory() {
           order_date: new Date().toISOString().split('T')[0],
           total_amount: quotation.total_amount,
           status: 'pending',
-          notes: `Converted from Quotation ${quotation.quotation_number}`
+          notes: `Converted from Quotation ${quotation.quotation_number}`,
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         })
         .select()
         .single();
@@ -720,6 +724,7 @@ export default function Inventory() {
                       <TableHead>Expected</TableHead>
                       <TableHead>Total</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Created By</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -745,6 +750,7 @@ export default function Inventory() {
                             {po.status}
                           </Badge>
                         </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{po.created_by_name || '-'}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button 

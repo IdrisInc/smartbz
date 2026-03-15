@@ -155,13 +155,14 @@ export function ExpensesTab() {
                   <TableHead>Amount</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Payment Method</TableHead>
+                  <TableHead>Created By</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredExpenses.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       No expenses found
                     </TableCell>
                   </TableRow>
@@ -173,6 +174,7 @@ export function ExpensesTab() {
                       <TableCell>${(expense.amount || 0).toLocaleString()}</TableCell>
                       <TableCell>{new Date(expense.expense_date).toLocaleDateString()}</TableCell>
                       <TableCell>{expense.payment_method || 'N/A'}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{expense.created_by_name || '-'}</TableCell>
                       <TableCell>
                         <Button variant="outline" size="sm">
                           <Receipt className="h-4 w-4" />

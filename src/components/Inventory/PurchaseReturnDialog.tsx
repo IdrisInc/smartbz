@@ -11,6 +11,7 @@ import { ProductSelector } from '@/components/Products/ProductSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 interface PurchaseReturnDialogProps {
   open: boolean;
@@ -47,6 +48,7 @@ interface Supplier {
 export function PurchaseReturnDialog({ open, onOpenChange, onSuccess }: PurchaseReturnDialogProps) {
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+  const { currentUser } = useCurrentUser();
   const [loading, setLoading] = useState(false);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -190,6 +192,8 @@ export function PurchaseReturnDialog({ open, onOpenChange, onSuccess }: Purchase
           reason: formData.reason,
           notes: formData.notes,
           status: 'pending',
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         })
         .select()
         .single();

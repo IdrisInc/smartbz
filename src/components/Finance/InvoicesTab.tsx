@@ -107,13 +107,14 @@ export function InvoicesTab() {
                   <TableHead>Status</TableHead>
                   <TableHead>Invoice Date</TableHead>
                   <TableHead>Due Date</TableHead>
+                  <TableHead>Created By</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredInvoices.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       No invoices found
                     </TableCell>
                   </TableRow>
@@ -130,6 +131,7 @@ export function InvoicesTab() {
                       </TableCell>
                       <TableCell>{new Date(invoice.invoice_date).toLocaleDateString()}</TableCell>
                       <TableCell>{invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A'}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{invoice.created_by_name || '-'}</TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm">

@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Trash2 } from 'lucide-react';
 
 interface SaleReturnDialogProps {
@@ -39,6 +40,7 @@ interface ReturnItem {
 export function SaleReturnDialog({ open, onOpenChange, onSuccess }: SaleReturnDialogProps) {
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+  const { currentUser } = useCurrentUser();
   const [loading, setLoading] = useState(false);
   const [sales, setSales] = useState<any[]>([]);
   const [selectedSaleId, setSelectedSaleId] = useState('');
@@ -212,6 +214,8 @@ export function SaleReturnDialog({ open, onOpenChange, onSuccess }: SaleReturnDi
           reason: formData.reason,
           notes: formData.notes,
           status: 'pending',
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         })
         .select()
         .single();

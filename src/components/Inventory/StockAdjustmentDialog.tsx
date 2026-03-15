@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, ArrowRight } from 'lucide-react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { StockStatusBadge, stockStatusLabels, StockStatusType } from './StockStatusBadge';
 
 interface StockAdjustmentDialogProps {
@@ -63,6 +64,7 @@ export function StockAdjustmentDialog({ open, onOpenChange, product, onSuccess }
   
   const { toast } = useToast();
   const { currentOrganization } = useOrganization();
+  const { currentUser } = useCurrentUser();
 
   useEffect(() => {
     if (product?.id && open) {
@@ -186,6 +188,7 @@ export function StockAdjustmentDialog({ open, onOpenChange, product, onSuccess }
           notes,
           warehouse_location: warehouse,
           performed_by: user?.id,
+          performed_by_name: currentUser?.displayName,
           approval_status: 'approved', // Auto-approve for now
           reference_type: 'manual',
         })

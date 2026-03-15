@@ -10,6 +10,7 @@ import { useExportUtils } from '@/hooks/useExportUtils';
 import { ProductSelector } from '@/components/Products/ProductSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 interface PurchaseOrderFormProps {
   onClose: () => void;
@@ -34,6 +35,7 @@ export function PurchaseOrderForm({ onClose, onSuccess }: PurchaseOrderFormProps
   const { toast } = useToast();
   const { exportToCSV } = useExportUtils();
   const { currentOrganization } = useOrganization();
+  const { currentUser } = useCurrentUser();
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [supplier, setSupplier] = useState('');
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -158,7 +160,9 @@ export function PurchaseOrderForm({ onClose, onSuccess }: PurchaseOrderFormProps
           total_amount: totalAmount,
           expected_date: expectedDate || null,
           po_number: `PO-${Date.now()}`,
-          status: 'draft'
+          status: 'draft',
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         })
         .select()
         .single();

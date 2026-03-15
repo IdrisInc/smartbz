@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { RotateCcw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -49,6 +50,7 @@ export default function Sales() {
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
   const { userRole } = useUserRole();
+  const { currentUser } = useCurrentUser();
   
   const isBusinessOwner = userRole === 'business_owner';
 
@@ -83,8 +85,10 @@ export default function Sales() {
           payment_method,
           sale_date,
           created_at,
+          created_by_name,
           confirmation_status,
           confirmed_at,
+          confirmed_by_name,
           rejection_reason,
           contacts(name)
         `)
@@ -142,6 +146,7 @@ export default function Sales() {
         .update({
           confirmation_status: 'confirmed',
           confirmed_by: user?.id,
+          confirmed_by_name: currentUser?.displayName,
           confirmed_at: new Date().toISOString()
         })
         .eq('id', saleId);
@@ -205,6 +210,7 @@ export default function Sales() {
         .update({
           confirmation_status: 'rejected',
           confirmed_by: user?.id,
+          confirmed_by_name: currentUser?.displayName,
           confirmed_at: new Date().toISOString(),
           rejection_reason: rejectionReason || 'No reason provided'
         })
@@ -398,9 +404,18 @@ export default function Sales() {
                     </CardHeader>
                     <CardContent>
                       <div className="flex justify-between items-center flex-wrap gap-2">
-                        <div className="flex gap-4 text-sm text-muted-foreground">
+                        <div className="flex gap-4 text-sm text-muted-foreground flex-wrap">
                           <span>Payment: {sale.payment_method || 'Not specified'}</span>
                           <span>Date: {new Date(sale.sale_date || sale.created_at).toLocaleDateString()}</span>
+                          {sale.created_by_name && (
+                            <span>Created by: {sale.created_by_name}</span>
+                          )}
+                          {sale.confirmed_by_name && sale.confirmation_status === 'confirmed' && (
+                            <span>Approved by: {sale.confirmed_by_name}</span>
+                          )}
+                          {sale.confirmed_by_name && sale.confirmation_status === 'rejected' && (
+                            <span className="text-destructive">Rejected by: {sale.confirmed_by_name}</span>
+                          )}
                           {sale.rejection_reason && (
                             <span className="text-destructive">Reason: {sale.rejection_reason}</span>
                           )}

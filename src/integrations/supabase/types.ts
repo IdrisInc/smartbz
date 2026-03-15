@@ -722,6 +722,7 @@ export type Database = {
           category: string
           created_at: string
           created_by: string | null
+          created_by_name: string | null
           description: string
           expense_date: string
           id: string
@@ -736,6 +737,7 @@ export type Database = {
           category: string
           created_at?: string
           created_by?: string | null
+          created_by_name?: string | null
           description: string
           expense_date?: string
           id?: string
@@ -750,6 +752,7 @@ export type Database = {
           category?: string
           created_at?: string
           created_by?: string | null
+          created_by_name?: string | null
           description?: string
           expense_date?: string
           id?: string
@@ -945,6 +948,8 @@ export type Database = {
           branch_id: string | null
           contact_id: string
           created_at: string
+          created_by: string | null
+          created_by_name: string | null
           discount_amount: number | null
           due_date: string | null
           id: string
@@ -961,6 +966,8 @@ export type Database = {
           branch_id?: string | null
           contact_id: string
           created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
           discount_amount?: number | null
           due_date?: string | null
           id?: string
@@ -977,6 +984,8 @@ export type Database = {
           branch_id?: string | null
           contact_id?: string
           created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
           discount_amount?: number | null
           due_date?: string | null
           id?: string
@@ -2490,8 +2499,10 @@ export type Database = {
           confirmation_status: string | null
           confirmed_at: string | null
           confirmed_by: string | null
+          confirmed_by_name: string | null
           contact_id: string | null
           created_at: string
+          created_by: string | null
           created_by_name: string | null
           discount_amount: number | null
           employee_id: string | null
@@ -2512,8 +2523,10 @@ export type Database = {
           confirmation_status?: string | null
           confirmed_at?: string | null
           confirmed_by?: string | null
+          confirmed_by_name?: string | null
           contact_id?: string | null
           created_at?: string
+          created_by?: string | null
           created_by_name?: string | null
           discount_amount?: number | null
           employee_id?: string | null
@@ -2534,8 +2547,10 @@ export type Database = {
           confirmation_status?: string | null
           confirmed_at?: string | null
           confirmed_by?: string | null
+          confirmed_by_name?: string | null
           contact_id?: string | null
           created_at?: string
+          created_by?: string | null
           created_by_name?: string | null
           discount_amount?: number | null
           employee_id?: string | null

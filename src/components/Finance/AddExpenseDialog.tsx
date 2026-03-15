@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 interface AddExpenseDialogProps {
   trigger?: React.ReactNode;
@@ -54,6 +55,7 @@ export function AddExpenseDialog({ trigger }: AddExpenseDialogProps) {
 
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+  const { currentUser } = useCurrentUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +71,9 @@ export function AddExpenseDialog({ trigger }: AddExpenseDialogProps) {
           description: formData.description,
           amount: parseFloat(formData.amount),
           payment_method: formData.payment_method,
-          expense_date: expenseDate.toISOString().split('T')[0]
+          expense_date: expenseDate.toISOString().split('T')[0],
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         });
 
       if (error) throw error;
