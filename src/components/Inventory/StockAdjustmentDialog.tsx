@@ -64,6 +64,7 @@ export function StockAdjustmentDialog({ open, onOpenChange, product, onSuccess }
   
   const { toast } = useToast();
   const { currentOrganization } = useOrganization();
+  const { currentUser } = useCurrentUser();
 
   useEffect(() => {
     if (product?.id && open) {
