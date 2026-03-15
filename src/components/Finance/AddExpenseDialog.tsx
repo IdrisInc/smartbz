@@ -55,6 +55,7 @@ export function AddExpenseDialog({ trigger }: AddExpenseDialogProps) {
 
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+  const { currentUser } = useCurrentUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
