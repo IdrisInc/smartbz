@@ -61,6 +61,7 @@ export default function Inventory() {
   const { toast } = useToast();
   const { exportToCSV } = useExportUtils();
   const { businessSettings } = useBusinessSettings();
+  const { currentUser } = useCurrentUser();
 
   useEffect(() => {
     if (currentOrganization) {
