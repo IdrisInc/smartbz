@@ -50,6 +50,7 @@ export default function Sales() {
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
   const { userRole } = useUserRole();
+  const { currentUser } = useCurrentUser();
   
   const isBusinessOwner = userRole === 'business_owner';
 
