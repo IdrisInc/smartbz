@@ -20,6 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 import { useExportUtils } from '@/hooks/useExportUtils';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useBusinessSettings } from '@/hooks/useBusinessSettings';
 import { formatDistanceToNow, format } from 'date-fns';
 
