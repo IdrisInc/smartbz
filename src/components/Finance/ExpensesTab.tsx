@@ -174,6 +174,7 @@ export function ExpensesTab() {
                       <TableCell>${(expense.amount || 0).toLocaleString()}</TableCell>
                       <TableCell>{new Date(expense.expense_date).toLocaleDateString()}</TableCell>
                       <TableCell>{expense.payment_method || 'N/A'}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{expense.created_by_name || '-'}</TableCell>
                       <TableCell>
                         <Button variant="outline" size="sm">
                           <Receipt className="h-4 w-4" />
