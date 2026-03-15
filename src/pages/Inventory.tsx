@@ -750,6 +750,7 @@ export default function Inventory() {
                             {po.status}
                           </Badge>
                         </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{po.created_by_name || '-'}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button 
