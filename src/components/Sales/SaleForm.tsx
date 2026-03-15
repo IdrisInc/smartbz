@@ -35,6 +35,7 @@ export function SaleForm({ onClose }: SaleFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { currentOrganization } = useOrganization();
+  const { currentUser } = useCurrentUser();
 
   const addItem = () => {
     const newItem: SaleItem = {
