@@ -219,6 +219,8 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
           discount_amount: discountAmount,
           payment_status: 'paid',
           payment_method: paymentMethod,
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         })
         .select()
         .single();
