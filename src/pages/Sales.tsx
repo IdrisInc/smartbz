@@ -208,6 +208,7 @@ export default function Sales() {
         .update({
           confirmation_status: 'rejected',
           confirmed_by: user?.id,
+          confirmed_by_name: currentUser?.displayName,
           confirmed_at: new Date().toISOString(),
           rejection_reason: rejectionReason || 'No reason provided'
         })
