@@ -35,6 +35,7 @@ export function PurchaseOrderForm({ onClose, onSuccess }: PurchaseOrderFormProps
   const { toast } = useToast();
   const { exportToCSV } = useExportUtils();
   const { currentOrganization } = useOrganization();
+  const { currentUser } = useCurrentUser();
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [supplier, setSupplier] = useState('');
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
