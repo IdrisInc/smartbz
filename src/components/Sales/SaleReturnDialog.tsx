@@ -214,6 +214,8 @@ export function SaleReturnDialog({ open, onOpenChange, onSuccess }: SaleReturnDi
           reason: formData.reason,
           notes: formData.notes,
           status: 'pending',
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         })
         .select()
         .single();

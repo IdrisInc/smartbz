@@ -192,6 +192,8 @@ export function PurchaseReturnDialog({ open, onOpenChange, onSuccess }: Purchase
           reason: formData.reason,
           notes: formData.notes,
           status: 'pending',
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         })
         .select()
         .single();
