@@ -53,7 +53,9 @@ export function CreateInvoiceDialog({ trigger }: CreateInvoiceDialogProps) {
           discount_amount: parseFloat(formData.discount_amount) || 0,
           due_date: dueDate?.toISOString().split('T')[0],
           notes: formData.notes,
-          status: 'draft'
+          status: 'draft',
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         });
 
       if (error) throw error;

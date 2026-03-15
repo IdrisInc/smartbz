@@ -101,7 +101,9 @@ export function SaleForm({ onClose }: SaleFormProps) {
           total_amount: totalAmount,
           payment_method: paymentMethod,
           payment_status: 'completed',
-          notes: customer ? `Customer: ${customer}` : null
+          notes: customer ? `Customer: ${customer}` : null,
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         })
         .select()
         .single();

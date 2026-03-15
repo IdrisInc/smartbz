@@ -314,6 +314,8 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
           discount_amount: discountAmount,
           payment_status: 'pending',
           payment_method: 'mobile_money',
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         })
         .select()
         .single();

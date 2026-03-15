@@ -160,7 +160,9 @@ export function PurchaseOrderForm({ onClose, onSuccess }: PurchaseOrderFormProps
           total_amount: totalAmount,
           expected_date: expectedDate || null,
           po_number: `PO-${Date.now()}`,
-          status: 'draft'
+          status: 'draft',
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         })
         .select()
         .single();

@@ -71,7 +71,9 @@ export function AddExpenseDialog({ trigger }: AddExpenseDialogProps) {
           description: formData.description,
           amount: parseFloat(formData.amount),
           payment_method: formData.payment_method,
-          expense_date: expenseDate.toISOString().split('T')[0]
+          expense_date: expenseDate.toISOString().split('T')[0],
+          created_by: currentUser?.id,
+          created_by_name: currentUser?.displayName,
         });
 
       if (error) throw error;
