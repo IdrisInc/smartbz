@@ -59,6 +59,7 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
   const { toast } = useToast();
   const { currentOrganization } = useOrganization();
   const { exportToCSV } = useExportUtils();
+  const { currentUser } = useCurrentUser();
 
   useEffect(() => {
     if (currentOrganization?.id) {
