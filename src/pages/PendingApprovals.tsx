@@ -42,6 +42,7 @@ export default function PendingApprovals() {
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
   const { userRole } = useUserRole();
+  const { currentUser } = useCurrentUser();
   
   const isBusinessOwner = userRole === 'business_owner';
 
