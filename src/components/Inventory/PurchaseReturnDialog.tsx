@@ -48,6 +48,7 @@ interface Supplier {
 export function PurchaseReturnDialog({ open, onOpenChange, onSuccess }: PurchaseReturnDialogProps) {
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
+  const { currentUser } = useCurrentUser();
   const [loading, setLoading] = useState(false);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
