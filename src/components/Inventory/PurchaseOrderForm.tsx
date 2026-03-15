@@ -10,6 +10,7 @@ import { useExportUtils } from '@/hooks/useExportUtils';
 import { ProductSelector } from '@/components/Products/ProductSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 interface PurchaseOrderFormProps {
   onClose: () => void;

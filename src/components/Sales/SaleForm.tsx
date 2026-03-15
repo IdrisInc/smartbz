@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ProductSelector } from '@/components/Products/ProductSelector';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 interface SaleFormProps {
   onClose: () => void;
