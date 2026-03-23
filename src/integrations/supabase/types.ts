@@ -120,6 +120,59 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          new_values: Json | null
+          old_values: Json | null
+          organization_id: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           address: string | null
@@ -354,6 +407,8 @@ export type Database = {
           organization_id: string
           phone: string | null
           updated_at: string
+          updated_by: string | null
+          updated_by_name: string | null
         }
         Insert: {
           address?: string | null
@@ -368,6 +423,8 @@ export type Database = {
           organization_id: string
           phone?: string | null
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
         }
         Update: {
           address?: string | null
@@ -382,6 +439,8 @@ export type Database = {
           organization_id?: string
           phone?: string | null
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
         }
         Relationships: [
           {
@@ -730,6 +789,8 @@ export type Database = {
           payment_method: string | null
           receipt_url: string | null
           updated_at: string
+          updated_by: string | null
+          updated_by_name: string | null
         }
         Insert: {
           amount: number
@@ -745,6 +806,8 @@ export type Database = {
           payment_method?: string | null
           receipt_url?: string | null
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
         }
         Update: {
           amount?: number
@@ -760,6 +823,8 @@ export type Database = {
           payment_method?: string | null
           receipt_url?: string | null
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
         }
         Relationships: [
           {
@@ -961,6 +1026,8 @@ export type Database = {
           tax_amount: number | null
           total_amount: number
           updated_at: string
+          updated_by: string | null
+          updated_by_name: string | null
         }
         Insert: {
           branch_id?: string | null
@@ -979,6 +1046,8 @@ export type Database = {
           tax_amount?: number | null
           total_amount: number
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
         }
         Update: {
           branch_id?: string | null
@@ -997,6 +1066,8 @@ export type Database = {
           tax_amount?: number | null
           total_amount?: number
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
         }
         Relationships: [
           {
@@ -1869,6 +1940,8 @@ export type Database = {
           stock_quantity: number | null
           unit: string | null
           updated_at: string
+          updated_by: string | null
+          updated_by_name: string | null
         }
         Insert: {
           brand_id?: string | null
@@ -1888,6 +1961,8 @@ export type Database = {
           stock_quantity?: number | null
           unit?: string | null
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
         }
         Update: {
           brand_id?: string | null
@@ -1907,6 +1982,8 @@ export type Database = {
           stock_quantity?: number | null
           unit?: string | null
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
         }
         Relationships: [
           {
@@ -2517,6 +2594,8 @@ export type Database = {
           tax_amount: number | null
           total_amount: number
           updated_at: string
+          updated_by: string | null
+          updated_by_name: string | null
         }
         Insert: {
           branch_id?: string | null
@@ -2541,6 +2620,8 @@ export type Database = {
           tax_amount?: number | null
           total_amount?: number
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
         }
         Update: {
           branch_id?: string | null
@@ -2565,6 +2646,8 @@ export type Database = {
           tax_amount?: number | null
           total_amount?: number
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
         }
         Relationships: [
           {
@@ -2916,6 +2999,7 @@ export type Database = {
         Returns: string
       }
       generate_activation_code: { Args: never; Returns: string }
+      get_sales_stats: { Args: { p_org_id: string }; Returns: Json }
       is_organization_owner: {
         Args: { org_id: string; user_id: string }
         Returns: boolean
@@ -2923,6 +3007,7 @@ export type Database = {
       is_super_admin: { Args: { check_user_id: string }; Returns: boolean }
       promote_to_admin: { Args: { target_user_id: string }; Returns: undefined }
       purge_expired_trash: { Args: never; Returns: undefined }
+      validate_stock_for_sale: { Args: { p_items: Json }; Returns: Json }
     }
     Enums: {
       business_sector:

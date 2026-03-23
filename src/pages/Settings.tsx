@@ -5,6 +5,7 @@ import { TaxSettings } from '@/components/Settings/TaxSettings';
 import { FeatureSettings } from '@/components/Settings/FeatureSettings';
 import { UserSettings } from '@/components/Settings/UserSettings';
 import { LogsSettings } from '@/components/Settings/LogsSettings';
+import { AuditLogViewer } from '@/components/Settings/AuditLogViewer';
 import { SubscriptionSettings } from '@/components/Settings/SubscriptionSettings';
 import { RolesPermissionsTab } from '@/components/Settings/RolesPermissionsTab';
 import { EmailTemplateSettings } from '@/components/Settings/EmailTemplateSettings';
@@ -52,6 +53,9 @@ export default function Settings() {
             <TabsTrigger value="sidebar">Sidebar Modules</TabsTrigger>
           )}
           <TabsTrigger value="logs">{t('settings.logs')}</TabsTrigger>
+          {isBusinessOwnerOrAdmin && (
+            <TabsTrigger value="audit">Audit Log</TabsTrigger>
+          )}
           {isSuperAdmin && (
             <>
               <TabsTrigger value="modules">{t('settings.modules')}</TabsTrigger>
@@ -113,6 +117,12 @@ export default function Settings() {
         <TabsContent value="logs">
           <LogsSettings />
         </TabsContent>
+
+        {isBusinessOwnerOrAdmin && (
+          <TabsContent value="audit">
+            <AuditLogViewer />
+          </TabsContent>
+        )}
         
         {isSuperAdmin && (
           <>

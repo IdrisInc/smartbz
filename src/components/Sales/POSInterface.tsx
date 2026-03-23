@@ -16,6 +16,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { ContactForm } from '@/components/Contacts/ContactForm';
 import { useExportUtils } from '@/hooks/useExportUtils';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { validateStockForSale, logAuditEvent } from '@/lib/auditService';
 
 interface POSInterfaceProps {
   onClose: () => void;
@@ -201,6 +202,19 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
     setIsProcessing(true);
 
     try {
+      // Server-side stock validation
+      const stockCheck = await validateStockForSale(
+        cart.map(item => ({ product_id: item.id, quantity: item.quantity }))
+      );
+      if (!stockCheck.valid) {
+        const errorMsg = stockCheck.errors
+          .map((e: any) => `${e.product_name || 'Product'}: ${e.error}${e.available !== undefined ? ` (${e.available} available)` : ''}`)
+          .join(', ');
+        toast({ title: 'Stock Error', description: errorMsg, variant: 'destructive' });
+        setIsProcessing(false);
+        return;
+      }
+
       const saleNumber = generateSaleNumber();
       
       // Get customer info
@@ -267,6 +281,19 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
       setPaymentCode(JSON.stringify(receipt, null, 2));
       setCompletedSaleId(saleData.id);
       setShowPaymentCode(true);
+
+      // Audit log
+      if (currentOrganization?.id && currentUser?.id) {
+        logAuditEvent({
+          organizationId: currentOrganization.id,
+          userId: currentUser.id,
+          userName: currentUser.displayName || 'Unknown',
+          action: 'create',
+          entityType: 'sale',
+          entityId: saleData.id,
+          newValues: { sale_number: saleNumber, total: total, payment_method: paymentMethod, items: cart.length },
+        });
+      }
 
       toast({
         title: "Payment Successful",
