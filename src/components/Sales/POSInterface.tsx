@@ -16,6 +16,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { ContactForm } from '@/components/Contacts/ContactForm';
 import { useExportUtils } from '@/hooks/useExportUtils';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { validateStockForSale, logAuditEvent } from '@/lib/auditService';
 
 interface POSInterfaceProps {
   onClose: () => void;
