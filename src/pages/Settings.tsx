@@ -53,6 +53,9 @@ export default function Settings() {
             <TabsTrigger value="sidebar">Sidebar Modules</TabsTrigger>
           )}
           <TabsTrigger value="logs">{t('settings.logs')}</TabsTrigger>
+          {isBusinessOwnerOrAdmin && (
+            <TabsTrigger value="audit">Audit Log</TabsTrigger>
+          )}
           {isSuperAdmin && (
             <>
               <TabsTrigger value="modules">{t('settings.modules')}</TabsTrigger>
