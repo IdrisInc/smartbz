@@ -117,6 +117,12 @@ export default function Settings() {
         <TabsContent value="logs">
           <LogsSettings />
         </TabsContent>
+
+        {isBusinessOwnerOrAdmin && (
+          <TabsContent value="audit">
+            <AuditLogViewer />
+          </TabsContent>
+        )}
         
         {isSuperAdmin && (
           <>
