@@ -5,6 +5,7 @@ import { TaxSettings } from '@/components/Settings/TaxSettings';
 import { FeatureSettings } from '@/components/Settings/FeatureSettings';
 import { UserSettings } from '@/components/Settings/UserSettings';
 import { LogsSettings } from '@/components/Settings/LogsSettings';
+import { AuditLogViewer } from '@/components/Settings/AuditLogViewer';
 import { SubscriptionSettings } from '@/components/Settings/SubscriptionSettings';
 import { RolesPermissionsTab } from '@/components/Settings/RolesPermissionsTab';
 import { EmailTemplateSettings } from '@/components/Settings/EmailTemplateSettings';
