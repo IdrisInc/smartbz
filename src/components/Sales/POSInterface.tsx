@@ -282,6 +282,19 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
       setCompletedSaleId(saleData.id);
       setShowPaymentCode(true);
 
+      // Audit log
+      if (currentOrganization?.id && currentUser?.id) {
+        logAuditEvent({
+          organizationId: currentOrganization.id,
+          userId: currentUser.id,
+          userName: currentUser.displayName || 'Unknown',
+          action: 'create',
+          entityType: 'sale',
+          entityId: saleData.id,
+          newValues: { sale_number: saleNumber, total: total, payment_method: paymentMethod, items: cart.length },
+        });
+      }
+
       toast({
         title: "Payment Successful",
         description: `Sale completed successfully`,
