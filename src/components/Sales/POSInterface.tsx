@@ -202,6 +202,19 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
     setIsProcessing(true);
 
     try {
+      // Server-side stock validation
+      const stockCheck = await validateStockForSale(
+        cart.map(item => ({ product_id: item.id, quantity: item.quantity }))
+      );
+      if (!stockCheck.valid) {
+        const errorMsg = stockCheck.errors
+          .map((e: any) => `${e.product_name || 'Product'}: ${e.error}${e.available !== undefined ? ` (${e.available} available)` : ''}`)
+          .join(', ');
+        toast({ title: 'Stock Error', description: errorMsg, variant: 'destructive' });
+        setIsProcessing(false);
+        return;
+      }
+
       const saleNumber = generateSaleNumber();
       
       // Get customer info
