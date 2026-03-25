@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/Auth/AuthProvider';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ChatMessage {
   id: string;
@@ -24,6 +25,7 @@ export function OrgChatWidget() {
   const [sending, setSending] = useState(false);
   const { user } = useAuth();
   const { currentOrganization } = useOrganization();
+  const { t } = useLanguage();
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -103,14 +105,14 @@ export function OrgChatWidget() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <MessageCircle className="h-4 w-4 text-primary" />
-              Team Chat
+              {t('chat.teamChat')}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <ScrollArea className="h-72 px-3" ref={scrollRef}>
               <div className="space-y-3 py-2">
                 {messages.length === 0 && (
-                  <p className="text-center text-sm text-muted-foreground py-8">No messages yet. Start the conversation!</p>
+                  <p className="text-center text-sm text-muted-foreground py-8">{t('chat.noMessages')}</p>
                 )}
                 {messages.map((msg) => {
                   const isMe = msg.sender_id === user?.id;
@@ -122,7 +124,7 @@ export function OrgChatWidget() {
                         </AvatarFallback>
                       </Avatar>
                       <div className={`max-w-[75%] ${isMe ? 'text-right' : ''}`}>
-                        <p className="text-[10px] text-muted-foreground mb-0.5">{isMe ? 'You' : msg.sender_name}</p>
+                        <p className="text-[10px] text-muted-foreground mb-0.5">{isMe ? t('common.you') : msg.sender_name}</p>
                         <div className={`rounded-lg px-3 py-1.5 text-sm ${isMe ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                           {msg.message}
                         </div>
@@ -136,7 +138,7 @@ export function OrgChatWidget() {
             </ScrollArea>
             <div className="p-3 border-t flex gap-2">
               <Input
-                placeholder="Type a message..."
+                placeholder={t('chat.typeMessage')}
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}

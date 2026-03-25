@@ -50,16 +50,16 @@ export default function Settings() {
             <TabsTrigger value="email">{t('settings.email')}</TabsTrigger>
           )}
           {isBusinessOwnerOrAdmin && (
-            <TabsTrigger value="sidebar">Sidebar Modules</TabsTrigger>
+            <TabsTrigger value="sidebar">{t('settings.sidebarModules')}</TabsTrigger>
           )}
           <TabsTrigger value="logs">{t('settings.logs')}</TabsTrigger>
           {isBusinessOwnerOrAdmin && (
-            <TabsTrigger value="audit">Audit Log</TabsTrigger>
+            <TabsTrigger value="audit">{t('settings.auditLog')}</TabsTrigger>
           )}
           {isSuperAdmin && (
             <>
               <TabsTrigger value="modules">{t('settings.modules')}</TabsTrigger>
-              <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+              <TabsTrigger value="maintenance">{t('settings.maintenance')}</TabsTrigger>
               <TabsTrigger value="admin">{t('settings.admin')}</TabsTrigger>
             </>
           )}

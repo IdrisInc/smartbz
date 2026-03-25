@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/components/Auth/AuthProvider';
 import { LoginForm } from '@/components/Auth/LoginForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const planNames: Record<string, string> = {
   free: 'Free',
@@ -15,6 +16,7 @@ const planNames: Record<string, string> = {
 export default function Auth() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode') || 'login';
   const selectedPlan = searchParams.get('plan') || '';
@@ -39,22 +41,22 @@ export default function Auth() {
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight">BizWiz</h1>
           <p className="text-muted-foreground mt-2">
-            Complete business management solution
+            {t('auth.completeBusinessSolution')}
           </p>
           {mode === 'signup' && selectedPlan && planNames[selectedPlan] && (
             <Badge variant="secondary" className="mt-3">
-              Selected Plan: {planNames[selectedPlan]}
+              {t('auth.selectedPlan')}: {planNames[selectedPlan]}
             </Badge>
           )}
         </div>
         
         <Card>
           <CardHeader className="text-center">
-            <CardTitle>{mode === 'signup' ? 'Create Account' : 'Welcome'}</CardTitle>
+            <CardTitle>{mode === 'signup' ? t('auth.createAccount') : t('auth.welcome')}</CardTitle>
             <CardDescription>
               {mode === 'signup'
-                ? 'Register your account to get started. Your account will be activated by an administrator.'
-                : 'Sign in to your account or create a new one'
+                ? t('auth.registerDesc')
+                : t('auth.signInToAccount')
               }
             </CardDescription>
           </CardHeader>
