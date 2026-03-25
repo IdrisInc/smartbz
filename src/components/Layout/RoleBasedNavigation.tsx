@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUserRole, UserPermissions } from '@/hooks/useUserRole';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   LayoutDashboard, Users, Package, ShoppingCart, TrendingUp, FileText, Wallet,
@@ -10,6 +11,7 @@ import {
 
 interface NavigationItem {
   title: string;
+  titleKey: string;
   url: string;
   icon: React.ComponentType<any>;
   requiredPermission?: keyof UserPermissions;
@@ -20,6 +22,7 @@ interface NavigationItem {
 export function useRoleBasedNavigation() {
   const { userRole, permissions } = useUserRole();
   const { currentOrganization } = useOrganization();
+  const { t } = useLanguage();
   const [hiddenModules, setHiddenModules] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -37,43 +40,42 @@ export function useRoleBasedNavigation() {
   }, [currentOrganization, userRole]);
 
   const superAdminItems: NavigationItem[] = [
-    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Owners", url: "/dashboard/super-admin/owners", icon: Crown },
-    { title: "Businesses", url: "/dashboard/super-admin/businesses", icon: Building2 },
-    { title: "Branches", url: "/dashboard/super-admin/branches", icon: GitBranch },
-    { title: "Staff", url: "/dashboard/super-admin/staff", icon: UserCog },
-    { title: "Subscriptions", url: "/dashboard/super-admin/subscriptions", icon: CreditCard },
-    { title: "Reports", url: "/dashboard/super-admin/reports", icon: BarChart3 },
-    { title: "Trunker", url: "/dashboard/trunker", icon: FileText },
-    { title: "FAQ", url: "/dashboard/faq", icon: HelpCircle },
-    { title: "Settings", url: "/dashboard/settings", icon: Settings },
+    { title: t('nav.dashboard'), titleKey: 'nav.dashboard', url: "/dashboard", icon: LayoutDashboard },
+    { title: t('nav.owners'), titleKey: 'nav.owners', url: "/dashboard/super-admin/owners", icon: Crown },
+    { title: t('nav.businesses'), titleKey: 'nav.businesses', url: "/dashboard/super-admin/businesses", icon: Building2 },
+    { title: t('nav.branches'), titleKey: 'nav.branches', url: "/dashboard/super-admin/branches", icon: GitBranch },
+    { title: t('nav.staff'), titleKey: 'nav.staff', url: "/dashboard/super-admin/staff", icon: UserCog },
+    { title: t('nav.subscriptions'), titleKey: 'nav.subscriptions', url: "/dashboard/super-admin/subscriptions", icon: CreditCard },
+    { title: t('nav.reports'), titleKey: 'nav.reports', url: "/dashboard/super-admin/reports", icon: BarChart3 },
+    { title: t('nav.trunker'), titleKey: 'nav.trunker', url: "/dashboard/trunker", icon: FileText },
+    { title: t('nav.faq'), titleKey: 'nav.faq', url: "/dashboard/faq", icon: HelpCircle },
+    { title: t('nav.settings'), titleKey: 'nav.settings', url: "/dashboard/settings", icon: Settings },
   ];
 
   const allNavigationItems: NavigationItem[] = [
-    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Branches", url: "/dashboard/branches", icon: GitBranch, requiredPermission: 'canManageBranches', moduleKey: 'branches' },
-    { title: "Employees", url: "/dashboard/employees", icon: UserCheck, requiredPermission: 'canManageEmployees', moduleKey: 'employees' },
-    { title: "Products", url: "/dashboard/products", icon: Package, requiredPermission: 'canManageProducts', moduleKey: 'products' },
-    { title: "Inventory", url: "/dashboard/inventory", icon: Store, requiredPermission: 'canManageInventory', moduleKey: 'inventory' },
-    { title: "Sales", url: "/dashboard/sales", icon: ShoppingCart, requiredPermission: 'canProcessSales', moduleKey: 'sales' },
-    { title: "Pending Approvals", url: "/dashboard/pending-approvals", icon: CheckSquare, moduleKey: 'pending-approvals' },
-    { title: "Finance", url: "/dashboard/finance", icon: Wallet, requiredPermission: 'canManageFinances', moduleKey: 'finance' },
-    { title: "Expense Categories", url: "/dashboard/expense-categories", icon: FolderOpen, requiredPermission: 'canManageExpenses', moduleKey: 'expense-categories' },
-    { title: "Cash Registers", url: "/dashboard/cash-registers", icon: DollarSign, requiredPermission: 'canProcessSales', moduleKey: 'cash-registers' },
-    { title: "Contacts", url: "/dashboard/contacts", icon: Users, requiredPermission: 'canManageContacts', moduleKey: 'contacts' },
-    { title: "Payment History", url: "/dashboard/payment-history", icon: Smartphone, requiredPermission: 'canManageFinances', moduleKey: 'payment-history' },
-    { title: "Reports", url: "/dashboard/reports", icon: TrendingUp, requiredPermission: 'canViewReports', moduleKey: 'reports' },
-    { title: "FAQ", url: "/dashboard/faq", icon: HelpCircle, moduleKey: 'faq' },
-    { title: "Trunker", url: "/dashboard/trunker", icon: FileText, requiredPermission: 'canViewLogs', moduleKey: 'trunker' },
-    { title: "Settings", url: "/dashboard/settings", icon: Settings, requiredPermission: 'canManageSettings', moduleKey: 'settings' },
+    { title: t('nav.dashboard'), titleKey: 'nav.dashboard', url: "/dashboard", icon: LayoutDashboard },
+    { title: t('nav.branches'), titleKey: 'nav.branches', url: "/dashboard/branches", icon: GitBranch, requiredPermission: 'canManageBranches', moduleKey: 'branches' },
+    { title: t('nav.employees'), titleKey: 'nav.employees', url: "/dashboard/employees", icon: UserCheck, requiredPermission: 'canManageEmployees', moduleKey: 'employees' },
+    { title: t('nav.products'), titleKey: 'nav.products', url: "/dashboard/products", icon: Package, requiredPermission: 'canManageProducts', moduleKey: 'products' },
+    { title: t('nav.inventory'), titleKey: 'nav.inventory', url: "/dashboard/inventory", icon: Store, requiredPermission: 'canManageInventory', moduleKey: 'inventory' },
+    { title: t('nav.sales'), titleKey: 'nav.sales', url: "/dashboard/sales", icon: ShoppingCart, requiredPermission: 'canProcessSales', moduleKey: 'sales' },
+    { title: t('nav.pendingApprovals'), titleKey: 'nav.pendingApprovals', url: "/dashboard/pending-approvals", icon: CheckSquare, moduleKey: 'pending-approvals' },
+    { title: t('nav.finance'), titleKey: 'nav.finance', url: "/dashboard/finance", icon: Wallet, requiredPermission: 'canManageFinances', moduleKey: 'finance' },
+    { title: t('nav.expenseCategories'), titleKey: 'nav.expenseCategories', url: "/dashboard/expense-categories", icon: FolderOpen, requiredPermission: 'canManageExpenses', moduleKey: 'expense-categories' },
+    { title: t('nav.cashRegisters'), titleKey: 'nav.cashRegisters', url: "/dashboard/cash-registers", icon: DollarSign, requiredPermission: 'canProcessSales', moduleKey: 'cash-registers' },
+    { title: t('nav.contacts'), titleKey: 'nav.contacts', url: "/dashboard/contacts", icon: Users, requiredPermission: 'canManageContacts', moduleKey: 'contacts' },
+    { title: t('nav.paymentHistory'), titleKey: 'nav.paymentHistory', url: "/dashboard/payment-history", icon: Smartphone, requiredPermission: 'canManageFinances', moduleKey: 'payment-history' },
+    { title: t('nav.reports'), titleKey: 'nav.reports', url: "/dashboard/reports", icon: TrendingUp, requiredPermission: 'canViewReports', moduleKey: 'reports' },
+    { title: t('nav.faq'), titleKey: 'nav.faq', url: "/dashboard/faq", icon: HelpCircle, moduleKey: 'faq' },
+    { title: t('nav.trunker'), titleKey: 'nav.trunker', url: "/dashboard/trunker", icon: FileText, requiredPermission: 'canViewLogs', moduleKey: 'trunker' },
+    { title: t('nav.settings'), titleKey: 'nav.settings', url: "/dashboard/settings", icon: Settings, requiredPermission: 'canManageSettings', moduleKey: 'settings' },
   ];
 
   const filterByPermissions = (items: NavigationItem[]): NavigationItem[] => {
-    if (!permissions) return [{ title: "Dashboard", url: "/dashboard", icon: LayoutDashboard }];
+    if (!permissions) return [{ title: t('nav.dashboard'), titleKey: 'nav.dashboard', url: "/dashboard", icon: LayoutDashboard }];
     
     return items.filter(item => {
       if (item.url === "/dashboard") return true;
-      // Check module visibility
       if (item.moduleKey && hiddenModules.has(item.moduleKey)) return false;
       if (!item.requiredPermission) return true;
       return permissions[item.requiredPermission] === true;
@@ -88,17 +90,18 @@ export function useRoleBasedNavigation() {
 export function RoleBasedNavigation() {
   const navigation = useRoleBasedNavigation();
   const { userRole } = useUserRole();
+  const { t } = useLanguage();
 
   const getRoleDisplayName = (role: string) => {
     const roleMap: Record<string, string> = {
-      'super_admin': 'Super Admin',
-      'business_owner': 'Business Owner',
-      'manager': 'Manager',
-      'admin_staff': 'Admin Staff',
-      'sales_staff': 'Sales Staff',
-      'inventory_staff': 'Inventory Staff',
-      'finance_staff': 'Finance Staff',
-      'cashier': 'Cashier',
+      'super_admin': t('roles.superAdmin'),
+      'business_owner': t('roles.businessOwner'),
+      'manager': t('roles.manager'),
+      'admin_staff': t('roles.adminStaff'),
+      'sales_staff': t('roles.salesStaff'),
+      'inventory_staff': t('roles.inventoryStaff'),
+      'finance_staff': t('roles.financeStaff'),
+      'cashier': t('roles.cashier'),
     };
     return roleMap[role] || role;
   };
@@ -107,7 +110,7 @@ export function RoleBasedNavigation() {
     <div className="space-y-2">
       {userRole && (
         <div className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Role: {getRoleDisplayName(userRole)}
+          {t('common.role')}: {getRoleDisplayName(userRole)}
         </div>
       )}
       <nav className="space-y-1">

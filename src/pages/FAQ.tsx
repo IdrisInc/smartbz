@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Search, HelpCircle, MessageCircle, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface FAQ {
   id: string;
@@ -17,6 +18,7 @@ interface FAQ {
 
 export default function FAQPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,49 +56,45 @@ export default function FAQPage() {
 
   return (
     <div className="min-h-screen bg-gradient-hero">
-      {/* Header */}
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Button variant="ghost" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            {t('common.back')}
           </Button>
-          <h1 className="text-xl font-bold">Help Center</h1>
+          <h1 className="text-xl font-bold">{t('faq.helpCenter')}</h1>
           <div className="w-20" />
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Hero */}
         <div className="text-center mb-12 animate-fade-in">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
             <HelpCircle className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="text-4xl font-bold mb-4">Frequently Asked Questions</h1>
+          <h1 className="text-4xl font-bold mb-4">{t('faq.frequentlyAsked')}</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Find answers to common questions about BizWiz
+            {t('faq.findAnswers')}
           </p>
         </div>
 
-        {/* Search */}
         <div className="relative mb-8 animate-scale-in">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
-            placeholder="Search questions..."
+            placeholder={t('search.questions')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 h-12 text-lg"
           />
         </div>
 
-        {/* Categories */}
         <div className="flex flex-wrap gap-2 mb-8 animate-fade-in">
           <Badge
             variant={selectedCategory === null ? "default" : "outline"}
             className="cursor-pointer"
             onClick={() => setSelectedCategory(null)}
           >
-            All
+            {t('common.all')}
           </Badge>
           {categories.map(cat => (
             <Badge
@@ -110,14 +108,13 @@ export default function FAQPage() {
           ))}
         </div>
 
-        {/* FAQ List */}
         <Card className="animate-slide-in-right">
           <CardContent className="pt-6">
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading...</div>
+              <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>
             ) : filteredFaqs.length > 0 ? (
               <Accordion type="single" collapsible className="w-full">
-                {filteredFaqs.map((faq, index) => (
+                {filteredFaqs.map((faq) => (
                   <AccordionItem key={faq.id} value={faq.id}>
                     <AccordionTrigger className="text-left hover:no-underline">
                       <span className="font-medium">{faq.question}</span>
@@ -130,26 +127,25 @@ export default function FAQPage() {
               </Accordion>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                No matching questions found
+                {t('faq.noMatchingQuestions')}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Contact Section */}
         <div className="mt-12 text-center animate-fade-in">
-          <h2 className="text-2xl font-bold mb-4">Still have questions?</h2>
+          <h2 className="text-2xl font-bold mb-4">{t('faq.stillHaveQuestions')}</h2>
           <p className="text-muted-foreground mb-6">
-            We're here to help. Contact our support team.
+            {t('faq.hereToHelp')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button variant="outline" size="lg">
               <MessageCircle className="h-5 w-5 mr-2" />
-              Live Chat
+              {t('faq.liveChat')}
             </Button>
             <Button size="lg">
               <Mail className="h-5 w-5 mr-2" />
-              Email Support
+              {t('faq.emailSupport')}
             </Button>
           </div>
         </div>
