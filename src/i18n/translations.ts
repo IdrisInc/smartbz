@@ -65,6 +65,16 @@ export const translations: Record<Language, Record<string, string>> = {
     'common.error': 'Error',
     'common.warning': 'Warning',
     'common.info': 'Information',
+    'common.saveChanges': 'Save Changes',
+    'common.saving': 'Saving...',
+    'common.you': 'You',
+    'common.role': 'Role',
+    'common.loadMore': 'Load More',
+    'common.noMore': 'No more items',
+    'common.createdBy': 'Created By',
+    'common.approvedBy': 'Approved By',
+    'common.rejectedBy': 'Rejected By',
+    'common.updatedBy': 'Updated By',
 
     // Navigation
     'nav.dashboard': 'Dashboard',
@@ -82,7 +92,12 @@ export const translations: Record<Language, Record<string, string>> = {
     'nav.paymentHistory': 'Payment History',
     'nav.pendingApprovals': 'Pending Approvals',
     'nav.trunker': 'Trunker',
+    'nav.faq': 'FAQ',
     'nav.logout': 'Logout',
+    'nav.owners': 'Owners',
+    'nav.businesses': 'Businesses',
+    'nav.staff': 'Staff',
+    'nav.subscriptions': 'Subscriptions',
 
     // Settings
     'settings.title': 'Settings & Configuration',
@@ -102,6 +117,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'settings.appearance.desc': 'Customize the look and feel of the application',
     'settings.businessHours': 'Business Hours',
     'settings.admin': 'Admin',
+    'settings.sidebarModules': 'Sidebar Modules',
+    'settings.auditLog': 'Audit Log',
+    'settings.maintenance': 'Maintenance',
 
     // Auth
     'auth.signIn': 'Sign In',
@@ -114,6 +132,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'auth.hasAccount': 'Already have an account?',
     'auth.welcomeBack': 'Welcome back',
     'auth.createAccount': 'Create an account',
+    'auth.welcome': 'Welcome',
+    'auth.completeBusinessSolution': 'Complete business management solution',
+    'auth.signInToAccount': 'Sign in to your account or create a new one',
+    'auth.registerDesc': 'Register your account to get started. Your account will be activated by an administrator.',
+    'auth.selectedPlan': 'Selected Plan',
 
     // Dashboard
     'dashboard.welcome': 'Welcome',
@@ -128,6 +151,33 @@ export const translations: Record<Language, Record<string, string>> = {
     'dashboard.addProduct': 'Add Product',
     'dashboard.addContact': 'Add Contact',
     'dashboard.viewReports': 'View Reports',
+    'dashboard.systemAdmin': 'System Administration',
+    'dashboard.businessOverview': 'Business Overview',
+    'dashboard.managementDashboard': 'Management Dashboard',
+    'dashboard.staffDashboard': 'Staff Dashboard',
+    'dashboard.posTerminal': 'POS Terminal',
+    'dashboard.totalOrganizations': 'Total Organizations',
+    'dashboard.activeUsers': 'Active Users',
+    'dashboard.systemHealth': 'System Health',
+    'dashboard.revenue': 'Revenue',
+    'dashboard.todaysSales': "Today's Sales",
+    'dashboard.teamPerformance': 'Team Performance',
+    'dashboard.staffPresent': 'Staff Present',
+    'dashboard.targetAchievement': 'Target achievement',
+    'dashboard.todaysAttendance': "Today's attendance",
+    'dashboard.mySalesToday': 'My Sales Today',
+    'dashboard.transactions': 'transactions',
+    'dashboard.processSale': 'Process Sale',
+    'dashboard.checkInventory': 'Check Inventory',
+    'dashboard.quickSale': 'Quick Sale',
+    'dashboard.processTransactions': 'Process customer transactions',
+    'dashboard.currentTransaction': 'Current transaction',
+    'dashboard.viewProducts': 'View Products',
+    'dashboard.noRoleAssigned': 'No role assigned or unauthorized access',
+    'dashboard.uptime': 'Uptime',
+    'dashboard.activeProducts': 'Active products',
+    'dashboard.acrossAllBranches': 'Across all branches',
+    'dashboard.fromLastMonth': 'from last month',
 
     // Search
     'search.placeholder': 'Search organizations, products, contacts...',
@@ -135,6 +185,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'search.products': 'Products',
     'search.contacts': 'Contacts',
     'search.employees': 'Employees',
+    'search.questions': 'Search questions...',
 
     // Products
     'products.title': 'Products',
@@ -244,6 +295,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'branches.branchName': 'Branch Name',
     'branches.city': 'City',
     'branches.manager': 'Manager',
+    'branches.desc': 'Manage your organization\'s branch locations and settings.',
 
     // Onboarding
     'onboarding.welcome': 'Welcome to BizWiz',
@@ -296,6 +348,73 @@ export const translations: Record<Language, Record<string, string>> = {
     'demo.finish': 'Finish',
     'demo.step': 'Step',
     'demo.of': 'of',
+    'demo.keyFeatures': 'Key Features',
+
+    // Chat
+    'chat.teamChat': 'Team Chat',
+    'chat.noMessages': 'No messages yet. Start the conversation!',
+    'chat.typeMessage': 'Type a message...',
+
+    // FAQ
+    'faq.title': 'FAQ',
+    'faq.helpCenter': 'Help Center',
+    'faq.frequentlyAsked': 'Frequently Asked Questions',
+    'faq.findAnswers': 'Find answers to common questions about BizWiz',
+    'faq.noMatchingQuestions': 'No matching questions found',
+    'faq.stillHaveQuestions': 'Still have questions?',
+    'faq.hereToHelp': 'We\'re here to help. Contact our support team.',
+    'faq.liveChat': 'Live Chat',
+    'faq.emailSupport': 'Email Support',
+
+    // Maintenance
+    'maintenance.title': 'Maintenance Mode',
+    'maintenance.desc': 'When enabled, only super admins can access the system. All other users will see a maintenance page.',
+    'maintenance.enable': 'Enable Maintenance Mode',
+    'maintenance.enableDesc': 'Block all non-super-admin users from accessing the system',
+    'maintenance.message': 'Maintenance Message',
+    'maintenance.messagePlaceholder': 'Message to display to users during maintenance...',
+    'maintenance.allowedRoles': 'Allowed Roles During Maintenance',
+    'maintenance.allowedRolesDesc': 'Only users with these roles can access the system during maintenance.',
+    'maintenance.activeWarning': 'Maintenance mode is currently ACTIVE. Non-admin users cannot access the system.',
+    'maintenance.enabled': 'Maintenance Mode Enabled',
+    'maintenance.disabled': 'Maintenance Mode Disabled',
+    'maintenance.enabledDesc': 'Only super admins can access the system now.',
+    'maintenance.disabledDesc': 'All users can access the system now.',
+    'maintenance.saveFailed': 'Failed to save settings.',
+    'maintenance.defaultMessage': 'System is under maintenance. Please try again later.',
+
+    // Module Visibility
+    'moduleVisibility.title': 'Sidebar Module Visibility',
+    'moduleVisibility.desc': 'Choose which modules appear in the sidebar for your organization',
+    'moduleVisibility.saved': 'Module visibility updated successfully',
+    'moduleVisibility.saveFailed': 'Failed to save module visibility',
+
+    // Audit Log
+    'audit.title': 'Audit Log',
+    'audit.filterByAction': 'Filter by action',
+    'audit.allActions': 'All Actions',
+    'audit.filterByEntity': 'Filter by entity',
+    'audit.allEntities': 'All Entities',
+    'audit.user': 'User',
+    'audit.action': 'Action',
+    'audit.entity': 'Entity',
+    'audit.timestamp': 'Timestamp',
+    'audit.noLogs': 'No audit logs found',
+
+    // Cash Registers
+    'cashRegisters.title': 'Cash Registers',
+
+    // Expense Categories
+    'expenseCategories.title': 'Expense Categories',
+
+    // Payment History
+    'paymentHistory.title': 'Payment History',
+
+    // Pending Approvals
+    'pendingApprovals.title': 'Pending Approvals',
+
+    // Trunker
+    'trunker.title': 'Trunker',
   },
   sw: {
     // Common - Swahili
@@ -361,6 +480,16 @@ export const translations: Record<Language, Record<string, string>> = {
     'common.error': 'Hitilafu',
     'common.warning': 'Onyo',
     'common.info': 'Taarifa',
+    'common.saveChanges': 'Hifadhi Mabadiliko',
+    'common.saving': 'Inahifadhi...',
+    'common.you': 'Wewe',
+    'common.role': 'Jukumu',
+    'common.loadMore': 'Pakia Zaidi',
+    'common.noMore': 'Hakuna zaidi',
+    'common.createdBy': 'Imeundwa na',
+    'common.approvedBy': 'Imekubaliwa na',
+    'common.rejectedBy': 'Imekataliwa na',
+    'common.updatedBy': 'Imesasishwa na',
 
     // Navigation - Swahili
     'nav.dashboard': 'Dashibodi',
@@ -378,7 +507,12 @@ export const translations: Record<Language, Record<string, string>> = {
     'nav.paymentHistory': 'Historia ya Malipo',
     'nav.pendingApprovals': 'Idhini Zinazosubiri',
     'nav.trunker': 'Trunker',
+    'nav.faq': 'Maswali Yanayoulizwa',
     'nav.logout': 'Toka',
+    'nav.owners': 'Wamiliki',
+    'nav.businesses': 'Biashara',
+    'nav.staff': 'Wafanyakazi',
+    'nav.subscriptions': 'Usajili',
 
     // Settings - Swahili
     'settings.title': 'Mipangilio na Usanidi',
@@ -398,6 +532,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'settings.appearance.desc': 'Badilisha muonekano wa programu',
     'settings.businessHours': 'Saa za Biashara',
     'settings.admin': 'Msimamizi',
+    'settings.sidebarModules': 'Moduli za Menyu',
+    'settings.auditLog': 'Kumbukumbu za Ukaguzi',
+    'settings.maintenance': 'Matengenezo',
 
     // Auth - Swahili
     'auth.signIn': 'Ingia',
@@ -410,6 +547,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'auth.hasAccount': 'Una akaunti tayari?',
     'auth.welcomeBack': 'Karibu tena',
     'auth.createAccount': 'Fungua akaunti',
+    'auth.welcome': 'Karibu',
+    'auth.completeBusinessSolution': 'Suluhisho kamili la usimamizi wa biashara',
+    'auth.signInToAccount': 'Ingia kwenye akaunti yako au fungua mpya',
+    'auth.registerDesc': 'Sajili akaunti yako kuanza. Akaunti yako itaamilishwa na msimamizi.',
+    'auth.selectedPlan': 'Mpango Uliochaguliwa',
 
     // Dashboard - Swahili
     'dashboard.welcome': 'Karibu',
@@ -424,6 +566,33 @@ export const translations: Record<Language, Record<string, string>> = {
     'dashboard.addProduct': 'Ongeza Bidhaa',
     'dashboard.addContact': 'Ongeza Anwani',
     'dashboard.viewReports': 'Tazama Ripoti',
+    'dashboard.systemAdmin': 'Usimamizi wa Mfumo',
+    'dashboard.businessOverview': 'Muhtasari wa Biashara',
+    'dashboard.managementDashboard': 'Dashibodi ya Usimamizi',
+    'dashboard.staffDashboard': 'Dashibodi ya Wafanyakazi',
+    'dashboard.posTerminal': 'Kituo cha POS',
+    'dashboard.totalOrganizations': 'Jumla ya Mashirika',
+    'dashboard.activeUsers': 'Watumiaji Hai',
+    'dashboard.systemHealth': 'Afya ya Mfumo',
+    'dashboard.revenue': 'Mapato',
+    'dashboard.todaysSales': 'Mauzo ya Leo',
+    'dashboard.teamPerformance': 'Utendaji wa Timu',
+    'dashboard.staffPresent': 'Wafanyakazi Waliopo',
+    'dashboard.targetAchievement': 'Kufikiwa kwa lengo',
+    'dashboard.todaysAttendance': 'Mahudhurio ya leo',
+    'dashboard.mySalesToday': 'Mauzo Yangu Leo',
+    'dashboard.transactions': 'miamala',
+    'dashboard.processSale': 'Fanya Uzo',
+    'dashboard.checkInventory': 'Angalia Stoki',
+    'dashboard.quickSale': 'Uzo wa Haraka',
+    'dashboard.processTransactions': 'Fanya miamala ya wateja',
+    'dashboard.currentTransaction': 'Muamala wa sasa',
+    'dashboard.viewProducts': 'Tazama Bidhaa',
+    'dashboard.noRoleAssigned': 'Hakuna jukumu lililowekwa au ufikiaji usioidhinishwa',
+    'dashboard.uptime': 'Muda wa kuwa hai',
+    'dashboard.activeProducts': 'Bidhaa hai',
+    'dashboard.acrossAllBranches': 'Katika matawi yote',
+    'dashboard.fromLastMonth': 'kutoka mwezi uliopita',
 
     // Search - Swahili
     'search.placeholder': 'Tafuta mashirika, bidhaa, mawasiliano...',
@@ -431,6 +600,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'search.products': 'Bidhaa',
     'search.contacts': 'Mawasiliano',
     'search.employees': 'Wafanyakazi',
+    'search.questions': 'Tafuta maswali...',
 
     // Products - Swahili
     'products.title': 'Bidhaa',
@@ -540,6 +710,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'branches.branchName': 'Jina la Tawi',
     'branches.city': 'Mji',
     'branches.manager': 'Meneja',
+    'branches.desc': 'Simamia maeneo ya matawi ya shirika lako na mipangilio.',
 
     // Onboarding - Swahili
     'onboarding.welcome': 'Karibu BizWiz',
@@ -592,5 +763,72 @@ export const translations: Record<Language, Record<string, string>> = {
     'demo.finish': 'Maliza',
     'demo.step': 'Hatua',
     'demo.of': 'ya',
+    'demo.keyFeatures': 'Vipengele Muhimu',
+
+    // Chat - Swahili
+    'chat.teamChat': 'Mazungumzo ya Timu',
+    'chat.noMessages': 'Hakuna ujumbe bado. Anza mazungumzo!',
+    'chat.typeMessage': 'Andika ujumbe...',
+
+    // FAQ - Swahili
+    'faq.title': 'Maswali Yanayoulizwa',
+    'faq.helpCenter': 'Kituo cha Msaada',
+    'faq.frequentlyAsked': 'Maswali Yanayoulizwa Mara kwa Mara',
+    'faq.findAnswers': 'Pata majibu ya maswali ya kawaida kuhusu BizWiz',
+    'faq.noMatchingQuestions': 'Hakuna maswali yanayolingana',
+    'faq.stillHaveQuestions': 'Bado una maswali?',
+    'faq.hereToHelp': 'Tuko hapa kukusaidia. Wasiliana na timu yetu ya msaada.',
+    'faq.liveChat': 'Mazungumzo ya Moja kwa Moja',
+    'faq.emailSupport': 'Msaada wa Barua Pepe',
+
+    // Maintenance - Swahili
+    'maintenance.title': 'Hali ya Matengenezo',
+    'maintenance.desc': 'Ikiwezeshwa, ni wasimamizi wakuu pekee wanaoweza kufikia mfumo. Watumiaji wengine wataona ukurasa wa matengenezo.',
+    'maintenance.enable': 'Washa Hali ya Matengenezo',
+    'maintenance.enableDesc': 'Zuia watumiaji wote wasio wasimamizi wakuu kufikia mfumo',
+    'maintenance.message': 'Ujumbe wa Matengenezo',
+    'maintenance.messagePlaceholder': 'Ujumbe wa kuonyesha watumiaji wakati wa matengenezo...',
+    'maintenance.allowedRoles': 'Majukumu Yanayoruhusiwa Wakati wa Matengenezo',
+    'maintenance.allowedRolesDesc': 'Ni watumiaji wenye majukumu haya pekee wanaoweza kufikia mfumo wakati wa matengenezo.',
+    'maintenance.activeWarning': 'Hali ya matengenezo iko HAI sasa. Watumiaji wasio wasimamizi hawawezi kufikia mfumo.',
+    'maintenance.enabled': 'Hali ya Matengenezo Imewashwa',
+    'maintenance.disabled': 'Hali ya Matengenezo Imezimwa',
+    'maintenance.enabledDesc': 'Ni wasimamizi wakuu pekee wanaoweza kufikia mfumo sasa.',
+    'maintenance.disabledDesc': 'Watumiaji wote wanaweza kufikia mfumo sasa.',
+    'maintenance.saveFailed': 'Imeshindwa kuhifadhi mipangilio.',
+    'maintenance.defaultMessage': 'Mfumo uko chini ya matengenezo. Tafadhali jaribu tena baadaye.',
+
+    // Module Visibility - Swahili
+    'moduleVisibility.title': 'Muonekano wa Moduli za Menyu',
+    'moduleVisibility.desc': 'Chagua moduli zipi zinaonekana kwenye menyu ya shirika lako',
+    'moduleVisibility.saved': 'Muonekano wa moduli umesasishwa',
+    'moduleVisibility.saveFailed': 'Imeshindwa kuhifadhi muonekano wa moduli',
+
+    // Audit Log - Swahili
+    'audit.title': 'Kumbukumbu za Ukaguzi',
+    'audit.filterByAction': 'Chuja kwa kitendo',
+    'audit.allActions': 'Vitendo Vyote',
+    'audit.filterByEntity': 'Chuja kwa kitengo',
+    'audit.allEntities': 'Vitengo Vyote',
+    'audit.user': 'Mtumiaji',
+    'audit.action': 'Kitendo',
+    'audit.entity': 'Kitengo',
+    'audit.timestamp': 'Muda',
+    'audit.noLogs': 'Hakuna kumbukumbu za ukaguzi',
+
+    // Cash Registers - Swahili
+    'cashRegisters.title': 'Rejista za Fedha',
+
+    // Expense Categories - Swahili
+    'expenseCategories.title': 'Aina za Gharama',
+
+    // Payment History - Swahili
+    'paymentHistory.title': 'Historia ya Malipo',
+
+    // Pending Approvals - Swahili
+    'pendingApprovals.title': 'Idhini Zinazosubiri',
+
+    // Trunker - Swahili
+    'trunker.title': 'Trunker',
   },
 };
