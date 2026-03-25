@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Search, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { formatDistanceToNow } from 'date-fns';
 
 const PAGE_SIZE = 25;
@@ -34,6 +35,7 @@ export function AuditLogViewer() {
   const [totalCount, setTotalCount] = useState(0);
 
   const { currentOrganization } = useOrganization();
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (currentOrganization) fetchLogs();
@@ -76,15 +78,15 @@ export function AuditLogViewer() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Audit Log</CardTitle>
-        <CardDescription>Track all system actions and changes</CardDescription>
+        <CardTitle>{t('audit.title')}</CardTitle>
+        <CardDescription>{t('settings.logs')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by user, action..."
+              placeholder={t('common.search') + '...'}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-8"
@@ -92,33 +94,33 @@ export function AuditLogViewer() {
           </div>
           <Select value={actionFilter} onValueChange={(v) => { setActionFilter(v); setPage(0); }}>
             <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Action" />
+              <SelectValue placeholder={t('audit.action')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Actions</SelectItem>
-              <SelectItem value="create">Create</SelectItem>
-              <SelectItem value="update">Update</SelectItem>
-              <SelectItem value="delete">Delete</SelectItem>
-              <SelectItem value="approve">Approve</SelectItem>
-              <SelectItem value="reject">Reject</SelectItem>
+              <SelectItem value="all">{t('audit.allActions')}</SelectItem>
+              <SelectItem value="create">{t('common.add')}</SelectItem>
+              <SelectItem value="update">{t('common.edit')}</SelectItem>
+              <SelectItem value="delete">{t('common.delete')}</SelectItem>
+              <SelectItem value="approve">{t('common.approved')}</SelectItem>
+              <SelectItem value="reject">{t('common.rejected')}</SelectItem>
               <SelectItem value="price_change">Price Change</SelectItem>
               <SelectItem value="stock_adjust">Stock Adjust</SelectItem>
-              <SelectItem value="refund">Refund</SelectItem>
+              <SelectItem value="refund">{t('sales.refund')}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={entityFilter} onValueChange={(v) => { setEntityFilter(v); setPage(0); }}>
             <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Entity" />
+              <SelectValue placeholder={t('audit.entity')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Entities</SelectItem>
-              <SelectItem value="sale">Sales</SelectItem>
-              <SelectItem value="expense">Expenses</SelectItem>
-              <SelectItem value="product">Products</SelectItem>
-              <SelectItem value="invoice">Invoices</SelectItem>
-              <SelectItem value="purchase_order">Purchase Orders</SelectItem>
-              <SelectItem value="stock_adjustment">Stock Adjustments</SelectItem>
-              <SelectItem value="contact">Contacts</SelectItem>
+              <SelectItem value="all">{t('audit.allEntities')}</SelectItem>
+              <SelectItem value="sale">{t('nav.sales')}</SelectItem>
+              <SelectItem value="expense">{t('finance.expenses')}</SelectItem>
+              <SelectItem value="product">{t('nav.products')}</SelectItem>
+              <SelectItem value="invoice">{t('finance.invoices')}</SelectItem>
+              <SelectItem value="purchase_order">{t('inventory.purchaseOrders')}</SelectItem>
+              <SelectItem value="stock_adjustment">{t('inventory.stockAdjustments')}</SelectItem>
+              <SelectItem value="contact">{t('nav.contacts')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -129,7 +131,7 @@ export function AuditLogViewer() {
           </div>
         ) : filteredLogs.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No audit logs found
+            {t('audit.noLogs')}
           </div>
         ) : (
           <>
@@ -137,11 +139,11 @@ export function AuditLogViewer() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Time</TableHead>
-                    <TableHead>User</TableHead>
-                    <TableHead>Action</TableHead>
-                    <TableHead>Entity</TableHead>
-                    <TableHead>Details</TableHead>
+                    <TableHead>{t('audit.timestamp')}</TableHead>
+                    <TableHead>{t('audit.user')}</TableHead>
+                    <TableHead>{t('audit.action')}</TableHead>
+                    <TableHead>{t('audit.entity')}</TableHead>
+                    <TableHead>{t('common.details')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -168,7 +170,7 @@ export function AuditLogViewer() {
 
             <div className="flex items-center justify-between pt-2">
               <span className="text-sm text-muted-foreground">
-                {totalCount} total entries
+                {totalCount} {t('common.total').toLowerCase()}
               </span>
               <div className="flex gap-2">
                 <Button

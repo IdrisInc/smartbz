@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import {
   LayoutDashboard, ShoppingCart, Package, Store, Wallet, Users,
   UserCheck, TrendingUp, Settings, GitBranch, Crown, ChevronRight,
-  ChevronLeft, X, Play, CheckCircle2
+  ChevronLeft, CheckCircle2
 } from 'lucide-react';
 
 interface TourStep {
@@ -16,6 +16,7 @@ interface TourStep {
   icon: React.ComponentType<any>;
   titleKey: string;
   title: string;
+  descriptionKey: string;
   description: string;
   features: string[];
   color: string;
@@ -23,92 +24,62 @@ interface TourStep {
 
 const tourSteps: TourStep[] = [
   {
-    id: 'dashboard',
-    icon: LayoutDashboard,
-    titleKey: 'nav.dashboard',
-    title: 'Dashboard',
-    description: 'Your command center with real-time business metrics, sales trends, and quick action buttons.',
+    id: 'dashboard', icon: LayoutDashboard, titleKey: 'nav.dashboard', title: 'Dashboard',
+    descriptionKey: 'demo.dashboardDesc', description: 'Your command center with real-time business metrics, sales trends, and quick action buttons.',
     features: ['Revenue overview', 'Sales charts', 'Low stock alerts', 'Recent activities', 'Quick actions'],
     color: 'bg-blue-500',
   },
   {
-    id: 'sales',
-    icon: ShoppingCart,
-    titleKey: 'nav.sales',
-    title: 'Sales & POS',
-    description: 'Complete point-of-sale system with invoicing, returns management, and payment tracking.',
+    id: 'sales', icon: ShoppingCart, titleKey: 'nav.sales', title: 'Sales & POS',
+    descriptionKey: 'demo.salesDesc', description: 'Complete point-of-sale system with invoicing, returns management, and payment tracking.',
     features: ['POS interface', 'Invoice generation', 'Sale returns & refunds', 'Payment methods', 'Discount management'],
     color: 'bg-green-500',
   },
   {
-    id: 'products',
-    icon: Package,
-    titleKey: 'nav.products',
-    title: 'Product Management',
-    description: 'Manage your entire product catalog with categories, brands, units, and tax configurations.',
+    id: 'products', icon: Package, titleKey: 'nav.products', title: 'Product Management',
+    descriptionKey: 'demo.productsDesc', description: 'Manage your entire product catalog with categories, brands, units, and tax configurations.',
     features: ['Product catalog', 'Categories & brands', 'Unit management', 'Tax rules', 'Barcode/SKU support'],
     color: 'bg-purple-500',
   },
   {
-    id: 'inventory',
-    icon: Store,
-    titleKey: 'nav.inventory',
-    title: 'Inventory Management',
-    description: 'Track stock levels, manage purchase orders, handle returns, and perform stock audits.',
+    id: 'inventory', icon: Store, titleKey: 'nav.inventory', title: 'Inventory Management',
+    descriptionKey: 'demo.inventoryDesc', description: 'Track stock levels, manage purchase orders, handle returns, and perform stock audits.',
     features: ['Stock tracking', 'Purchase orders', 'Purchase returns', 'Stock adjustments', 'Audit logs', 'Quotations'],
     color: 'bg-orange-500',
   },
   {
-    id: 'finance',
-    icon: Wallet,
-    titleKey: 'nav.finance',
-    title: 'Finance & Accounting',
-    description: 'Comprehensive financial management with invoicing, expense tracking, and credit notes.',
+    id: 'finance', icon: Wallet, titleKey: 'nav.finance', title: 'Finance & Accounting',
+    descriptionKey: 'demo.financeDesc', description: 'Comprehensive financial management with invoicing, expense tracking, and credit notes.',
     features: ['Invoicing', 'Expense tracking', 'Credit notes', 'Revenue reports', 'Payment history'],
     color: 'bg-emerald-500',
   },
   {
-    id: 'employees',
-    icon: UserCheck,
-    titleKey: 'nav.employees',
-    title: 'Employee Management',
-    description: 'Manage your workforce with attendance tracking, payroll processing, and performance monitoring.',
+    id: 'employees', icon: UserCheck, titleKey: 'nav.employees', title: 'Employee Management',
+    descriptionKey: 'demo.employeesDesc', description: 'Manage your workforce with attendance tracking, payroll processing, and performance monitoring.',
     features: ['Employee profiles', 'Attendance tracking', 'Payroll (TZ PAYE/NSSF)', 'Performance reviews', 'Payslip generation'],
     color: 'bg-cyan-500',
   },
   {
-    id: 'contacts',
-    icon: Users,
-    titleKey: 'nav.contacts',
-    title: 'Contact Management',
-    description: 'Organize customers and suppliers with detailed profiles and transaction history.',
+    id: 'contacts', icon: Users, titleKey: 'nav.contacts', title: 'Contact Management',
+    descriptionKey: 'demo.contactsDesc', description: 'Organize customers and suppliers with detailed profiles and transaction history.',
     features: ['Customer database', 'Supplier management', 'Contact details', 'Transaction history'],
     color: 'bg-pink-500',
   },
   {
-    id: 'reports',
-    icon: TrendingUp,
-    titleKey: 'nav.reports',
-    title: 'Reports & Analytics',
-    description: 'Data-driven insights with sales performance, inventory levels, and financial summaries.',
+    id: 'reports', icon: TrendingUp, titleKey: 'nav.reports', title: 'Reports & Analytics',
+    descriptionKey: 'demo.reportsDesc', description: 'Data-driven insights with sales performance, inventory levels, and financial summaries.',
     features: ['Sales analytics', 'Inventory reports', 'Cash flow charts', 'Customer insights', 'Export to PDF/Excel'],
     color: 'bg-indigo-500',
   },
   {
-    id: 'branches',
-    icon: GitBranch,
-    titleKey: 'nav.branches',
-    title: 'Multi-Branch Support',
-    description: 'Manage multiple business locations with branch-specific data and configurations.',
+    id: 'branches', icon: GitBranch, titleKey: 'nav.branches', title: 'Multi-Branch Support',
+    descriptionKey: 'demo.branchesDesc', description: 'Manage multiple business locations with branch-specific data and configurations.',
     features: ['Branch creation', 'Staff assignment', 'Branch-level reports', 'Centralized control'],
     color: 'bg-amber-500',
   },
   {
-    id: 'settings',
-    icon: Settings,
-    titleKey: 'nav.settings',
-    title: 'System Settings',
-    description: 'Configure every aspect of your business — from appearance and roles to tax rules and email templates.',
+    id: 'settings', icon: Settings, titleKey: 'nav.settings', title: 'System Settings',
+    descriptionKey: 'demo.settingsDesc', description: 'Configure every aspect of your business — from appearance and roles to tax rules and email templates.',
     features: ['Business settings', 'Role management', 'Tax configuration', 'Email templates', 'Appearance customization', 'Subscription management'],
     color: 'bg-gray-500',
   },
@@ -181,7 +152,7 @@ export function AdminDemoTour({ open, onClose }: AdminDemoTourProps) {
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Key Features</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('demo.keyFeatures')}</p>
                 <div className="grid grid-cols-2 gap-1.5">
                   {step.features.map((feature) => (
                     <div key={feature} className="flex items-center gap-1.5 text-sm">
@@ -194,7 +165,6 @@ export function AdminDemoTour({ open, onClose }: AdminDemoTourProps) {
             </CardContent>
           </Card>
 
-          {/* Step indicators */}
           <div className="flex justify-center gap-1.5">
             {tourSteps.map((_, i) => (
               <button
