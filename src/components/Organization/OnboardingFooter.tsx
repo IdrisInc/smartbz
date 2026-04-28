@@ -109,8 +109,19 @@ export function OnboardingFooter() {
           )}
         </div>
 
-        <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
+        <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground space-y-1">
           <p>© {new Date().getFullYear()} BizWiz. All rights reserved.</p>
+          <p>
+            Designed by{' '}
+            <a
+              href="https://www.idrisinc.co.tz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-primary hover:underline"
+            >
+              IdrisInc
+            </a>
+          </p>
         </div>
       </div>
     </footer>
