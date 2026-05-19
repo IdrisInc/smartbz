@@ -13,19 +13,19 @@ interface OnboardingGuardProps {
 }
 
 export function OnboardingGuard({ children }: OnboardingGuardProps) {
-  const { needsOnboarding } = useOnboarding();
+  const { needsOnboarding, onboardingChecked } = useOnboarding();
   const { user, loading, signOut } = useAuth();
-  const { currentOrganization } = useOrganization();
+  const { currentOrganization, loading: orgLoading } = useOrganization();
   const { userRole } = useUserRole();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && user && needsOnboarding) {
+    if (!loading && !orgLoading && onboardingChecked && user && needsOnboarding) {
       navigate('/onboarding', { replace: true });
     }
-  }, [needsOnboarding, user, loading, navigate]);
+  }, [needsOnboarding, onboardingChecked, user, loading, orgLoading, navigate]);
 
-  if (loading) {
+  if (loading || orgLoading || !onboardingChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
