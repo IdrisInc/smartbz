@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface OnboardingContextType {
   needsOnboarding: boolean;
+  onboardingChecked: boolean;
   setNeedsOnboarding: (needs: boolean) => void;
   checkOnboardingStatus: () => Promise<void>;
 }
@@ -13,14 +14,19 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(undef
 
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
   const { user } = useAuth();
   const { organizations, loading } = useOrganization();
 
   const checkOnboardingStatus = async () => {
-    if (!user || loading) return;
-    
-    // Check if user is a super admin - they don't need onboarding
+    if (!user) {
+      setOnboardingChecked(false);
+      return;
+    }
+    if (loading) return; // wait until orgs finished loading
+
     try {
+      // Super admins skip onboarding
       const { data: superAdminCheck } = await supabase
         .from('organization_memberships')
         .select('role')
@@ -30,41 +36,41 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
 
       if (superAdminCheck) {
         setNeedsOnboarding(false);
+        setOnboardingChecked(true);
         return;
       }
     } catch (error) {
       console.error('Error checking super admin status:', error);
     }
-    
-    // If user has no organizations, they need onboarding
+
     const hasOrganizations = organizations && organizations.length > 0;
-    
+
     if (!hasOrganizations) {
       setNeedsOnboarding(true);
+      setOnboardingChecked(true);
       return;
     }
 
-    // If user has organizations, check if onboarding is complete
-    // We'll check if they have at least one branch (indicates completed onboarding)
     const currentOrg = organizations[0];
-    if (currentOrg) {
-      try {
-        const { data: branches, error } = await supabase
-          .from('branches')
-          .select('id')
-          .eq('organization_id', currentOrg.id)
-          .limit(1);
-        
-        // If no branches exist, user needs to complete onboarding
-        const needsOnboarding = !branches || branches.length === 0;
-        setNeedsOnboarding(needsOnboarding);
-      } catch (error) {
-        console.error('Error checking onboarding status:', error);
-        // Default to not needing onboarding if there's an error
-        setNeedsOnboarding(false);
+    try {
+      const { data: branches, error } = await supabase
+        .from('branches')
+        .select('id')
+        .eq('organization_id', currentOrg.id)
+        .limit(1);
+
+      if (error) {
+        // On RLS or transient errors, do NOT force onboarding — keep current state
+        console.error('Error checking branches:', error);
+        setOnboardingChecked(true);
+        return;
       }
-    } else {
-      setNeedsOnboarding(false);
+
+      setNeedsOnboarding(!branches || branches.length === 0);
+      setOnboardingChecked(true);
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+      setOnboardingChecked(true);
     }
   };
 
@@ -75,6 +81,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
   return (
     <OnboardingContext.Provider value={{
       needsOnboarding,
+      onboardingChecked,
       setNeedsOnboarding,
       checkOnboardingStatus,
     }}>
