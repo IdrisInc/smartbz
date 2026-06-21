@@ -676,6 +676,12 @@ export function ProductForm({ onClose }: ProductFormProps) {
           setShowTaxDialog(false);
         }}
       />
+      <BarcodeScanner
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        onDetected={handleScanned}
+        title="Scan product code"
+      />
     </div>
   );
 }
