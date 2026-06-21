@@ -143,6 +143,32 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
     }
   };
 
+  const handleScanned = async (code: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, price, category, stock_quantity, sku')
+        .eq('organization_id', currentOrganization?.id)
+        .eq('is_active', true)
+        .or(`sku.eq.${code},name.eq.${code}`)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        toast({ title: 'Not found', description: `No product matches code ${code}`, variant: 'destructive' });
+        return;
+      }
+      if (data.stock_quantity <= 0) {
+        toast({ title: 'Out of stock', description: data.name, variant: 'destructive' });
+        return;
+      }
+      addToCart({ id: data.id, name: data.name, price: data.price, category: data.category, stock_quantity: data.stock_quantity });
+      toast({ title: 'Added', description: data.name });
+    } catch (e: any) {
+      toast({ title: 'Lookup failed', description: e.message || 'Try again', variant: 'destructive' });
+    }
+  };
+
   const updateQuantity = (id: string, quantity: number) => {
     if (quantity <= 0) {
       setCart(cart.filter(item => item.id !== id));
@@ -589,14 +615,19 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
               <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6 pb-4 lg:pb-6">
                 {/* Products Section */}
                 <div className="lg:col-span-2 space-y-3 sm:space-y-4 order-2 lg:order-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search products..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
+                  <div className="relative flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search products..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <Button type="button" variant="outline" onClick={() => setShowScanner(true)} title="Scan barcode/QR">
+                      <ScanLine className="h-4 w-4" />
+                    </Button>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 max-h-[35vh] lg:max-h-[50vh] overflow-y-auto">
