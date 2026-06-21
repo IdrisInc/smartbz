@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
-import { Search, ShoppingCart, CreditCard, Banknote, Copy, CheckCircle, Mail, Phone, UserPlus, Printer, Download, Eye, Smartphone, Loader2 } from 'lucide-react';
+import { Search, ShoppingCart, CreditCard, Banknote, Copy, CheckCircle, Mail, Phone, UserPlus, Printer, Download, Eye, Smartphone, Loader2, ScanLine } from 'lucide-react';
+import { BarcodeScanner } from '@/components/Products/BarcodeScanner';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -39,6 +40,7 @@ interface CartItem {
 
 export function POSInterface({ onClose }: POSInterfaceProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showScanner, setShowScanner] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -138,6 +140,32 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
       ));
     } else {
       setCart([...cart, { ...product, quantity: 1 }]);
+    }
+  };
+
+  const handleScanned = async (code: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, price, category, stock_quantity, sku')
+        .eq('organization_id', currentOrganization?.id)
+        .eq('is_active', true)
+        .or(`sku.eq.${code},name.eq.${code}`)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        toast({ title: 'Not found', description: `No product matches code ${code}`, variant: 'destructive' });
+        return;
+      }
+      if (data.stock_quantity <= 0) {
+        toast({ title: 'Out of stock', description: data.name, variant: 'destructive' });
+        return;
+      }
+      addToCart({ id: data.id, name: data.name, price: data.price, category: data.category, stock_quantity: data.stock_quantity });
+      toast({ title: 'Added', description: data.name });
+    } catch (e: any) {
+      toast({ title: 'Lookup failed', description: e.message || 'Try again', variant: 'destructive' });
     }
   };
 
@@ -587,14 +615,19 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
               <div className="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6 pb-4 lg:pb-6">
                 {/* Products Section */}
                 <div className="lg:col-span-2 space-y-3 sm:space-y-4 order-2 lg:order-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search products..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
+                  <div className="relative flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search products..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <Button type="button" variant="outline" onClick={() => setShowScanner(true)} title="Scan barcode/QR">
+                      <ScanLine className="h-4 w-4" />
+                    </Button>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2 sm:gap-3 lg:gap-4 max-h-[35vh] lg:max-h-[50vh] overflow-y-auto">
@@ -992,6 +1025,12 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <BarcodeScanner
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        onDetected={handleScanned}
+        title="Scan to add to cart"
+      />
     </>
   );
 }
