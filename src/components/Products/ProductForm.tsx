@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Plus, Upload, Image as ImageIcon, ScanLine } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +17,8 @@ import { CategoryDialog } from './CategoryDialog';
 import { BrandDialog } from './BrandDialog';
 import { UnitDialog } from './UnitDialog';
 import { TaxDialog } from './TaxDialog';
+import { BarcodeScanner } from './BarcodeScanner';
+import { generateProductCode } from '@/lib/productCodeGenerator';
 
 interface ProductFormProps {
   onClose: () => void;
@@ -59,6 +62,8 @@ export function ProductForm({ onClose }: ProductFormProps) {
   const [showBrandDialog, setShowBrandDialog] = useState(false);
   const [showUnitDialog, setShowUnitDialog] = useState(false);
   const [showTaxDialog, setShowTaxDialog] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [skuOrigin, setSkuOrigin] = useState<'manual' | 'scanned' | 'generated'>('manual');
   
   useEffect(() => {
     if (currentOrganization?.id) {
@@ -121,10 +126,21 @@ export function ProductForm({ onClose }: ProductFormProps) {
     }
   };
 
-  const generateSKU = () => {
-    const prefix = product.type.toUpperCase().substring(0, 3);
-    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-    setProduct({...product, sku: `${prefix}-${random}`});
+  const generateSKU = async () => {
+    if (!currentOrganization?.id) return;
+    const code = await generateProductCode({
+      organizationId: currentOrganization.id,
+      category: product.category,
+      type: product.type,
+    });
+    setProduct({ ...product, sku: code });
+    setSkuOrigin('generated');
+  };
+
+  const handleScanned = (code: string) => {
+    setProduct({ ...product, sku: code });
+    setSkuOrigin('scanned');
+    toast({ title: 'Scanned', description: code });
   };
 
   const addVariant = () => {
@@ -303,13 +319,26 @@ export function ProductForm({ onClose }: ProductFormProps) {
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="sku">SKU</Label>
+                <Label htmlFor="sku" className="flex items-center gap-2">
+                  SKU / Code
+                  {skuOrigin !== 'manual' && (
+                    <Badge variant="secondary" className="text-[10px]">
+                      {skuOrigin === 'scanned' ? 'Scanned' : 'Generated'}
+                    </Badge>
+                  )}
+                </Label>
                 <div className="flex gap-2">
                   <Input
                     id="sku"
                     value={product.sku}
-                    onChange={(e) => setProduct({...product, sku: e.target.value})}
+                    onChange={(e) => {
+                      setProduct({ ...product, sku: e.target.value });
+                      setSkuOrigin('manual');
+                    }}
                   />
+                  <Button type="button" variant="outline" size="icon" onClick={() => setShowScanner(true)} title="Scan barcode/QR">
+                    <ScanLine className="h-4 w-4" />
+                  </Button>
                   <Button type="button" variant="outline" onClick={generateSKU}>
                     Generate
                   </Button>
