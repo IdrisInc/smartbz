@@ -1025,6 +1025,12 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <BarcodeScanner
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        onDetected={handleScanned}
+        title="Scan to add to cart"
+      />
     </>
   );
 }
