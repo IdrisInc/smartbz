@@ -140,10 +140,38 @@ export function ProductForm({ onClose }: ProductFormProps) {
     setSkuOrigin('generated');
   };
 
-  const handleScanned = (code: string) => {
-    setProduct({ ...product, sku: code });
+  const handleScanned = async (code: string) => {
+    setProduct((p) => ({ ...p, sku: code }));
     setSkuOrigin('scanned');
-    toast({ title: 'Scanned', description: code });
+    if (!currentOrganization?.id) {
+      toast({ title: 'Scanned', description: code });
+      return;
+    }
+    // Try to auto-fill if a product with this SKU already exists
+    const { data: existing } = await supabase
+      .from('products')
+      .select('*')
+      .eq('organization_id', currentOrganization.id)
+      .eq('sku', code)
+      .maybeSingle();
+    if (existing) {
+      setProduct((p) => ({
+        ...p,
+        name: existing.name ?? p.name,
+        sku: existing.sku ?? code,
+        category: existing.category ?? p.category,
+        brand_id: existing.brand_id ?? p.brand_id,
+        price: existing.price != null ? String(existing.price) : p.price,
+        cost: existing.cost != null ? String(existing.cost) : p.cost,
+        unit: existing.unit ?? p.unit,
+        description: existing.description ?? p.description,
+        minStock: existing.min_stock_level != null ? String(existing.min_stock_level) : p.minStock,
+      }));
+      if (existing.image_url) setImagePreview(existing.image_url);
+      toast({ title: 'Product found', description: `Auto-filled details for ${existing.name}` });
+    } else {
+      toast({ title: 'Scanned', description: `${code} — no match, fill details to create new` });
+    }
   };
 
   const addVariant = () => {
