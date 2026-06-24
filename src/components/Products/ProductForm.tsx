@@ -13,6 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSectorFeatures } from '@/hooks/useSectorFeatures';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { createSystemNotification } from '@/lib/notificationService';
 import { CategoryDialog } from './CategoryDialog';
 import { BrandDialog } from './BrandDialog';
 import { UnitDialog } from './UnitDialog';
@@ -28,6 +30,7 @@ export function ProductForm({ onClose }: ProductFormProps) {
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
   const { productCategories, getCustomFields, isSectorSpecific } = useSectorFeatures();
+  const { currentUser } = useCurrentUser();
   const [product, setProduct] = useState({
     name: '',
     sku: '',
@@ -137,10 +140,38 @@ export function ProductForm({ onClose }: ProductFormProps) {
     setSkuOrigin('generated');
   };
 
-  const handleScanned = (code: string) => {
-    setProduct({ ...product, sku: code });
+  const handleScanned = async (code: string) => {
+    setProduct((p) => ({ ...p, sku: code }));
     setSkuOrigin('scanned');
-    toast({ title: 'Scanned', description: code });
+    if (!currentOrganization?.id) {
+      toast({ title: 'Scanned', description: code });
+      return;
+    }
+    // Try to auto-fill if a product with this SKU already exists
+    const { data: existing } = await supabase
+      .from('products')
+      .select('*')
+      .eq('organization_id', currentOrganization.id)
+      .eq('sku', code)
+      .maybeSingle();
+    if (existing) {
+      setProduct((p) => ({
+        ...p,
+        name: existing.name ?? p.name,
+        sku: existing.sku ?? code,
+        category: existing.category ?? p.category,
+        brand_id: existing.brand_id ?? p.brand_id,
+        price: existing.price != null ? String(existing.price) : p.price,
+        cost: existing.cost != null ? String(existing.cost) : p.cost,
+        unit: existing.unit ?? p.unit,
+        description: existing.description ?? p.description,
+        minStock: existing.min_stock_level != null ? String(existing.min_stock_level) : p.minStock,
+      }));
+      if (existing.image_url) setImagePreview(existing.image_url);
+      toast({ title: 'Product found', description: `Auto-filled details for ${existing.name}` });
+    } else {
+      toast({ title: 'Scanned', description: `${code} — no match, fill details to create new` });
+    }
   };
 
   const addVariant = () => {
@@ -223,6 +254,15 @@ export function ProductForm({ onClose }: ProductFormProps) {
         toast({
           title: "Success",
           description: "Product created successfully",
+        });
+        const actor = currentUser?.displayName || currentUser?.email || 'A user';
+        await createSystemNotification({
+          title: 'Product Created',
+          message: `${actor} added product "${product.name}"${product.sku ? ` (SKU: ${product.sku})` : ''}.`,
+          type: 'success',
+          organizationId: currentOrganization.id,
+          actionUrl: '/dashboard/products',
+          targetRoles: ['business_owner', 'manager', 'inventory_staff'],
         });
         onClose();
       }
