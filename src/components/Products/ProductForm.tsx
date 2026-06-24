@@ -13,6 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSectorFeatures } from '@/hooks/useSectorFeatures';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { createSystemNotification } from '@/lib/notificationService';
 import { CategoryDialog } from './CategoryDialog';
 import { BrandDialog } from './BrandDialog';
 import { UnitDialog } from './UnitDialog';
