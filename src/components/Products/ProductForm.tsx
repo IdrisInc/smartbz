@@ -255,6 +255,15 @@ export function ProductForm({ onClose }: ProductFormProps) {
           title: "Success",
           description: "Product created successfully",
         });
+        const actor = currentUser?.displayName || currentUser?.email || 'A user';
+        await createSystemNotification({
+          title: 'Product Created',
+          message: `${actor} added product "${product.name}"${product.sku ? ` (SKU: ${product.sku})` : ''}.`,
+          type: 'success',
+          organizationId: currentOrganization.id,
+          actionUrl: '/dashboard/products',
+          targetRoles: ['business_owner', 'manager', 'inventory_staff'],
+        });
         onClose();
       }
     } catch (error) {
