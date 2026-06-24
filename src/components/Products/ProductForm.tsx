@@ -30,6 +30,7 @@ export function ProductForm({ onClose }: ProductFormProps) {
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
   const { productCategories, getCustomFields, isSectorSpecific } = useSectorFeatures();
+  const { currentUser } = useCurrentUser();
   const [product, setProduct] = useState({
     name: '',
     sku: '',
