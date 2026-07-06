@@ -236,7 +236,8 @@ export function ProductForm({ onClose }: ProductFormProps) {
         stock_quantity: product.trackStock ? parseInt(product.minStock) || 0 : 0,
         min_stock_level: product.trackStock ? parseInt(product.minStock) || 0 : 0,
         image_url: imageUrl,
-        is_active: true
+        is_active: true,
+        is_serialized: product.hasSerialNumbers,
       };
 
       const { error } = await supabase
@@ -528,13 +529,19 @@ export function ProductForm({ onClose }: ProductFormProps) {
                   </div>
                 )}
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-start space-x-2 rounded-md border p-3">
                   <Switch
                     id="hasSerialNumbers"
                     checked={product.hasSerialNumbers}
                     onCheckedChange={(checked) => setProduct({...product, hasSerialNumbers: checked})}
                   />
-                  <Label htmlFor="hasSerialNumbers">Has Serial Numbers (Auto-generated)</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="hasSerialNumbers">Serialized product (unique IMEI / serial per unit)</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Turn on for phones, laptops, and any item where each physical unit needs to be tracked individually.
+                      You'll scan IMEI / serial numbers in <strong>Inventory → Receive Units</strong> as stock arrives.
+                    </p>
+                  </div>
                 </div>
               </>
             )}

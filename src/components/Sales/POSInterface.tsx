@@ -145,17 +145,47 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
 
   const handleScanned = async (code: string) => {
     try {
+      const { parseScanned } = await import('@/lib/scanParser');
+      const parsed = parseScanned(code);
+
+      // 1) Try IMEI / serial lookup against product_serial_units first
+      if (parsed.imei || parsed.serial) {
+        const orFilter = [
+          parsed.imei ? `imei.eq.${parsed.imei}` : null,
+          parsed.serial ? `serial_number.eq.${parsed.serial}` : null,
+        ].filter(Boolean).join(',');
+        const { data: unit } = await supabase
+          .from('product_serial_units')
+          .select('id, status, product:products(id, name, price, category, stock_quantity)')
+          .eq('organization_id', currentOrganization?.id)
+          .or(orFilter)
+          .limit(1)
+          .maybeSingle();
+        if (unit?.product) {
+          if (unit.status !== 'in_stock') {
+            toast({ title: 'Unit unavailable', description: `Status: ${unit.status}`, variant: 'destructive' });
+            return;
+          }
+          const p: any = unit.product;
+          addToCart({ id: p.id, name: `${p.name} · ${parsed.imei || parsed.serial}`, price: p.price, category: p.category, stock_quantity: p.stock_quantity });
+          toast({ title: 'Unit added', description: `${p.name} (${parsed.imei ? 'IMEI ' + parsed.imei : 'SN ' + parsed.serial})` });
+          return;
+        }
+      }
+
+      // 2) Fall back to SKU / name lookup
+      const key = parsed.raw;
       const { data, error } = await supabase
         .from('products')
         .select('id, name, price, category, stock_quantity, sku')
         .eq('organization_id', currentOrganization?.id)
         .eq('is_active', true)
-        .or(`sku.eq.${code},name.eq.${code}`)
+        .or(`sku.eq.${key},name.eq.${key}`)
         .limit(1)
         .maybeSingle();
       if (error) throw error;
       if (!data) {
-        toast({ title: 'Not found', description: `No product matches code ${code}`, variant: 'destructive' });
+        toast({ title: 'Not found', description: `No product or unit matches ${key}`, variant: 'destructive' });
         return;
       }
       if (data.stock_quantity <= 0) {

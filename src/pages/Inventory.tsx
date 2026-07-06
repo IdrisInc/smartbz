@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Package, TrendingDown, AlertTriangle, Loader2, FileText, RotateCcw, ClipboardList, Check, Eye, ArrowRight, History, Printer, Download, Mail, Settings2, Ban, Trash2 } from 'lucide-react';
+import { Plus, Search, Package, TrendingDown, AlertTriangle, Loader2, FileText, RotateCcw, ClipboardList, Check, Eye, ArrowRight, History, Printer, Download, Mail, Settings2, Ban, Trash2, ScanLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import { QuotationDialog } from '@/components/Inventory/QuotationDialog';
 import { StockByStatusCard } from '@/components/Inventory/StockByStatusCard';
 import { StockAdjustmentsTable } from '@/components/Inventory/StockAdjustmentsTable';
 import { StockAuditLog } from '@/components/Inventory/StockAuditLog';
+import { ReceiveUnitsDialog } from '@/components/Inventory/ReceiveUnitsDialog';
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -27,6 +28,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 export default function Inventory() {
   const [activeTab, setActiveTab] = useState('overview');
   const [showPOForm, setShowPOForm] = useState(false);
+  const [showReceiveUnits, setShowReceiveUnits] = useState(false);
   const [showReturnDialog, setShowReturnDialog] = useState(false);
   const [showQuotationDialog, setShowQuotationDialog] = useState(false);
   const [showPODetails, setShowPODetails] = useState(false);
@@ -507,11 +509,18 @@ export default function Inventory() {
             Manage inventory levels, purchase orders, and stock movements
           </p>
         </div>
-        <Button onClick={() => setShowPOForm(true)} className="w-full sm:w-auto">
-          <Plus className="mr-2 h-4 w-4" />
-          New Purchase Order
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={() => setShowReceiveUnits(true)} className="w-full sm:w-auto">
+            <ScanLine className="mr-2 h-4 w-4" />
+            Receive Units
+          </Button>
+          <Button onClick={() => setShowPOForm(true)} className="w-full sm:w-auto">
+            <Plus className="mr-2 h-4 w-4" />
+            New Purchase Order
+          </Button>
+        </div>
       </div>
+
 
       <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -1312,6 +1321,16 @@ export default function Inventory() {
         onOpenChange={setShowPOPrint}
         purchaseOrder={selectedPO}
         businessSettings={businessSettings}
+      />
+
+      <ReceiveUnitsDialog
+        open={showReceiveUnits}
+        onClose={() => setShowReceiveUnits(false)}
+        onReceived={() => {
+          fetchProducts();
+          fetchStats();
+          fetchMovements();
+        }}
       />
       </div>
     </ProtectedRoute>
