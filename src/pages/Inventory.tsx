@@ -1322,6 +1322,16 @@ export default function Inventory() {
         purchaseOrder={selectedPO}
         businessSettings={businessSettings}
       />
+
+      <ReceiveUnitsDialog
+        open={showReceiveUnits}
+        onClose={() => setShowReceiveUnits(false)}
+        onReceived={() => {
+          fetchProducts();
+          fetchStats();
+          fetchMovements();
+        }}
+      />
       </div>
     </ProtectedRoute>
   );
