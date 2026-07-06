@@ -1816,6 +1816,102 @@ export type Database = {
           },
         ]
       }
+      product_serial_units: {
+        Row: {
+          barcode: string | null
+          branch_id: string | null
+          created_at: string
+          created_by_name: string | null
+          id: string
+          imei: string | null
+          notes: string | null
+          organization_id: string
+          product_id: string
+          purchase_order_id: string | null
+          received_at: string
+          sale_id: string | null
+          serial_number: string | null
+          sold_at: string | null
+          status: Database["public"]["Enums"]["product_unit_status"]
+          updated_at: string
+          updated_by_name: string | null
+        }
+        Insert: {
+          barcode?: string | null
+          branch_id?: string | null
+          created_at?: string
+          created_by_name?: string | null
+          id?: string
+          imei?: string | null
+          notes?: string | null
+          organization_id: string
+          product_id: string
+          purchase_order_id?: string | null
+          received_at?: string
+          sale_id?: string | null
+          serial_number?: string | null
+          sold_at?: string | null
+          status?: Database["public"]["Enums"]["product_unit_status"]
+          updated_at?: string
+          updated_by_name?: string | null
+        }
+        Update: {
+          barcode?: string | null
+          branch_id?: string | null
+          created_at?: string
+          created_by_name?: string | null
+          id?: string
+          imei?: string | null
+          notes?: string | null
+          organization_id?: string
+          product_id?: string
+          purchase_order_id?: string | null
+          received_at?: string
+          sale_id?: string | null
+          serial_number?: string | null
+          sold_at?: string | null
+          status?: Database["public"]["Enums"]["product_unit_status"]
+          updated_at?: string
+          updated_by_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_serial_units_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_serial_units_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_serial_units_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_serial_units_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_serial_units_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_stock: {
         Row: {
           created_at: string
@@ -1932,6 +2028,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          is_serialized: boolean
           min_stock_level: number | null
           name: string
           organization_id: string
@@ -1953,6 +2050,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_serialized?: boolean
           min_stock_level?: number | null
           name: string
           organization_id: string
@@ -1974,6 +2072,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_serialized?: boolean
           min_stock_level?: number | null
           name?: string
           organization_id?: string
@@ -3026,6 +3125,7 @@ export type Database = {
         | "consulting"
         | "non_profit"
         | "other"
+      product_unit_status: "in_stock" | "sold" | "returned" | "damaged" | "lost"
       stock_status:
         | "available"
         | "reserved"
@@ -3186,6 +3286,7 @@ export const Constants = {
         "non_profit",
         "other",
       ],
+      product_unit_status: ["in_stock", "sold", "returned", "damaged", "lost"],
       stock_status: [
         "available",
         "reserved",
