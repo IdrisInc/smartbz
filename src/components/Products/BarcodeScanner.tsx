@@ -4,22 +4,44 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Keyboard, Camera } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Keyboard, Camera, CheckCircle2 } from 'lucide-react';
+import { parseScanned, ParsedScan } from '@/lib/scanParser';
 
 interface BarcodeScannerProps {
   open: boolean;
   onClose: () => void;
-  onDetected: (code: string) => void;
+  /** Called with raw scan string (kept for backwards compatibility). */
+  onDetected?: (code: string) => void;
+  /** Called with structured parse result (IMEI / serial / URL extraction). */
+  onDetectedStructured?: (parsed: ParsedScan) => void;
   title?: string;
+  /** When true, camera stays open after a hit for continuous scanning. */
+  repeating?: boolean;
+  /** Optional counter text displayed above the video, e.g. "3 of 10 received". */
+  progressLabel?: string;
+  /** Hint about which field is expected next, shown as a badge. */
+  expecting?: 'imei' | 'serial' | 'sku' | 'any';
 }
 
-export function BarcodeScanner({ open, onClose, onDetected, title = 'Scan Barcode / QR' }: BarcodeScannerProps) {
+export function BarcodeScanner({
+  open,
+  onClose,
+  onDetected,
+  onDetectedStructured,
+  title = 'Scan Barcode / QR',
+  repeating = false,
+  progressLabel,
+  expecting = 'any',
+}: BarcodeScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [manual, setManual] = useState('');
   const [mode, setMode] = useState<'camera' | 'manual'>('camera');
+  const [lastHit, setLastHit] = useState<ParsedScan | null>(null);
+  const cooldownRef = useRef<number>(0);
 
   useEffect(() => {
     if (!open || mode !== 'camera') return;
@@ -38,9 +60,17 @@ export function BarcodeScanner({ open, onClose, onDetected, title = 'Scan Barcod
           back.deviceId,
           videoRef.current,
           (result, _err, ctrl) => {
-            if (result) {
+            if (!result) return;
+            const now = Date.now();
+            if (now - cooldownRef.current < 1200) return; // debounce
+            cooldownRef.current = now;
+            const raw = result.getText();
+            const parsed = parseScanned(raw);
+            setLastHit(parsed);
+            onDetected?.(raw);
+            onDetectedStructured?.(parsed);
+            if (!repeating) {
               ctrl.stop();
-              onDetected(result.getText());
               onClose();
             }
           }
@@ -58,29 +88,47 @@ export function BarcodeScanner({ open, onClose, onDetected, title = 'Scan Barcod
       controlsRef.current?.stop();
       controlsRef.current = null;
     };
-  }, [open, mode, onDetected, onClose]);
+  }, [open, mode, repeating, onDetected, onDetectedStructured, onClose]);
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const code = manual.trim();
-    if (code) {
-      onDetected(code);
-      setManual('');
-      onClose();
-    }
+    if (!code) return;
+    const parsed = parseScanned(code);
+    setLastHit(parsed);
+    onDetected?.(code);
+    onDetectedStructured?.(parsed);
+    setManual('');
+    if (!repeating) onClose();
+  };
+
+  const expectLabel: Record<string, string> = {
+    imei: 'Expecting: IMEI',
+    serial: 'Expecting: Serial Number',
+    sku: 'Expecting: SKU / barcode',
+    any: 'Any code',
   };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle className="flex items-center justify-between gap-2">
+            <span>{title}</span>
+            {expecting !== 'any' && (
+              <Badge variant="outline" className="text-[10px]">{expectLabel[expecting]}</Badge>
+            )}
+          </DialogTitle>
           <DialogDescription>
             {mode === 'camera'
               ? 'Point the camera at a barcode or QR code.'
               : 'Type or use a hardware scanner that types into this field.'}
           </DialogDescription>
         </DialogHeader>
+
+        {progressLabel && (
+          <div className="text-sm font-medium text-center text-muted-foreground">{progressLabel}</div>
+        )}
 
         <div className="flex gap-2">
           <Button
@@ -128,6 +176,21 @@ export function BarcodeScanner({ open, onClose, onDetected, title = 'Scan Barcod
             />
             <Button type="submit" className="w-full">Use code</Button>
           </form>
+        )}
+
+        {lastHit && repeating && (
+          <div className="rounded-md border p-2 text-xs space-y-1">
+            <div className="flex items-center gap-1 font-medium text-green-600">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Captured
+            </div>
+            {lastHit.imei && <div>IMEI: <span className="font-mono">{lastHit.imei}</span></div>}
+            {lastHit.serial && <div>Serial: <span className="font-mono">{lastHit.serial}</span></div>}
+            {!lastHit.imei && !lastHit.serial && <div>Raw: <span className="font-mono">{lastHit.raw}</span></div>}
+          </div>
+        )}
+
+        {repeating && (
+          <Button variant="secondary" onClick={onClose}>Done</Button>
         )}
       </DialogContent>
     </Dialog>
