@@ -54,6 +54,7 @@ export function ProductEditDialog({ open, onOpenChange, product, onSuccess }: Pr
     description: '',
     min_stock_level: '',
     is_active: true,
+    is_serialized: false,
   });
   
   const [imageFile, setImageFile] = useState<File | null>(null);
