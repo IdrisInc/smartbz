@@ -25,6 +25,7 @@ interface Product {
   image_url: string | null;
   is_active: boolean;
   brand_id: string | null;
+  is_serialized?: boolean | null;
 }
 
 interface ProductEditDialogProps {
