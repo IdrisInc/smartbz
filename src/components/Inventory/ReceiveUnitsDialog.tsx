@@ -252,9 +252,30 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                 </SelectContent>
               </Select>
               {selectedProduct && !selectedProduct.is_serialized && (
-                <p className="text-xs text-yellow-600">
-                  This product is not marked as serialized. Units will still be saved; edit the product to enable per-unit tracking.
-                </p>
+                <div className="flex items-start justify-between gap-2 rounded-md border border-yellow-300 bg-yellow-50 p-2 text-xs text-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-200">
+                  <span>
+                    This product is not marked as serialized. Mark it to enable per-unit IMEI/serial tracking.
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      const { error } = await supabase
+                        .from('products')
+                        .update({ is_serialized: true })
+                        .eq('id', selectedProduct.id);
+                      if (error) {
+                        toast({ title: 'Failed to update product', description: error.message, variant: 'destructive' });
+                        return;
+                      }
+                      setProducts(prev => prev.map(p => p.id === selectedProduct.id ? { ...p, is_serialized: true } : p));
+                      toast({ title: 'Marked as serialized', description: selectedProduct.name });
+                    }}
+                  >
+                    Mark as serialized
+                  </Button>
+                </div>
               )}
             </div>
 
