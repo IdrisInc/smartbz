@@ -132,8 +132,68 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
       return;
     }
 
+    // Client-side duplicate check within the current batch
+    const seenImei = new Set<string>();
+    const seenSerial = new Set<string>();
+    for (const r of rows) {
+      if (r.imei) {
+        if (seenImei.has(r.imei)) {
+          toast({ title: 'Duplicate IMEI in batch', description: r.imei, variant: 'destructive' });
+          return;
+        }
+        seenImei.add(r.imei);
+      }
+      if (r.serial_number) {
+        if (seenSerial.has(r.serial_number)) {
+          toast({ title: 'Duplicate serial in batch', description: r.serial_number, variant: 'destructive' });
+          return;
+        }
+        seenSerial.add(r.serial_number);
+      }
+    }
+
     setSaving(true);
     try {
+      // Server-side duplicate check against existing units in this org
+      const imeis = Array.from(seenImei);
+      const serials = Array.from(seenSerial);
+      const dupChecks: Array<Promise<any>> = [];
+      if (imeis.length) {
+        dupChecks.push(
+          Promise.resolve(
+            supabase.from('product_serial_units')
+              .select('imei')
+              .eq('organization_id', currentOrganization.id)
+              .in('imei', imeis)
+          )
+        );
+      }
+      if (serials.length) {
+        dupChecks.push(
+          Promise.resolve(
+            supabase.from('product_serial_units')
+              .select('serial_number')
+              .eq('organization_id', currentOrganization.id)
+              .in('serial_number', serials)
+          )
+        );
+      }
+      const results = await Promise.all(dupChecks);
+      const existingImeis = (results[0]?.data || []).map((r: any) => r.imei).filter(Boolean);
+      const existingSerials = (imeis.length ? results[1]?.data : results[0]?.data)?.map((r: any) => r.serial_number).filter(Boolean) || [];
+      if (existingImeis.length || existingSerials.length) {
+        toast({
+          title: 'Duplicate found',
+          description: [
+            existingImeis.length ? `IMEI already exists: ${existingImeis.join(', ')}` : '',
+            existingSerials.length ? `Serial already exists: ${existingSerials.join(', ')}` : '',
+          ].filter(Boolean).join(' · '),
+          variant: 'destructive',
+        });
+        setSaving(false);
+        return;
+      }
+
       const { error } = await supabase.from('product_serial_units').insert(rows);
       if (error) throw error;
 
