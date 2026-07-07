@@ -360,6 +360,21 @@ export function ProductEditDialog({ open, onOpenChange, product, onSuccess }: Pr
             <Label htmlFor="isActive">Active</Label>
           </div>
 
+          <div className="flex items-start space-x-2 rounded-md border p-3">
+            <Switch
+              id="isSerialized"
+              checked={formData.is_serialized}
+              onCheckedChange={(checked) => setFormData({ ...formData, is_serialized: checked })}
+            />
+            <div className="space-y-0.5">
+              <Label htmlFor="isSerialized">Serialized product (IMEI / Serial per unit)</Label>
+              <p className="text-xs text-muted-foreground">
+                Enable for phones or devices where each unit has a unique IMEI or serial number. Units are tracked via Inventory → Receive Units.
+              </p>
+            </div>
+          </div>
+
+
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
