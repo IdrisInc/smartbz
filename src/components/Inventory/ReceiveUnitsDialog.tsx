@@ -268,7 +268,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
         repeating
         title="Scan units"
         progressLabel={`${validCount} unit(s) captured`}
-        expecting="imei"
+        expecting={nextExpecting}
       />
     </>
   );
