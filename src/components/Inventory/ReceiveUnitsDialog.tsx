@@ -72,24 +72,34 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
   const handleScanResult = (parsed: ParsedScan) => {
     setUnits(prev => {
       const next = [...prev];
-      // find first empty slot or append
-      let idx = next.findIndex(u => !u.imei && !u.serial && !u.barcode);
+      // Find a row that is still missing IMEI or serial (in-progress), else first fully empty, else append
+      let idx = next.findIndex(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial));
+      if (idx === -1) idx = next.findIndex(u => !u.imei && !u.serial && !u.barcode);
       if (idx === -1) {
         next.push(emptyUnit());
         idx = next.length - 1;
       }
       const slot = { ...next[idx] };
+      // Autofill both fields if the QR/URL carried them
       if (parsed.imei && !slot.imei) slot.imei = parsed.imei;
       if (parsed.serial && !slot.serial) slot.serial = parsed.serial;
       if (!parsed.imei && !parsed.serial && !slot.barcode) slot.barcode = parsed.raw;
       next[idx] = slot;
-      // If this row now has both IMEI and serial (or at least something), auto-add next empty row
-      if ((slot.imei || slot.serial || slot.barcode) && idx === next.length - 1) {
+      // Only advance to a new empty row once this unit has BOTH IMEI and serial captured
+      const rowComplete = !!slot.imei && !!slot.serial;
+      if (rowComplete && idx === next.length - 1) {
         next.push(emptyUnit());
       }
       return next;
     });
   };
+
+  // Compute what the next scan should fill so the scanner can hint the user
+  const nextExpecting: 'imei' | 'serial' | 'any' = useMemo(() => {
+    const inProgress = units.find(u => (u.imei || u.serial) && (!u.imei || !u.serial));
+    if (inProgress) return inProgress.imei ? 'serial' : 'imei';
+    return 'any';
+  }, [units]);
 
   const updateUnit = (idx: number, patch: Partial<DraftUnit>) => {
     setUnits(prev => prev.map((u, i) => (i === idx ? { ...u, ...patch } : u)));
