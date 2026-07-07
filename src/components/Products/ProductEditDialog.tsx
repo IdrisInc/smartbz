@@ -81,6 +81,7 @@ export function ProductEditDialog({ open, onOpenChange, product, onSuccess }: Pr
         description: product.description || '',
         min_stock_level: product.min_stock_level?.toString() || '',
         is_active: product.is_active,
+        is_serialized: !!product.is_serialized,
       });
       setImagePreview(product.image_url);
       setImageFile(null);
