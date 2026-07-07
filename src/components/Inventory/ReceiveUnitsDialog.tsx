@@ -70,9 +70,11 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
   const validCount = units.filter(u => u.imei.trim() || u.serial.trim() || u.barcode.trim()).length;
 
   const handleScanResult = (parsed: ParsedScan) => {
+    // Debug — helps diagnose why a scan didn't autofill (e.g. plain text vs URL vs 15-digit)
+    console.log('[ReceiveUnits] scan captured', parsed);
+    let captured: string[] = [];
     setUnits(prev => {
       const next = [...prev];
-      // Find a row that is still missing IMEI or serial (in-progress), else first fully empty, else append
       let idx = next.findIndex(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial));
       if (idx === -1) idx = next.findIndex(u => !u.imei && !u.serial && !u.barcode);
       if (idx === -1) {
@@ -80,17 +82,20 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
         idx = next.length - 1;
       }
       const slot = { ...next[idx] };
-      // Autofill both fields if the QR/URL carried them
-      if (parsed.imei && !slot.imei) slot.imei = parsed.imei;
-      if (parsed.serial && !slot.serial) slot.serial = parsed.serial;
-      if (!parsed.imei && !parsed.serial && !slot.barcode) slot.barcode = parsed.raw;
-      next[idx] = slot;
-      // Only advance to a new empty row once this unit has BOTH IMEI and serial captured
-      const rowComplete = !!slot.imei && !!slot.serial;
-      if (rowComplete && idx === next.length - 1) {
-        next.push(emptyUnit());
+      if (parsed.imei && !slot.imei) { slot.imei = parsed.imei; captured.push(`IMEI ${parsed.imei}`); }
+      if (parsed.serial && !slot.serial) { slot.serial = parsed.serial; captured.push(`SN ${parsed.serial}`); }
+      if (!parsed.imei && !parsed.serial && !slot.barcode) {
+        slot.barcode = parsed.raw;
+        captured.push(`Barcode ${parsed.raw}`);
       }
+      next[idx] = slot;
+      const rowComplete = !!slot.imei && !!slot.serial;
+      if (rowComplete && idx === next.length - 1) next.push(emptyUnit());
       return next;
+    });
+    toast({
+      title: captured.length ? 'Captured' : 'Scan received',
+      description: captured.length ? captured.join(' · ') : `Raw: ${parsed.raw}`,
     });
   };
 
@@ -247,9 +252,30 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                 </SelectContent>
               </Select>
               {selectedProduct && !selectedProduct.is_serialized && (
-                <p className="text-xs text-yellow-600">
-                  This product is not marked as serialized. Units will still be saved; edit the product to enable per-unit tracking.
-                </p>
+                <div className="flex items-start justify-between gap-2 rounded-md border border-yellow-300 bg-yellow-50 p-2 text-xs text-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-200">
+                  <span>
+                    This product is not marked as serialized. Mark it to enable per-unit IMEI/serial tracking.
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      const { error } = await supabase
+                        .from('products')
+                        .update({ is_serialized: true })
+                        .eq('id', selectedProduct.id);
+                      if (error) {
+                        toast({ title: 'Failed to update product', description: error.message, variant: 'destructive' });
+                        return;
+                      }
+                      setProducts(prev => prev.map(p => p.id === selectedProduct.id ? { ...p, is_serialized: true } : p));
+                      toast({ title: 'Marked as serialized', description: selectedProduct.name });
+                    }}
+                  >
+                    Mark as serialized
+                  </Button>
+                </div>
               )}
             </div>
 
