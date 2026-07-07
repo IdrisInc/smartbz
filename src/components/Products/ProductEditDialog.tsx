@@ -169,6 +169,7 @@ export function ProductEditDialog({ open, onOpenChange, product, onSuccess }: Pr
           description: formData.description || null,
           min_stock_level: parseInt(formData.min_stock_level) || 0,
           is_active: formData.is_active,
+          is_serialized: formData.is_serialized,
           image_url: imageUrl,
         })
         .eq('id', product.id);
