@@ -160,18 +160,22 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
       const dupChecks: Array<Promise<any>> = [];
       if (imeis.length) {
         dupChecks.push(
-          supabase.from('product_serial_units')
-            .select('imei')
-            .eq('organization_id', currentOrganization.id)
-            .in('imei', imeis)
+          Promise.resolve(
+            supabase.from('product_serial_units')
+              .select('imei')
+              .eq('organization_id', currentOrganization.id)
+              .in('imei', imeis)
+          )
         );
       }
       if (serials.length) {
         dupChecks.push(
-          supabase.from('product_serial_units')
-            .select('serial_number')
-            .eq('organization_id', currentOrganization.id)
-            .in('serial_number', serials)
+          Promise.resolve(
+            supabase.from('product_serial_units')
+              .select('serial_number')
+              .eq('organization_id', currentOrganization.id)
+              .in('serial_number', serials)
+          )
         );
       }
       const results = await Promise.all(dupChecks);
