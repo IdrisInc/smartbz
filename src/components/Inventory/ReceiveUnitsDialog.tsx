@@ -157,7 +157,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
       // Server-side duplicate check against existing units in this org
       const imeis = Array.from(seenImei);
       const serials = Array.from(seenSerial);
-      const dupChecks: Promise<any>[] = [];
+      const dupChecks: Array<Promise<any>> = [];
       if (imeis.length) {
         dupChecks.push(
           supabase.from('product_serial_units')
