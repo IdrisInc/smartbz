@@ -294,6 +294,16 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
               )}
             </div>
 
+            {pendingFollowUp && (
+              <div className="rounded-md border border-blue-300 bg-blue-50 p-2 text-xs text-blue-900 dark:bg-blue-950/30 dark:text-blue-100">
+                <div className="font-medium">Step 2 of 2 — scan the printed IMEI/SN barcode</div>
+                <div className="mt-0.5 opacity-80">
+                  The QR you just scanned only contained a URL. Its raw text was saved in the Barcode field. Now scan the
+                  printed Code-128 barcode (the one under the IMEI/SN on the box) to complete this unit.
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
                 <Badge variant="secondary" className="mr-2">{validCount}</Badge>
@@ -304,10 +314,11 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                   <PlusCircle className="mr-1 h-4 w-4" /> Add row
                 </Button>
                 <Button type="button" size="sm" onClick={() => setShowScanner(true)} disabled={!selectedProductId}>
-                  <ScanLine className="mr-1 h-4 w-4" /> Scan unit
+                  <ScanLine className="mr-1 h-4 w-4" /> {pendingFollowUp ? 'Scan IMEI/SN barcode' : 'Scan unit'}
                 </Button>
               </div>
             </div>
+
 
             <ScrollArea className="max-h-[45vh] pr-2">
               <div className="space-y-2">
