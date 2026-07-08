@@ -170,7 +170,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
       return;
     }
     const rows = units
-      .filter(u => u.imei.trim() || u.serial.trim() || u.barcode.trim())
+      .filter(u => rowStatus(u).state === 'complete')
       .map(u => ({
         organization_id: currentOrganization.id,
         product_id: selectedProductId,
@@ -183,8 +183,20 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
       }));
 
     if (rows.length === 0) {
-      toast({ title: 'Nothing to receive', description: 'Scan at least one unit.', variant: 'destructive' });
+      toast({
+        title: 'No complete units',
+        description: 'Each row needs both IMEI and serial before it can be received.',
+        variant: 'destructive',
+      });
       return;
+    }
+
+    const incompleteCount = units.filter(u => rowStatus(u).state !== 'complete' && rowStatus(u).state !== 'empty').length;
+    if (incompleteCount > 0) {
+      toast({
+        title: 'Incomplete rows skipped',
+        description: `${incompleteCount} row(s) missing IMEI or serial were not saved.`,
+      });
     }
 
     // Client-side duplicate check within the current batch
