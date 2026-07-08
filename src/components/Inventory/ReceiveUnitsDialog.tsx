@@ -28,9 +28,10 @@ interface DraftUnit {
   imei: string;
   serial: string;
   barcode: string;
+  completed: boolean;
 }
 
-const emptyUnit = (): DraftUnit => ({ imei: '', serial: '', barcode: '' });
+const emptyUnit = (): DraftUnit => ({ imei: '', serial: '', barcode: '', completed: false });
 
 export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purchaseOrderId }: ReceiveUnitsDialogProps) {
   const { currentOrganization } = useOrganization();
