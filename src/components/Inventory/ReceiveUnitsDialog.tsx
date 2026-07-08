@@ -6,13 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ScanLine, Trash2, PlusCircle } from 'lucide-react';
+import { ScanLine, Trash2, PlusCircle, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useToast } from '@/hooks/use-toast';
 import { BarcodeScanner } from '@/components/Products/BarcodeScanner';
 import { ParsedScan } from '@/lib/scanParser';
+import { cn } from '@/lib/utils';
 
 interface ReceiveUnitsDialogProps {
   open: boolean;
