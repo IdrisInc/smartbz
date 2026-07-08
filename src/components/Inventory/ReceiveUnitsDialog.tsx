@@ -72,22 +72,29 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
   const handleScanResult = (parsed: ParsedScan) => {
     // Debug — helps diagnose why a scan didn't autofill (e.g. plain text vs URL vs 15-digit)
     console.log('[ReceiveUnits] scan captured', parsed);
-    let captured: string[] = [];
+    const captured: string[] = [];
+    let needsFollowUp = false;
     setUnits(prev => {
       const next = [...prev];
+      // Prefer a row already in progress (has something but is missing IMEI or serial)
       let idx = next.findIndex(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial));
       if (idx === -1) idx = next.findIndex(u => !u.imei && !u.serial && !u.barcode);
-      if (idx === -1) {
-        next.push(emptyUnit());
-        idx = next.length - 1;
-      }
+      if (idx === -1) { next.push(emptyUnit()); idx = next.length - 1; }
       const slot = { ...next[idx] };
+
       if (parsed.imei && !slot.imei) { slot.imei = parsed.imei; captured.push(`IMEI ${parsed.imei}`); }
       if (parsed.serial && !slot.serial) { slot.serial = parsed.serial; captured.push(`SN ${parsed.serial}`); }
-      if (!parsed.imei && !parsed.serial && !slot.barcode) {
-        slot.barcode = parsed.raw;
-        captured.push(`Barcode ${parsed.raw}`);
+
+      // Nothing structured extracted — always keep the raw text in the barcode field
+      // so it isn't lost, and flag that we still need the printed Code-128 IMEI/SN.
+      if (!parsed.imei && !parsed.serial) {
+        if (!slot.barcode) {
+          slot.barcode = parsed.raw;
+          captured.push(parsed.kind === 'url' ? 'QR URL saved' : `Barcode ${parsed.raw}`);
+        }
+        needsFollowUp = true;
       }
+
       next[idx] = slot;
       const rowComplete = !!slot.imei && !!slot.serial;
       if (rowComplete && idx === next.length - 1) next.push(emptyUnit());
@@ -95,16 +102,24 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
     });
     toast({
       title: captured.length ? 'Captured' : 'Scan received',
-      description: captured.length ? captured.join(' · ') : `Raw: ${parsed.raw}`,
+      description: needsFollowUp
+        ? `${captured.join(' · ') || parsed.raw} — now scan the printed IMEI/SN barcode`
+        : (captured.join(' · ') || `Raw: ${parsed.raw}`),
     });
   };
 
   // Compute what the next scan should fill so the scanner can hint the user
   const nextExpecting: 'imei' | 'serial' | 'any' = useMemo(() => {
-    const inProgress = units.find(u => (u.imei || u.serial) && (!u.imei || !u.serial));
+    const inProgress = units.find(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial));
     if (inProgress) return inProgress.imei ? 'serial' : 'imei';
     return 'any';
   }, [units]);
+
+  // A row that started from a QR/URL scan but still needs the printed IMEI/SN
+  const pendingFollowUp = useMemo(
+    () => units.find(u => u.barcode && !u.imei && !u.serial),
+    [units]
+  );
 
   const updateUnit = (idx: number, patch: Partial<DraftUnit>) => {
     setUnits(prev => prev.map((u, i) => (i === idx ? { ...u, ...patch } : u)));
