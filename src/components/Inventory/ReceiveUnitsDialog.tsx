@@ -6,13 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ScanLine, Trash2, PlusCircle } from 'lucide-react';
+import { ScanLine, Trash2, PlusCircle, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useToast } from '@/hooks/use-toast';
 import { BarcodeScanner } from '@/components/Products/BarcodeScanner';
 import { ParsedScan } from '@/lib/scanParser';
+import { cn } from '@/lib/utils';
 
 interface ReceiveUnitsDialogProps {
   open: boolean;
@@ -27,9 +28,10 @@ interface DraftUnit {
   imei: string;
   serial: string;
   barcode: string;
+  completed: boolean;
 }
 
-const emptyUnit = (): DraftUnit => ({ imei: '', serial: '', barcode: '' });
+const emptyUnit = (): DraftUnit => ({ imei: '', serial: '', barcode: '', completed: false });
 
 export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purchaseOrderId }: ReceiveUnitsDialogProps) {
   const { currentOrganization } = useOrganization();
@@ -67,17 +69,47 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
     [products, selectedProductId]
   );
 
-  const validCount = units.filter(u => u.imei.trim() || u.serial.trim() || u.barcode.trim()).length;
+  const rowStatus = (u: DraftUnit): {
+    state: 'empty' | 'in_progress' | 'needs_imei' | 'needs_serial' | 'needs_followup' | 'complete';
+    label: string;
+    icon: React.ReactNode;
+    variant: 'outline' | 'secondary' | 'default' | 'destructive';
+  } => {
+    const hasImei = !!u.imei.trim();
+    const hasSerial = !!u.serial.trim();
+    const hasBarcode = !!u.barcode.trim();
+    if (hasImei && hasSerial) {
+      return { state: 'complete', label: 'Complete', icon: <CheckCircle2 className="h-3.5 w-3.5" />, variant: 'default' };
+    }
+    if (hasBarcode && !hasImei && !hasSerial) {
+      return { state: 'needs_followup', label: 'Step 1 of 2', icon: <AlertCircle className="h-3.5 w-3.5" />, variant: 'destructive' };
+    }
+    if (hasImei && !hasSerial) {
+      return { state: 'needs_serial', label: 'Needs serial', icon: <Circle className="h-3.5 w-3.5" />, variant: 'secondary' };
+    }
+    if (!hasImei && hasSerial) {
+      return { state: 'needs_imei', label: 'Needs IMEI', icon: <Circle className="h-3.5 w-3.5" />, variant: 'secondary' };
+    }
+    if (hasImei || hasSerial || hasBarcode) {
+      return { state: 'in_progress', label: 'In progress', icon: <Circle className="h-3.5 w-3.5" />, variant: 'outline' };
+    }
+    return { state: 'empty', label: 'Empty', icon: <Circle className="h-3.5 w-3.5" />, variant: 'outline' };
+  };
+
+  const completedCount = units.filter(u => rowStatus(u).state === 'complete').length;
+  const inProgressCount = units.filter(u => {
+    const s = rowStatus(u).state;
+    return s !== 'empty' && s !== 'complete';
+  }).length;
 
   const handleScanResult = (parsed: ParsedScan) => {
-    // Debug — helps diagnose why a scan didn't autofill (e.g. plain text vs URL vs 15-digit)
     console.log('[ReceiveUnits] scan captured', parsed);
     const captured: string[] = [];
     let needsFollowUp = false;
     setUnits(prev => {
       const next = [...prev];
       // Prefer a row already in progress (has something but is missing IMEI or serial)
-      let idx = next.findIndex(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial));
+      let idx = next.findIndex(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial) && !u.completed);
       if (idx === -1) idx = next.findIndex(u => !u.imei && !u.serial && !u.barcode);
       if (idx === -1) { next.push(emptyUnit()); idx = next.length - 1; }
       const slot = { ...next[idx] };
@@ -85,8 +117,6 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
       if (parsed.imei && !slot.imei) { slot.imei = parsed.imei; captured.push(`IMEI ${parsed.imei}`); }
       if (parsed.serial && !slot.serial) { slot.serial = parsed.serial; captured.push(`SN ${parsed.serial}`); }
 
-      // Nothing structured extracted — always keep the raw text in the barcode field
-      // so it isn't lost, and flag that we still need the printed Code-128 IMEI/SN.
       if (!parsed.imei && !parsed.serial) {
         if (!slot.barcode) {
           slot.barcode = parsed.raw;
@@ -95,9 +125,9 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
         needsFollowUp = true;
       }
 
+      slot.completed = !!slot.imei && !!slot.serial;
       next[idx] = slot;
-      const rowComplete = !!slot.imei && !!slot.serial;
-      if (rowComplete && idx === next.length - 1) next.push(emptyUnit());
+      if (slot.completed && idx === next.length - 1) next.push(emptyUnit());
       return next;
     });
     toast({
@@ -110,19 +140,24 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
 
   // Compute what the next scan should fill so the scanner can hint the user
   const nextExpecting: 'imei' | 'serial' | 'any' = useMemo(() => {
-    const inProgress = units.find(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial));
+    const inProgress = units.find(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial) && !u.completed);
     if (inProgress) return inProgress.imei ? 'serial' : 'imei';
     return 'any';
   }, [units]);
 
   // A row that started from a QR/URL scan but still needs the printed IMEI/SN
   const pendingFollowUp = useMemo(
-    () => units.find(u => u.barcode && !u.imei && !u.serial),
+    () => units.find(u => u.barcode && !u.imei && !u.serial && !u.completed),
     [units]
   );
 
   const updateUnit = (idx: number, patch: Partial<DraftUnit>) => {
-    setUnits(prev => prev.map((u, i) => (i === idx ? { ...u, ...patch } : u)));
+    setUnits(prev => prev.map((u, i) => {
+      if (i !== idx) return u;
+      const next = { ...u, ...patch };
+      next.completed = !!next.imei.trim() && !!next.serial.trim();
+      return next;
+    }));
   };
 
   const removeUnit = (idx: number) => {
@@ -135,7 +170,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
       return;
     }
     const rows = units
-      .filter(u => u.imei.trim() || u.serial.trim() || u.barcode.trim())
+      .filter(u => rowStatus(u).state === 'complete')
       .map(u => ({
         organization_id: currentOrganization.id,
         product_id: selectedProductId,
@@ -148,8 +183,20 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
       }));
 
     if (rows.length === 0) {
-      toast({ title: 'Nothing to receive', description: 'Scan at least one unit.', variant: 'destructive' });
+      toast({
+        title: 'No complete units',
+        description: 'Each row needs both IMEI and serial before it can be received.',
+        variant: 'destructive',
+      });
       return;
+    }
+
+    const incompleteCount = units.filter(u => rowStatus(u).state !== 'complete' && rowStatus(u).state !== 'empty').length;
+    if (incompleteCount > 0) {
+      toast({
+        title: 'Incomplete rows skipped',
+        description: `${incompleteCount} row(s) missing IMEI or serial were not saved.`,
+      });
     }
 
     // Client-side duplicate check within the current batch
@@ -305,9 +352,15 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
             )}
 
             <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                <Badge variant="secondary" className="mr-2">{validCount}</Badge>
-                unit(s) ready to receive
+              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                <Badge variant="default">{completedCount}</Badge>
+                <span>complete</span>
+                {inProgressCount > 0 && (
+                  <>
+                    <Badge variant="secondary" className="ml-1">{inProgressCount}</Badge>
+                    <span>in progress</span>
+                  </>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setUnits(prev => [...prev, emptyUnit()])}>
@@ -321,53 +374,81 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
 
 
             <ScrollArea className="max-h-[45vh] pr-2">
-              <div className="space-y-2">
-                {units.map((u, idx) => (
-                  <div key={idx} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
-                    <div>
-                      {idx === 0 && <Label className="text-xs">IMEI</Label>}
-                      <Input
-                        value={u.imei}
-                        onChange={(e) => updateUnit(idx, { imei: e.target.value })}
-                        placeholder="15-digit IMEI"
-                        inputMode="numeric"
-                      />
-                    </div>
-                    <div>
-                      {idx === 0 && <Label className="text-xs">Serial number</Label>}
-                      <Input
-                        value={u.serial}
-                        onChange={(e) => updateUnit(idx, { serial: e.target.value })}
-                        placeholder="Serial number"
-                      />
-                    </div>
-                    <div>
-                      {idx === 0 && <Label className="text-xs">Barcode / other</Label>}
-                      <Input
-                        value={u.barcode}
-                        onChange={(e) => updateUnit(idx, { barcode: e.target.value })}
-                        placeholder="Barcode"
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeUnit(idx)}
-                      aria-label="Remove unit"
+              <div className="space-y-3">
+                {units.map((u, idx) => {
+                  const status = rowStatus(u);
+                  return (
+                    <div
+                      key={idx}
+                      className={cn(
+                        "rounded-md border p-2 transition-colors",
+                        status.state === 'complete' && "border-green-500 bg-green-50/50 dark:bg-green-950/20",
+                        status.state === 'needs_followup' && "border-blue-300 bg-blue-50/50 dark:bg-blue-950/20",
+                        status.state === 'needs_imei' && "border-amber-300 bg-amber-50/30 dark:bg-amber-950/20",
+                        status.state === 'needs_serial' && "border-amber-300 bg-amber-50/30 dark:bg-amber-950/20"
+                      )}
                     >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                ))}
+                      <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
+                        <div>
+                          {idx === 0 && <Label className="text-xs">IMEI</Label>}
+                          <Input
+                            value={u.imei}
+                            onChange={(e) => updateUnit(idx, { imei: e.target.value })}
+                            placeholder="15-digit IMEI"
+                            inputMode="numeric"
+                          />
+                        </div>
+                        <div>
+                          {idx === 0 && <Label className="text-xs">Serial number</Label>}
+                          <Input
+                            value={u.serial}
+                            onChange={(e) => updateUnit(idx, { serial: e.target.value })}
+                            placeholder="Serial number"
+                          />
+                        </div>
+                        <div>
+                          {idx === 0 && <Label className="text-xs">Barcode / other</Label>}
+                          <Input
+                            value={u.barcode}
+                            onChange={(e) => updateUnit(idx, { barcode: e.target.value })}
+                            placeholder="Barcode"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeUnit(idx)}
+                          aria-label="Remove unit"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Badge variant={status.variant} className="flex items-center gap-1 text-xs">
+                          {status.icon}
+                          {status.label}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {status.state === 'empty' && 'Scan or type IMEI + serial to start'}
+                          {status.state === 'needs_followup' && 'Step 2 of 2: scan printed IMEI/SN barcode'}
+                          {status.state === 'needs_serial' && 'Step 2 of 2: scan serial number'}
+                          {status.state === 'needs_imei' && 'Step 1 of 2: scan IMEI'}
+                          {status.state === 'in_progress' && 'Continue scanning both IMEI and serial'}
+                          {status.state === 'complete' && 'Both IMEI and serial captured'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </ScrollArea>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving || validCount === 0}>
-              {saving ? 'Saving…' : `Receive ${validCount} unit(s)`}
+            <Button onClick={handleSave} disabled={saving || completedCount === 0}>
+              {saving ? 'Saving…' : `Receive ${completedCount} unit(s)`}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -379,7 +460,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
         onDetectedStructured={handleScanResult}
         repeating
         title="Scan units"
-        progressLabel={`${validCount} unit(s) captured`}
+        progressLabel={`${completedCount} complete · ${inProgressCount} in progress`}
         expecting={nextExpecting}
       />
     </>
