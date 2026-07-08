@@ -72,22 +72,29 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
   const handleScanResult = (parsed: ParsedScan) => {
     // Debug — helps diagnose why a scan didn't autofill (e.g. plain text vs URL vs 15-digit)
     console.log('[ReceiveUnits] scan captured', parsed);
-    let captured: string[] = [];
+    const captured: string[] = [];
+    let needsFollowUp = false;
     setUnits(prev => {
       const next = [...prev];
+      // Prefer a row already in progress (has something but is missing IMEI or serial)
       let idx = next.findIndex(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial));
       if (idx === -1) idx = next.findIndex(u => !u.imei && !u.serial && !u.barcode);
-      if (idx === -1) {
-        next.push(emptyUnit());
-        idx = next.length - 1;
-      }
+      if (idx === -1) { next.push(emptyUnit()); idx = next.length - 1; }
       const slot = { ...next[idx] };
+
       if (parsed.imei && !slot.imei) { slot.imei = parsed.imei; captured.push(`IMEI ${parsed.imei}`); }
       if (parsed.serial && !slot.serial) { slot.serial = parsed.serial; captured.push(`SN ${parsed.serial}`); }
-      if (!parsed.imei && !parsed.serial && !slot.barcode) {
-        slot.barcode = parsed.raw;
-        captured.push(`Barcode ${parsed.raw}`);
+
+      // Nothing structured extracted — always keep the raw text in the barcode field
+      // so it isn't lost, and flag that we still need the printed Code-128 IMEI/SN.
+      if (!parsed.imei && !parsed.serial) {
+        if (!slot.barcode) {
+          slot.barcode = parsed.raw;
+          captured.push(parsed.kind === 'url' ? 'QR URL saved' : `Barcode ${parsed.raw}`);
+        }
+        needsFollowUp = true;
       }
+
       next[idx] = slot;
       const rowComplete = !!slot.imei && !!slot.serial;
       if (rowComplete && idx === next.length - 1) next.push(emptyUnit());
@@ -95,16 +102,24 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
     });
     toast({
       title: captured.length ? 'Captured' : 'Scan received',
-      description: captured.length ? captured.join(' · ') : `Raw: ${parsed.raw}`,
+      description: needsFollowUp
+        ? `${captured.join(' · ') || parsed.raw} — now scan the printed IMEI/SN barcode`
+        : (captured.join(' · ') || `Raw: ${parsed.raw}`),
     });
   };
 
   // Compute what the next scan should fill so the scanner can hint the user
   const nextExpecting: 'imei' | 'serial' | 'any' = useMemo(() => {
-    const inProgress = units.find(u => (u.imei || u.serial) && (!u.imei || !u.serial));
+    const inProgress = units.find(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial));
     if (inProgress) return inProgress.imei ? 'serial' : 'imei';
     return 'any';
   }, [units]);
+
+  // A row that started from a QR/URL scan but still needs the printed IMEI/SN
+  const pendingFollowUp = useMemo(
+    () => units.find(u => u.barcode && !u.imei && !u.serial),
+    [units]
+  );
 
   const updateUnit = (idx: number, patch: Partial<DraftUnit>) => {
     setUnits(prev => prev.map((u, i) => (i === idx ? { ...u, ...patch } : u)));
@@ -279,6 +294,16 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
               )}
             </div>
 
+            {pendingFollowUp && (
+              <div className="rounded-md border border-blue-300 bg-blue-50 p-2 text-xs text-blue-900 dark:bg-blue-950/30 dark:text-blue-100">
+                <div className="font-medium">Step 2 of 2 — scan the printed IMEI/SN barcode</div>
+                <div className="mt-0.5 opacity-80">
+                  The QR you just scanned only contained a URL. Its raw text was saved in the Barcode field. Now scan the
+                  printed Code-128 barcode (the one under the IMEI/SN on the box) to complete this unit.
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
                 <Badge variant="secondary" className="mr-2">{validCount}</Badge>
@@ -289,10 +314,11 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                   <PlusCircle className="mr-1 h-4 w-4" /> Add row
                 </Button>
                 <Button type="button" size="sm" onClick={() => setShowScanner(true)} disabled={!selectedProductId}>
-                  <ScanLine className="mr-1 h-4 w-4" /> Scan unit
+                  <ScanLine className="mr-1 h-4 w-4" /> {pendingFollowUp ? 'Scan IMEI/SN barcode' : 'Scan unit'}
                 </Button>
               </div>
             </div>
+
 
             <ScrollArea className="max-h-[45vh] pr-2">
               <div className="space-y-2">
