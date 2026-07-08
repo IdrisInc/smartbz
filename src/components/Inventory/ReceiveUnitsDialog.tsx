@@ -152,7 +152,12 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
   );
 
   const updateUnit = (idx: number, patch: Partial<DraftUnit>) => {
-    setUnits(prev => prev.map((u, i) => (i === idx ? { ...u, ...patch } : u)));
+    setUnits(prev => prev.map((u, i) => {
+      if (i !== idx) return u;
+      const next = { ...u, ...patch };
+      next.completed = !!next.imei.trim() && !!next.serial.trim();
+      return next;
+    }));
   };
 
   const removeUnit = (idx: number) => {
