@@ -69,17 +69,47 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
     [products, selectedProductId]
   );
 
-  const validCount = units.filter(u => u.imei.trim() || u.serial.trim() || u.barcode.trim()).length;
+  const rowStatus = (u: DraftUnit): {
+    state: 'empty' | 'in_progress' | 'needs_imei' | 'needs_serial' | 'needs_followup' | 'complete';
+    label: string;
+    icon: React.ReactNode;
+    variant: 'outline' | 'secondary' | 'default' | 'destructive';
+  } => {
+    const hasImei = !!u.imei.trim();
+    const hasSerial = !!u.serial.trim();
+    const hasBarcode = !!u.barcode.trim();
+    if (hasImei && hasSerial) {
+      return { state: 'complete', label: 'Complete', icon: <CheckCircle2 className="h-3.5 w-3.5" />, variant: 'default' };
+    }
+    if (hasBarcode && !hasImei && !hasSerial) {
+      return { state: 'needs_followup', label: 'Step 1 of 2', icon: <AlertCircle className="h-3.5 w-3.5" />, variant: 'destructive' };
+    }
+    if (hasImei && !hasSerial) {
+      return { state: 'needs_serial', label: 'Needs serial', icon: <Circle className="h-3.5 w-3.5" />, variant: 'secondary' };
+    }
+    if (!hasImei && hasSerial) {
+      return { state: 'needs_imei', label: 'Needs IMEI', icon: <Circle className="h-3.5 w-3.5" />, variant: 'secondary' };
+    }
+    if (hasImei || hasSerial || hasBarcode) {
+      return { state: 'in_progress', label: 'In progress', icon: <Circle className="h-3.5 w-3.5" />, variant: 'outline' };
+    }
+    return { state: 'empty', label: 'Empty', icon: <Circle className="h-3.5 w-3.5" />, variant: 'outline' };
+  };
+
+  const completedCount = units.filter(u => rowStatus(u).state === 'complete').length;
+  const inProgressCount = units.filter(u => {
+    const s = rowStatus(u).state;
+    return s !== 'empty' && s !== 'complete';
+  }).length;
 
   const handleScanResult = (parsed: ParsedScan) => {
-    // Debug — helps diagnose why a scan didn't autofill (e.g. plain text vs URL vs 15-digit)
     console.log('[ReceiveUnits] scan captured', parsed);
     const captured: string[] = [];
     let needsFollowUp = false;
     setUnits(prev => {
       const next = [...prev];
       // Prefer a row already in progress (has something but is missing IMEI or serial)
-      let idx = next.findIndex(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial));
+      let idx = next.findIndex(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial) && !u.completed);
       if (idx === -1) idx = next.findIndex(u => !u.imei && !u.serial && !u.barcode);
       if (idx === -1) { next.push(emptyUnit()); idx = next.length - 1; }
       const slot = { ...next[idx] };
@@ -87,8 +117,6 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
       if (parsed.imei && !slot.imei) { slot.imei = parsed.imei; captured.push(`IMEI ${parsed.imei}`); }
       if (parsed.serial && !slot.serial) { slot.serial = parsed.serial; captured.push(`SN ${parsed.serial}`); }
 
-      // Nothing structured extracted — always keep the raw text in the barcode field
-      // so it isn't lost, and flag that we still need the printed Code-128 IMEI/SN.
       if (!parsed.imei && !parsed.serial) {
         if (!slot.barcode) {
           slot.barcode = parsed.raw;
@@ -97,9 +125,9 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
         needsFollowUp = true;
       }
 
+      slot.completed = !!slot.imei && !!slot.serial;
       next[idx] = slot;
-      const rowComplete = !!slot.imei && !!slot.serial;
-      if (rowComplete && idx === next.length - 1) next.push(emptyUnit());
+      if (slot.completed && idx === next.length - 1) next.push(emptyUnit());
       return next;
     });
     toast({
@@ -112,14 +140,14 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
 
   // Compute what the next scan should fill so the scanner can hint the user
   const nextExpecting: 'imei' | 'serial' | 'any' = useMemo(() => {
-    const inProgress = units.find(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial));
+    const inProgress = units.find(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial) && !u.completed);
     if (inProgress) return inProgress.imei ? 'serial' : 'imei';
     return 'any';
   }, [units]);
 
   // A row that started from a QR/URL scan but still needs the printed IMEI/SN
   const pendingFollowUp = useMemo(
-    () => units.find(u => u.barcode && !u.imei && !u.serial),
+    () => units.find(u => u.barcode && !u.imei && !u.serial && !u.completed),
     [units]
   );
 
