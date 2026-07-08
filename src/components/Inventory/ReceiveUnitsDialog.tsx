@@ -335,9 +335,15 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
             )}
 
             <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                <Badge variant="secondary" className="mr-2">{validCount}</Badge>
-                unit(s) ready to receive
+              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                <Badge variant="default">{completedCount}</Badge>
+                <span>complete</span>
+                {inProgressCount > 0 && (
+                  <>
+                    <Badge variant="secondary" className="ml-1">{inProgressCount}</Badge>
+                    <span>in progress</span>
+                  </>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setUnits(prev => [...prev, emptyUnit()])}>
@@ -351,53 +357,81 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
 
 
             <ScrollArea className="max-h-[45vh] pr-2">
-              <div className="space-y-2">
-                {units.map((u, idx) => (
-                  <div key={idx} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
-                    <div>
-                      {idx === 0 && <Label className="text-xs">IMEI</Label>}
-                      <Input
-                        value={u.imei}
-                        onChange={(e) => updateUnit(idx, { imei: e.target.value })}
-                        placeholder="15-digit IMEI"
-                        inputMode="numeric"
-                      />
-                    </div>
-                    <div>
-                      {idx === 0 && <Label className="text-xs">Serial number</Label>}
-                      <Input
-                        value={u.serial}
-                        onChange={(e) => updateUnit(idx, { serial: e.target.value })}
-                        placeholder="Serial number"
-                      />
-                    </div>
-                    <div>
-                      {idx === 0 && <Label className="text-xs">Barcode / other</Label>}
-                      <Input
-                        value={u.barcode}
-                        onChange={(e) => updateUnit(idx, { barcode: e.target.value })}
-                        placeholder="Barcode"
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeUnit(idx)}
-                      aria-label="Remove unit"
+              <div className="space-y-3">
+                {units.map((u, idx) => {
+                  const status = rowStatus(u);
+                  return (
+                    <div
+                      key={idx}
+                      className={cn(
+                        "rounded-md border p-2 transition-colors",
+                        status.state === 'complete' && "border-green-500 bg-green-50/50 dark:bg-green-950/20",
+                        status.state === 'needs_followup' && "border-blue-300 bg-blue-50/50 dark:bg-blue-950/20",
+                        status.state === 'needs_imei' && "border-amber-300 bg-amber-50/30 dark:bg-amber-950/20",
+                        status.state === 'needs_serial' && "border-amber-300 bg-amber-50/30 dark:bg-amber-950/20"
+                      )}
                     >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                ))}
+                      <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
+                        <div>
+                          {idx === 0 && <Label className="text-xs">IMEI</Label>}
+                          <Input
+                            value={u.imei}
+                            onChange={(e) => updateUnit(idx, { imei: e.target.value })}
+                            placeholder="15-digit IMEI"
+                            inputMode="numeric"
+                          />
+                        </div>
+                        <div>
+                          {idx === 0 && <Label className="text-xs">Serial number</Label>}
+                          <Input
+                            value={u.serial}
+                            onChange={(e) => updateUnit(idx, { serial: e.target.value })}
+                            placeholder="Serial number"
+                          />
+                        </div>
+                        <div>
+                          {idx === 0 && <Label className="text-xs">Barcode / other</Label>}
+                          <Input
+                            value={u.barcode}
+                            onChange={(e) => updateUnit(idx, { barcode: e.target.value })}
+                            placeholder="Barcode"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeUnit(idx)}
+                          aria-label="Remove unit"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Badge variant={status.variant} className="flex items-center gap-1 text-xs">
+                          {status.icon}
+                          {status.label}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {status.state === 'empty' && 'Scan or type IMEI + serial to start'}
+                          {status.state === 'needs_followup' && 'Step 2 of 2: scan printed IMEI/SN barcode'}
+                          {status.state === 'needs_serial' && 'Step 2 of 2: scan serial number'}
+                          {status.state === 'needs_imei' && 'Step 1 of 2: scan IMEI'}
+                          {status.state === 'in_progress' && 'Continue scanning both IMEI and serial'}
+                          {status.state === 'complete' && 'Both IMEI and serial captured'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </ScrollArea>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving || validCount === 0}>
-              {saving ? 'Saving…' : `Receive ${validCount} unit(s)`}
+            <Button onClick={handleSave} disabled={saving || completedCount === 0}>
+              {saving ? 'Saving…' : `Receive ${completedCount} unit(s)`}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -409,7 +443,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
         onDetectedStructured={handleScanResult}
         repeating
         title="Scan units"
-        progressLabel={`${validCount} unit(s) captured`}
+        progressLabel={`${completedCount} complete · ${inProgressCount} in progress`}
         expecting={nextExpecting}
       />
     </>
