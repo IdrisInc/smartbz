@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,20 +6,20 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ScanLine, Trash2, PlusCircle, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import { ScanLine, Trash2, PlusCircle, CheckCircle2, Circle, AlertCircle, Download, Printer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useToast } from '@/hooks/use-toast';
 import { BarcodeScanner } from '@/components/Products/BarcodeScanner';
 import { ParsedScan } from '@/lib/scanParser';
+import { useExportUtils } from '@/hooks/useExportUtils';
 import { cn } from '@/lib/utils';
 
 interface ReceiveUnitsDialogProps {
   open: boolean;
   onClose: () => void;
   onReceived?: () => void;
-  /** Optional pre-selection */
   productId?: string;
   purchaseOrderId?: string;
 }
@@ -31,18 +31,26 @@ interface DraftUnit {
   completed: boolean;
 }
 
+interface DupError {
+  imei?: string;
+  serial?: string;
+}
+
 const emptyUnit = (): DraftUnit => ({ imei: '', serial: '', barcode: '', completed: false });
 
 export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purchaseOrderId }: ReceiveUnitsDialogProps) {
   const { currentOrganization } = useOrganization();
   const { currentUser } = useCurrentUser();
   const { toast } = useToast();
+  const { exportToCSV } = useExportUtils();
 
   const [products, setProducts] = useState<Array<{ id: string; name: string; sku: string | null; is_serialized: boolean }>>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>(productId || '');
   const [units, setUnits] = useState<DraftUnit[]>([emptyUnit()]);
   const [showScanner, setShowScanner] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [dupErrors, setDupErrors] = useState<DupError[]>([{}]);
+  const dupCheckSeq = useRef(0);
 
   useEffect(() => {
     if (!open || !currentOrganization?.id) return;
@@ -61,6 +69,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
     if (open) {
       setSelectedProductId(productId || '');
       setUnits([emptyUnit()]);
+      setDupErrors([{}]);
     }
   }, [open, productId]);
 
@@ -101,6 +110,63 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
     const s = rowStatus(u).state;
     return s !== 'empty' && s !== 'complete';
   }).length;
+  const hasErrors = dupErrors.some(e => e.imei || e.serial);
+
+  // Live duplicate validation — checks both intra-batch and existing DB rows per org
+  useEffect(() => {
+    if (!open || !currentOrganization?.id) return;
+    const seq = ++dupCheckSeq.current;
+    const handle = setTimeout(async () => {
+      const nextErrors: DupError[] = units.map(() => ({}));
+
+      // Intra-batch dupes
+      const imeiIdxMap = new Map<string, number[]>();
+      const serialIdxMap = new Map<string, number[]>();
+      units.forEach((u, i) => {
+        const imei = u.imei.trim();
+        const serial = u.serial.trim();
+        if (imei) imeiIdxMap.set(imei, [...(imeiIdxMap.get(imei) || []), i]);
+        if (serial) serialIdxMap.set(serial, [...(serialIdxMap.get(serial) || []), i]);
+      });
+      imeiIdxMap.forEach((idxs, val) => {
+        if (idxs.length > 1) idxs.forEach(i => (nextErrors[i].imei = `Duplicate IMEI in batch: ${val}`));
+      });
+      serialIdxMap.forEach((idxs, val) => {
+        if (idxs.length > 1) idxs.forEach(i => (nextErrors[i].serial = `Duplicate serial in batch: ${val}`));
+      });
+
+      // DB check
+      const imeis = Array.from(imeiIdxMap.keys());
+      const serials = Array.from(serialIdxMap.keys());
+      try {
+        const [imeiRes, serialRes] = await Promise.all([
+          imeis.length
+            ? supabase.from('product_serial_units').select('imei').eq('organization_id', currentOrganization.id).in('imei', imeis)
+            : Promise.resolve({ data: [] as any[] } as any),
+          serials.length
+            ? supabase.from('product_serial_units').select('serial_number').eq('organization_id', currentOrganization.id).in('serial_number', serials)
+            : Promise.resolve({ data: [] as any[] } as any),
+        ]);
+        if (seq !== dupCheckSeq.current) return;
+        const existingImeis = new Set(((imeiRes as any).data || []).map((r: any) => r.imei).filter(Boolean));
+        const existingSerials = new Set(((serialRes as any).data || []).map((r: any) => r.serial_number).filter(Boolean));
+        units.forEach((u, i) => {
+          const imei = u.imei.trim();
+          const serial = u.serial.trim();
+          if (imei && existingImeis.has(imei) && !nextErrors[i].imei) {
+            nextErrors[i].imei = `IMEI already exists in this org`;
+          }
+          if (serial && existingSerials.has(serial) && !nextErrors[i].serial) {
+            nextErrors[i].serial = `Serial already exists in this org`;
+          }
+        });
+      } catch (e) {
+        console.error('[ReceiveUnits] dup check failed', e);
+      }
+      if (seq === dupCheckSeq.current) setDupErrors(nextErrors);
+    }, 350);
+    return () => clearTimeout(handle);
+  }, [units, open, currentOrganization?.id]);
 
   const handleScanResult = (parsed: ParsedScan) => {
     console.log('[ReceiveUnits] scan captured', parsed);
@@ -108,7 +174,6 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
     let needsFollowUp = false;
     setUnits(prev => {
       const next = [...prev];
-      // Prefer a row already in progress (has something but is missing IMEI or serial)
       let idx = next.findIndex(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial) && !u.completed);
       if (idx === -1) idx = next.findIndex(u => !u.imei && !u.serial && !u.barcode);
       if (idx === -1) { next.push(emptyUnit()); idx = next.length - 1; }
@@ -127,6 +192,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
 
       slot.completed = !!slot.imei && !!slot.serial;
       next[idx] = slot;
+      // Auto-advance: append a fresh row so the scanner focus moves onward
       if (slot.completed && idx === next.length - 1) next.push(emptyUnit());
       return next;
     });
@@ -138,35 +204,109 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
     });
   };
 
-  // Compute what the next scan should fill so the scanner can hint the user
   const nextExpecting: 'imei' | 'serial' | 'any' = useMemo(() => {
     const inProgress = units.find(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial) && !u.completed);
     if (inProgress) return inProgress.imei ? 'serial' : 'imei';
     return 'any';
   }, [units]);
 
-  // A row that started from a QR/URL scan but still needs the printed IMEI/SN
+  const activeRowIdx = useMemo(() => {
+    const idx = units.findIndex(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial) && !u.completed);
+    if (idx !== -1) return idx;
+    return units.findIndex(u => !u.imei && !u.serial && !u.barcode);
+  }, [units]);
+
   const pendingFollowUp = useMemo(
     () => units.find(u => u.barcode && !u.imei && !u.serial && !u.completed),
     [units]
   );
 
   const updateUnit = (idx: number, patch: Partial<DraftUnit>) => {
-    setUnits(prev => prev.map((u, i) => {
-      if (i !== idx) return u;
-      const next = { ...u, ...patch };
-      next.completed = !!next.imei.trim() && !!next.serial.trim();
+    setUnits(prev => {
+      const next = prev.map((u, i) => {
+        if (i !== idx) return u;
+        const merged = { ...u, ...patch };
+        merged.completed = !!merged.imei.trim() && !!merged.serial.trim();
+        return merged;
+      });
+      // Auto-advance: if the edited row just became complete and is last, append a new empty row
+      const edited = next[idx];
+      if (edited.completed && idx === next.length - 1) next.push(emptyUnit());
       return next;
-    }));
+    });
   };
 
   const removeUnit = (idx: number) => {
     setUnits(prev => prev.length === 1 ? [emptyUnit()] : prev.filter((_, i) => i !== idx));
+    setDupErrors(prev => prev.length === 1 ? [{}] : prev.filter((_, i) => i !== idx));
+  };
+
+  const buildExportRows = () => units.map((u, i) => {
+    const status = rowStatus(u);
+    const err = dupErrors[i] || {};
+    return {
+      row: i + 1,
+      imei: u.imei || '',
+      serial: u.serial || '',
+      barcode: u.barcode || '',
+      status: status.label,
+      error: [err.imei, err.serial].filter(Boolean).join(' | ') || '',
+    };
+  });
+
+  const handleExportCSV = () => {
+    const rows = buildExportRows();
+    if (!rows.length) return toast({ title: 'Nothing to export' });
+    const productName = selectedProduct?.name?.replace(/\s+/g, '-').toLowerCase() || 'units';
+    exportToCSV(rows, `receive-units-${productName}`);
+  };
+
+  const handleExportPDF = () => {
+    const rows = buildExportRows();
+    if (!rows.length) return toast({ title: 'Nothing to export' });
+    const w = window.open('', '_blank', 'width=900,height=700');
+    if (!w) return toast({ title: 'Popup blocked', variant: 'destructive' });
+    const productName = selectedProduct?.name || 'Units';
+    const dateStr = new Date().toLocaleString();
+    const rowsHtml = rows.map(r => `
+      <tr>
+        <td>${r.row}</td>
+        <td>${r.barcode}</td>
+        <td>${r.imei}</td>
+        <td>${r.serial}</td>
+        <td>${r.status}</td>
+        <td style="color:#b91c1c">${r.error}</td>
+      </tr>
+    `).join('');
+    w.document.write(`
+      <html><head><title>Receive Units — ${productName}</title>
+      <style>
+        body{font-family:system-ui,sans-serif;padding:24px;color:#111}
+        h1{font-size:18px;margin:0 0 4px}
+        .meta{color:#666;font-size:12px;margin-bottom:16px}
+        table{width:100%;border-collapse:collapse;font-size:12px}
+        th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}
+        th{background:#f5f5f5}
+      </style></head><body>
+        <h1>Receive Units — ${productName}</h1>
+        <div class="meta">Generated ${dateStr} · ${rows.length} row(s) · ${completedCount} complete</div>
+        <table>
+          <thead><tr><th>#</th><th>Barcode</th><th>IMEI</th><th>Serial</th><th>Status</th><th>Error</th></tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+        <script>window.onload=()=>{window.print();}</script>
+      </body></html>
+    `);
+    w.document.close();
   };
 
   const handleSave = async () => {
     if (!currentOrganization?.id || !selectedProductId) {
       toast({ title: 'Select a product', variant: 'destructive' });
+      return;
+    }
+    if (hasErrors) {
+      toast({ title: 'Fix duplicate errors', description: 'One or more rows have duplicate IMEI or serial numbers.', variant: 'destructive' });
       return;
     }
     const rows = units
@@ -191,7 +331,10 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
       return;
     }
 
-    const incompleteCount = units.filter(u => rowStatus(u).state !== 'complete' && rowStatus(u).state !== 'empty').length;
+    const incompleteCount = units.filter(u => {
+      const s = rowStatus(u).state;
+      return s !== 'complete' && s !== 'empty';
+    }).length;
     if (incompleteCount > 0) {
       toast({
         title: 'Incomplete rows skipped',
@@ -199,72 +342,11 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
       });
     }
 
-    // Client-side duplicate check within the current batch
-    const seenImei = new Set<string>();
-    const seenSerial = new Set<string>();
-    for (const r of rows) {
-      if (r.imei) {
-        if (seenImei.has(r.imei)) {
-          toast({ title: 'Duplicate IMEI in batch', description: r.imei, variant: 'destructive' });
-          return;
-        }
-        seenImei.add(r.imei);
-      }
-      if (r.serial_number) {
-        if (seenSerial.has(r.serial_number)) {
-          toast({ title: 'Duplicate serial in batch', description: r.serial_number, variant: 'destructive' });
-          return;
-        }
-        seenSerial.add(r.serial_number);
-      }
-    }
-
     setSaving(true);
     try {
-      // Server-side duplicate check against existing units in this org
-      const imeis = Array.from(seenImei);
-      const serials = Array.from(seenSerial);
-      const dupChecks: Array<Promise<any>> = [];
-      if (imeis.length) {
-        dupChecks.push(
-          Promise.resolve(
-            supabase.from('product_serial_units')
-              .select('imei')
-              .eq('organization_id', currentOrganization.id)
-              .in('imei', imeis)
-          )
-        );
-      }
-      if (serials.length) {
-        dupChecks.push(
-          Promise.resolve(
-            supabase.from('product_serial_units')
-              .select('serial_number')
-              .eq('organization_id', currentOrganization.id)
-              .in('serial_number', serials)
-          )
-        );
-      }
-      const results = await Promise.all(dupChecks);
-      const existingImeis = (results[0]?.data || []).map((r: any) => r.imei).filter(Boolean);
-      const existingSerials = (imeis.length ? results[1]?.data : results[0]?.data)?.map((r: any) => r.serial_number).filter(Boolean) || [];
-      if (existingImeis.length || existingSerials.length) {
-        toast({
-          title: 'Duplicate found',
-          description: [
-            existingImeis.length ? `IMEI already exists: ${existingImeis.join(', ')}` : '',
-            existingSerials.length ? `Serial already exists: ${existingSerials.join(', ')}` : '',
-          ].filter(Boolean).join(' · '),
-          variant: 'destructive',
-        });
-        setSaving(false);
-        return;
-      }
-
       const { error } = await supabase.from('product_serial_units').insert(rows);
       if (error) throw error;
 
-      // Bump product stock by the number of units received
       const { data: prod } = await supabase
         .from('products')
         .select('stock_quantity')
@@ -315,9 +397,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
               </Select>
               {selectedProduct && !selectedProduct.is_serialized && (
                 <div className="flex items-start justify-between gap-2 rounded-md border border-yellow-300 bg-yellow-50 p-2 text-xs text-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-200">
-                  <span>
-                    This product is not marked as serialized. Mark it to enable per-unit IMEI/serial tracking.
-                  </span>
+                  <span>This product is not marked as serialized. Mark it to enable per-unit IMEI/serial tracking.</span>
                   <Button
                     type="button"
                     size="sm"
@@ -351,7 +431,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
               </div>
             )}
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="text-sm text-muted-foreground flex items-center gap-2">
                 <Badge variant="default">{completedCount}</Badge>
                 <span>complete</span>
@@ -361,8 +441,20 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                     <span>in progress</span>
                   </>
                 )}
+                {hasErrors && (
+                  <>
+                    <Badge variant="destructive" className="ml-1">!</Badge>
+                    <span className="text-destructive">duplicates found</span>
+                  </>
+                )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={handleExportCSV}>
+                  <Download className="mr-1 h-4 w-4" /> CSV
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={handleExportPDF}>
+                  <Printer className="mr-1 h-4 w-4" /> PDF
+                </Button>
                 <Button type="button" variant="outline" size="sm" onClick={() => setUnits(prev => [...prev, emptyUnit()])}>
                   <PlusCircle className="mr-1 h-4 w-4" /> Add row
                 </Button>
@@ -372,11 +464,12 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
               </div>
             </div>
 
-
             <ScrollArea className="max-h-[45vh] pr-2">
               <div className="space-y-3">
                 {units.map((u, idx) => {
                   const status = rowStatus(u);
+                  const err = dupErrors[idx] || {};
+                  const isActive = idx === activeRowIdx;
                   return (
                     <div
                       key={idx}
@@ -384,8 +477,9 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                         "rounded-md border p-2 transition-colors",
                         status.state === 'complete' && "border-green-500 bg-green-50/50 dark:bg-green-950/20",
                         status.state === 'needs_followup' && "border-blue-300 bg-blue-50/50 dark:bg-blue-950/20",
-                        status.state === 'needs_imei' && "border-amber-300 bg-amber-50/30 dark:bg-amber-950/20",
-                        status.state === 'needs_serial' && "border-amber-300 bg-amber-50/30 dark:bg-amber-950/20"
+                        (status.state === 'needs_imei' || status.state === 'needs_serial') && "border-amber-300 bg-amber-50/30 dark:bg-amber-950/20",
+                        (err.imei || err.serial) && "border-destructive bg-destructive/5",
+                        isActive && "ring-2 ring-primary/50"
                       )}
                     >
                       <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
@@ -396,6 +490,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                             onChange={(e) => updateUnit(idx, { imei: e.target.value })}
                             placeholder="15-digit IMEI"
                             inputMode="numeric"
+                            className={err.imei ? 'border-destructive' : ''}
                           />
                         </div>
                         <div>
@@ -404,6 +499,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                             value={u.serial}
                             onChange={(e) => updateUnit(idx, { serial: e.target.value })}
                             placeholder="Serial number"
+                            className={err.serial ? 'border-destructive' : ''}
                           />
                         </div>
                         <div>
@@ -424,12 +520,13 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
-                      <div className="mt-2 flex items-center gap-2">
+                      <div className="mt-2 flex items-center gap-2 flex-wrap">
                         <Badge variant={status.variant} className="flex items-center gap-1 text-xs">
                           {status.icon}
                           {status.label}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
+                          {isActive && status.state !== 'complete' && '➜ next scan target · '}
                           {status.state === 'empty' && 'Scan or type IMEI + serial to start'}
                           {status.state === 'needs_followup' && 'Step 2 of 2: scan printed IMEI/SN barcode'}
                           {status.state === 'needs_serial' && 'Step 2 of 2: scan serial number'}
@@ -438,6 +535,12 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                           {status.state === 'complete' && 'Both IMEI and serial captured'}
                         </span>
                       </div>
+                      {(err.imei || err.serial) && (
+                        <div className="mt-1 text-xs text-destructive flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          {err.imei || err.serial}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -447,7 +550,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
 
           <DialogFooter>
             <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving || completedCount === 0}>
+            <Button onClick={handleSave} disabled={saving || completedCount === 0 || hasErrors}>
               {saving ? 'Saving…' : `Receive ${completedCount} unit(s)`}
             </Button>
           </DialogFooter>
@@ -460,7 +563,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
         onDetectedStructured={handleScanResult}
         repeating
         title="Scan units"
-        progressLabel={`${completedCount} complete · ${inProgressCount} in progress`}
+        progressLabel={`${completedCount} complete · ${inProgressCount} in progress${hasErrors ? ' · duplicates!' : ''}`}
         expecting={nextExpecting}
       />
     </>
