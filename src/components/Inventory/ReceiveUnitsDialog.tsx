@@ -530,12 +530,12 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                         </Badge>
                         <span className="text-xs text-muted-foreground">
                           {isActive && status.state !== 'complete' && '➜ next scan target · '}
-                          {status.state === 'empty' && 'Scan or type IMEI + serial to start'}
-                          {status.state === 'needs_followup' && 'Step 2 of 2: scan printed IMEI/SN barcode'}
-                          {status.state === 'needs_serial' && 'Step 2 of 2: scan serial number'}
-                          {status.state === 'needs_imei' && 'Step 1 of 2: scan IMEI'}
-                          {status.state === 'in_progress' && 'Continue scanning both IMEI and serial'}
-                          {status.state === 'complete' && 'Both IMEI and serial captured'}
+                          {status.state === 'empty' && 'Scan or type serial + IMEI to start'}
+                          {status.state === 'needs_followup' && 'Step 1 of 2: scan printed serial barcode'}
+                          {status.state === 'needs_serial' && 'Step 1 of 2: scan serial number'}
+                          {status.state === 'needs_imei' && 'Step 2 of 2: scan IMEI'}
+                          {status.state === 'in_progress' && 'Continue scanning both serial and IMEI'}
+                          {status.state === 'complete' && 'Both serial and IMEI captured'}
                         </span>
                       </div>
                       {(err.imei || err.serial) && (
