@@ -379,7 +379,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
           <DialogHeader>
             <DialogTitle>Receive Serialized Units</DialogTitle>
             <DialogDescription>
-              Scan each phone / device to capture its IMEI or serial number. Each unit becomes traceable through sale and return.
+              Scan each phone / device to capture its serial number (S/N) first, then its IMEI. Each unit becomes traceable through sale and return.
             </DialogDescription>
           </DialogHeader>
 
