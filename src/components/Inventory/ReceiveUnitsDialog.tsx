@@ -206,7 +206,10 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
 
   const nextExpecting: 'imei' | 'serial' | 'any' = useMemo(() => {
     const inProgress = units.find(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial) && !u.completed);
-    if (inProgress) return inProgress.imei ? 'serial' : 'imei';
+    if (inProgress) {
+      if (!inProgress.serial) return 'serial';
+      if (!inProgress.imei) return 'imei';
+    }
     return 'any';
   }, [units]);
 
