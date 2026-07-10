@@ -93,11 +93,11 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
     if (hasBarcode && !hasImei && !hasSerial) {
       return { state: 'needs_followup', label: 'Step 1 of 2', icon: <AlertCircle className="h-3.5 w-3.5" />, variant: 'destructive' };
     }
-    if (hasImei && !hasSerial) {
-      return { state: 'needs_serial', label: 'Needs serial', icon: <Circle className="h-3.5 w-3.5" />, variant: 'secondary' };
+    if (!hasSerial && hasImei) {
+      return { state: 'needs_serial', label: 'Step 1 of 2', icon: <Circle className="h-3.5 w-3.5" />, variant: 'secondary' };
     }
-    if (!hasImei && hasSerial) {
-      return { state: 'needs_imei', label: 'Needs IMEI', icon: <Circle className="h-3.5 w-3.5" />, variant: 'secondary' };
+    if (hasSerial && !hasImei) {
+      return { state: 'needs_imei', label: 'Step 2 of 2', icon: <Circle className="h-3.5 w-3.5" />, variant: 'secondary' };
     }
     if (hasImei || hasSerial || hasBarcode) {
       return { state: 'in_progress', label: 'In progress', icon: <Circle className="h-3.5 w-3.5" />, variant: 'outline' };
