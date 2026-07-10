@@ -199,7 +199,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
     toast({
       title: captured.length ? 'Captured' : 'Scan received',
       description: needsFollowUp
-        ? `${captured.join(' · ') || parsed.raw} — now scan the printed IMEI/SN barcode`
+        ? `${captured.join(' · ') || parsed.raw} — now scan the printed serial barcode (Step 1), then the IMEI barcode (Step 2)`
         : (captured.join(' · ') || `Raw: ${parsed.raw}`),
     });
   };
