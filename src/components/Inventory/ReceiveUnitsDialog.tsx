@@ -93,11 +93,11 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
     if (hasBarcode && !hasImei && !hasSerial) {
       return { state: 'needs_followup', label: 'Step 1 of 2', icon: <AlertCircle className="h-3.5 w-3.5" />, variant: 'destructive' };
     }
-    if (hasImei && !hasSerial) {
-      return { state: 'needs_serial', label: 'Needs serial', icon: <Circle className="h-3.5 w-3.5" />, variant: 'secondary' };
+    if (!hasSerial && hasImei) {
+      return { state: 'needs_serial', label: 'Step 1 of 2', icon: <Circle className="h-3.5 w-3.5" />, variant: 'secondary' };
     }
-    if (!hasImei && hasSerial) {
-      return { state: 'needs_imei', label: 'Needs IMEI', icon: <Circle className="h-3.5 w-3.5" />, variant: 'secondary' };
+    if (hasSerial && !hasImei) {
+      return { state: 'needs_imei', label: 'Step 2 of 2', icon: <Circle className="h-3.5 w-3.5" />, variant: 'secondary' };
     }
     if (hasImei || hasSerial || hasBarcode) {
       return { state: 'in_progress', label: 'In progress', icon: <Circle className="h-3.5 w-3.5" />, variant: 'outline' };
@@ -199,14 +199,17 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
     toast({
       title: captured.length ? 'Captured' : 'Scan received',
       description: needsFollowUp
-        ? `${captured.join(' · ') || parsed.raw} — now scan the printed IMEI/SN barcode`
+        ? `${captured.join(' · ') || parsed.raw} — now scan the printed serial barcode (Step 1), then the IMEI barcode (Step 2)`
         : (captured.join(' · ') || `Raw: ${parsed.raw}`),
     });
   };
 
   const nextExpecting: 'imei' | 'serial' | 'any' = useMemo(() => {
     const inProgress = units.find(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial) && !u.completed);
-    if (inProgress) return inProgress.imei ? 'serial' : 'imei';
+    if (inProgress) {
+      if (!inProgress.serial) return 'serial';
+      if (!inProgress.imei) return 'imei';
+    }
     return 'any';
   }, [units]);
 
@@ -376,7 +379,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
           <DialogHeader>
             <DialogTitle>Receive Serialized Units</DialogTitle>
             <DialogDescription>
-              Scan each phone / device to capture its IMEI or serial number. Each unit becomes traceable through sale and return.
+              Scan each phone / device to capture its serial number (S/N) first, then its IMEI. Each unit becomes traceable through sale and return.
             </DialogDescription>
           </DialogHeader>
 
@@ -423,10 +426,10 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
 
             {pendingFollowUp && (
               <div className="rounded-md border border-blue-300 bg-blue-50 p-2 text-xs text-blue-900 dark:bg-blue-950/30 dark:text-blue-100">
-                <div className="font-medium">Step 2 of 2 — scan the printed IMEI/SN barcode</div>
+                <div className="font-medium">Step 1 of 2 — scan the printed serial barcode</div>
                 <div className="mt-0.5 opacity-80">
                   The QR you just scanned only contained a URL. Its raw text was saved in the Barcode field. Now scan the
-                  printed Code-128 barcode (the one under the IMEI/SN on the box) to complete this unit.
+                  printed serial (S/N) barcode, then the IMEI barcode to complete this unit.
                 </div>
               </div>
             )}
@@ -527,12 +530,12 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                         </Badge>
                         <span className="text-xs text-muted-foreground">
                           {isActive && status.state !== 'complete' && '➜ next scan target · '}
-                          {status.state === 'empty' && 'Scan or type IMEI + serial to start'}
-                          {status.state === 'needs_followup' && 'Step 2 of 2: scan printed IMEI/SN barcode'}
-                          {status.state === 'needs_serial' && 'Step 2 of 2: scan serial number'}
-                          {status.state === 'needs_imei' && 'Step 1 of 2: scan IMEI'}
-                          {status.state === 'in_progress' && 'Continue scanning both IMEI and serial'}
-                          {status.state === 'complete' && 'Both IMEI and serial captured'}
+                          {status.state === 'empty' && 'Scan or type serial + IMEI to start'}
+                          {status.state === 'needs_followup' && 'Step 1 of 2: scan printed serial barcode'}
+                          {status.state === 'needs_serial' && 'Step 1 of 2: scan serial number'}
+                          {status.state === 'needs_imei' && 'Step 2 of 2: scan IMEI'}
+                          {status.state === 'in_progress' && 'Continue scanning both serial and IMEI'}
+                          {status.state === 'complete' && 'Both serial and IMEI captured'}
                         </span>
                       </div>
                       {(err.imei || err.serial) && (
