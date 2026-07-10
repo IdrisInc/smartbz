@@ -426,10 +426,10 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
 
             {pendingFollowUp && (
               <div className="rounded-md border border-blue-300 bg-blue-50 p-2 text-xs text-blue-900 dark:bg-blue-950/30 dark:text-blue-100">
-                <div className="font-medium">Step 2 of 2 — scan the printed IMEI/SN barcode</div>
+                <div className="font-medium">Step 1 of 2 — scan the printed serial barcode</div>
                 <div className="mt-0.5 opacity-80">
                   The QR you just scanned only contained a URL. Its raw text was saved in the Barcode field. Now scan the
-                  printed Code-128 barcode (the one under the IMEI/SN on the box) to complete this unit.
+                  printed serial (S/N) barcode, then the IMEI barcode to complete this unit.
                 </div>
               </div>
             )}
