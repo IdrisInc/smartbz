@@ -71,13 +71,12 @@ export function UserSettings() {
 
 
 
-          // Extract email from display_name if it looks like an email (fallback from auth)
-          let email = '';
-          if (profile?.display_name && profile.display_name.includes('@')) {
+          // Prefer explicit profile.email column, fall back to display_name if it looks like an email
+          let email = (profile as any)?.email || '';
+          if (!email && profile?.display_name && profile.display_name.includes('@')) {
             email = profile.display_name;
           }
 
-          // Generate a meaningful name from profile data
           let displayName = 'User';
           if (profile) {
             if (profile.first_name || profile.last_name) {
@@ -86,8 +85,6 @@ export function UserSettings() {
               displayName = profile.display_name;
             }
           }
-          
-          // If no profile or empty name, show truncated user ID
           if (displayName === 'User' || !displayName) {
             displayName = `User (${membership.user_id.substring(0, 8)}...)`;
           }
@@ -99,10 +96,15 @@ export function UserSettings() {
               first_name: profile?.first_name || '',
               last_name: profile?.last_name || '',
               display_name: displayName,
-              email: email,
+              email,
+              phone: (profile as any)?.phone || '',
+              address: (profile as any)?.address || '',
+              avatar_url: (profile as any)?.avatar_url || '',
               user_id: membership.user_id,
-              has_profile: !!profile
+              has_profile: !!profile,
             }
+          };
+
           };
         })
       );
