@@ -219,6 +219,13 @@ export function BarcodeScanner({
           </form>
         )}
 
+        {mismatch && (
+          <div className="rounded-md border border-destructive/50 bg-destructive/5 p-2 text-xs text-destructive">
+            {mismatch}
+          </div>
+        )}
+
+
         {lastHit && repeating && (
           <div className="rounded-md border p-2 text-xs space-y-1">
             <div className="flex items-center gap-1 font-medium text-green-600">
