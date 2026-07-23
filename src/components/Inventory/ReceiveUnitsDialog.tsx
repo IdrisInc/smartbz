@@ -12,7 +12,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useToast } from '@/hooks/use-toast';
 import { BarcodeScanner } from '@/components/Products/BarcodeScanner';
-import { ParsedScan } from '@/lib/scanParser';
+import { ParsedScan, isValidIMEI } from '@/lib/scanParser';
 import { useExportUtils } from '@/hooks/useExportUtils';
 import { cn } from '@/lib/utils';
 
@@ -50,7 +50,9 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
   const [showScanner, setShowScanner] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dupErrors, setDupErrors] = useState<DupError[]>([{}]);
+  const [rescanTarget, setRescanTarget] = useState<{ idx: number; field: 'serial' | 'imei' } | null>(null);
   const dupCheckSeq = useRef(0);
+
 
   useEffect(() => {
     if (!open || !currentOrganization?.id) return;
@@ -119,6 +121,14 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
     const handle = setTimeout(async () => {
       const nextErrors: DupError[] = units.map(() => ({}));
 
+      // IMEI format validation (Luhn + 15 digits)
+      units.forEach((u, i) => {
+        const imei = u.imei.trim();
+        if (imei && !isValidIMEI(imei)) {
+          nextErrors[i].imei = 'Invalid IMEI (must be 15 digits, Luhn check)';
+        }
+      });
+
       // Intra-batch dupes
       const imeiIdxMap = new Map<string, number[]>();
       const serialIdxMap = new Map<string, number[]>();
@@ -134,6 +144,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
       serialIdxMap.forEach((idxs, val) => {
         if (idxs.length > 1) idxs.forEach(i => (nextErrors[i].serial = `Duplicate serial in batch: ${val}`));
       });
+
 
       // DB check
       const imeis = Array.from(imeiIdxMap.keys());
@@ -170,6 +181,28 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
 
   const handleScanResult = (parsed: ParsedScan) => {
     console.log('[ReceiveUnits] scan captured', parsed);
+
+    // Targeted rescan of a specific row+field
+    if (rescanTarget) {
+      const value =
+        rescanTarget.field === 'imei'
+          ? (parsed.imei || parsed.raw)
+          : (parsed.serial || parsed.raw);
+      if (rescanTarget.field === 'imei' && !isValidIMEI(value)) {
+        toast({
+          title: 'Invalid IMEI',
+          description: 'Rescan expected a 15-digit IMEI (Luhn valid). Try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      updateUnit(rescanTarget.idx, { [rescanTarget.field === 'imei' ? 'imei' : 'serial']: value } as any);
+      toast({ title: 'Rescanned', description: `${rescanTarget.field.toUpperCase()} row ${rescanTarget.idx + 1} updated` });
+      setRescanTarget(null);
+      setShowScanner(false);
+      return;
+    }
+
     const captured: string[] = [];
     let needsFollowUp = false;
     setUnits(prev => {
@@ -192,7 +225,6 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
 
       slot.completed = !!slot.imei && !!slot.serial;
       next[idx] = slot;
-      // Auto-advance: append a fresh row so the scanner focus moves onward
       if (slot.completed && idx === next.length - 1) next.push(emptyUnit());
       return next;
     });
@@ -203,6 +235,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
         : (captured.join(' · ') || `Raw: ${parsed.raw}`),
     });
   };
+
 
   const nextExpecting: 'imei' | 'serial' | 'any' = useMemo(() => {
     const inProgress = units.find(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial) && !u.completed);
@@ -450,7 +483,11 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                     <span className="text-destructive">duplicates found</span>
                   </>
                 )}
+                <Badge variant="outline" className="ml-1 uppercase text-[10px]">
+                  Next scan: {nextExpecting === 'any' ? 'Serial (Step 1)' : nextExpecting === 'serial' ? 'Serial (Step 1)' : 'IMEI (Step 2)'}
+                </Badge>
               </div>
+
               <div className="flex flex-wrap gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={handleExportCSV}>
                   <Download className="mr-1 h-4 w-4" /> CSV
@@ -537,7 +574,30 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                           {status.state === 'in_progress' && 'Continue scanning both serial and IMEI'}
                           {status.state === 'complete' && 'Both serial and IMEI captured'}
                         </span>
+                        <div className="ml-auto flex gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-[10px]"
+                            disabled={!selectedProductId}
+                            onClick={() => { setRescanTarget({ idx, field: 'serial' }); setShowScanner(true); }}
+                          >
+                            Rescan S/N
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-[10px]"
+                            disabled={!selectedProductId}
+                            onClick={() => { setRescanTarget({ idx, field: 'imei' }); setShowScanner(true); }}
+                          >
+                            Rescan IMEI
+                          </Button>
+                        </div>
                       </div>
+
                       {(err.imei || err.serial) && (
                         <div className="mt-1 text-xs text-destructive flex items-center gap-1">
                           <AlertCircle className="h-3 w-3" />
@@ -562,13 +622,14 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
 
       <BarcodeScanner
         open={showScanner}
-        onClose={() => setShowScanner(false)}
+        onClose={() => { setShowScanner(false); setRescanTarget(null); }}
         onDetectedStructured={handleScanResult}
-        repeating
-        title="Scan units"
+        repeating={!rescanTarget}
+        title={rescanTarget ? `Rescan ${rescanTarget.field.toUpperCase()} · row ${rescanTarget.idx + 1}` : 'Scan units'}
         progressLabel={`${completedCount} complete · ${inProgressCount} in progress${hasErrors ? ' · duplicates!' : ''}`}
-        expecting={nextExpecting}
+        expecting={rescanTarget ? rescanTarget.field : nextExpecting}
       />
+
     </>
   );
 }

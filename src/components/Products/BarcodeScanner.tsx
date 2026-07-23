@@ -41,7 +41,26 @@ export function BarcodeScanner({
   const [manual, setManual] = useState('');
   const [mode, setMode] = useState<'camera' | 'manual'>('camera');
   const [lastHit, setLastHit] = useState<ParsedScan | null>(null);
+  const [mismatch, setMismatch] = useState<string | null>(null);
   const cooldownRef = useRef<number>(0);
+  const seenRef = useRef<Set<string>>(new Set());
+
+  // Reset dedupe + mismatch when scanner reopens or the expected field changes.
+  useEffect(() => {
+    if (open) {
+      seenRef.current = new Set();
+      setMismatch(null);
+    }
+  }, [open, expecting]);
+
+  const matchesExpecting = (parsed: ParsedScan): boolean => {
+    if (expecting === 'any') return true;
+    if (expecting === 'imei') return !!parsed.imei;
+    if (expecting === 'serial') return !!parsed.serial || parsed.kind === 'unknown' || parsed.kind === 'url';
+    if (expecting === 'sku') return true;
+    return true;
+  };
+
 
   useEffect(() => {
     if (!open || mode !== 'camera') return;
@@ -65,7 +84,17 @@ export function BarcodeScanner({
             if (now - cooldownRef.current < 1200) return; // debounce
             cooldownRef.current = now;
             const raw = result.getText();
+            if (seenRef.current.has(raw)) {
+              setMismatch('This code was already scanned in this session.');
+              return;
+            }
             const parsed = parseScanned(raw);
+            if (!matchesExpecting(parsed)) {
+              setMismatch(`Expected ${expectLabel[expecting]} — got a different code type. Ignored.`);
+              return;
+            }
+            seenRef.current.add(raw);
+            setMismatch(null);
             setLastHit(parsed);
             onDetected?.(raw);
             onDetectedStructured?.(parsed);
@@ -88,19 +117,31 @@ export function BarcodeScanner({
       controlsRef.current?.stop();
       controlsRef.current = null;
     };
-  }, [open, mode, repeating, onDetected, onDetectedStructured, onClose]);
+  }, [open, mode, repeating, onDetected, onDetectedStructured, onClose, expecting]);
+
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const code = manual.trim();
     if (!code) return;
+    if (seenRef.current.has(code)) {
+      setMismatch('This code was already scanned in this session.');
+      return;
+    }
     const parsed = parseScanned(code);
+    if (!matchesExpecting(parsed)) {
+      setMismatch(`Expected ${expectLabel[expecting]} — this code does not match.`);
+      return;
+    }
+    seenRef.current.add(code);
+    setMismatch(null);
     setLastHit(parsed);
     onDetected?.(code);
     onDetectedStructured?.(parsed);
     setManual('');
     if (!repeating) onClose();
   };
+
 
   const expectLabel: Record<string, string> = {
     imei: 'Expecting: IMEI',
@@ -177,6 +218,13 @@ export function BarcodeScanner({
             <Button type="submit" className="w-full">Use code</Button>
           </form>
         )}
+
+        {mismatch && (
+          <div className="rounded-md border border-destructive/50 bg-destructive/5 p-2 text-xs text-destructive">
+            {mismatch}
+          </div>
+        )}
+
 
         {lastHit && repeating && (
           <div className="rounded-md border p-2 text-xs space-y-1">

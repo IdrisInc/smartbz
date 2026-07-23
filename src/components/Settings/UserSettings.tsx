@@ -7,13 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, UserMinus, Loader2, Eye, Pencil, MoreHorizontal } from 'lucide-react';
+import { Plus, UserMinus, Loader2, Eye, Pencil, MoreHorizontal, Mail, Phone, MapPin } from 'lucide-react';
 import { RolesPermissionsTab } from './RolesPermissionsTab';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 
 export function UserSettings() {
   const [users, setUsers] = useState([]);
@@ -22,8 +24,10 @@ export function UserSettings() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState({ firstName: '', lastName: '', role: '' });
+  const [editingUser, setEditingUser] = useState({ firstName: '', lastName: '', role: '', email: '', phone: '', address: '', avatarUrl: '' });
   const [updating, setUpdating] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
 
@@ -61,17 +65,18 @@ export function UserSettings() {
         (data || []).map(async (membership) => {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('id, first_name, last_name, display_name, user_id')
+            .select('id, first_name, last_name, display_name, user_id, email, phone, address, avatar_url')
             .eq('user_id', membership.user_id)
             .maybeSingle();
 
-          // Extract email from display_name if it looks like an email (fallback from auth)
-          let email = '';
-          if (profile?.display_name && profile.display_name.includes('@')) {
+
+
+          // Prefer explicit profile.email column, fall back to display_name if it looks like an email
+          let email = (profile as any)?.email || '';
+          if (!email && profile?.display_name && profile.display_name.includes('@')) {
             email = profile.display_name;
           }
 
-          // Generate a meaningful name from profile data
           let displayName = 'User';
           if (profile) {
             if (profile.first_name || profile.last_name) {
@@ -80,8 +85,6 @@ export function UserSettings() {
               displayName = profile.display_name;
             }
           }
-          
-          // If no profile or empty name, show truncated user ID
           if (displayName === 'User' || !displayName) {
             displayName = `User (${membership.user_id.substring(0, 8)}...)`;
           }
@@ -93,12 +96,16 @@ export function UserSettings() {
               first_name: profile?.first_name || '',
               last_name: profile?.last_name || '',
               display_name: displayName,
-              email: email,
+              email,
+              phone: (profile as any)?.phone || '',
+              address: (profile as any)?.address || '',
+              avatar_url: (profile as any)?.avatar_url || '',
               user_id: membership.user_id,
-              has_profile: !!profile
+              has_profile: !!profile,
             }
           };
         })
+
       );
 
       setUsers(usersWithProfiles);
@@ -217,8 +224,13 @@ export function UserSettings() {
     setEditingUser({
       firstName: membership.profiles.first_name || '',
       lastName: membership.profiles.last_name || '',
-      role: membership.role
+      role: membership.role,
+      email: membership.profiles.email || '',
+      phone: membership.profiles.phone || '',
+      address: membership.profiles.address || '',
+      avatarUrl: membership.profiles.avatar_url || '',
     });
+
     setEditDialogOpen(true);
   };
 
@@ -236,18 +248,22 @@ export function UserSettings() {
         .maybeSingle();
 
       if (existingProfile) {
-        // Update existing profile
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
             first_name: editingUser.firstName,
             last_name: editingUser.lastName,
-            display_name: `${editingUser.firstName} ${editingUser.lastName}`.trim()
-          })
+            display_name: `${editingUser.firstName} ${editingUser.lastName}`.trim(),
+            email: editingUser.email || null,
+            phone: editingUser.phone || null,
+            address: editingUser.address || null,
+            avatar_url: editingUser.avatarUrl || null,
+          } as any)
           .eq('user_id', selectedUser.user_id);
 
         if (profileError) throw profileError;
       }
+
       // Note: Cannot insert new profiles due to RLS - profile is created on user signup
 
       // Update role in membership
@@ -278,6 +294,24 @@ export function UserSettings() {
     }
   };
 
+  const handleAvatarUpload = async (file: File) => {
+    if (!selectedUser) return;
+    try {
+      setUploadingAvatar(true);
+      const path = `${selectedUser.user_id}/${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+      const { error: upErr } = await supabase.storage.from('product-images').upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from('product-images').getPublicUrl(path);
+      setEditingUser(prev => ({ ...prev, avatarUrl: pub.publicUrl }));
+      toast({ title: 'Avatar uploaded' });
+    } catch (e: any) {
+      toast({ title: 'Upload failed', description: e?.message, variant: 'destructive' });
+    } finally {
+      setUploadingAvatar(false);
+    }
+
+  };
+
   return (
     <Tabs defaultValue="users" className="space-y-4">
       <TabsList>
@@ -301,20 +335,33 @@ export function UserSettings() {
             ) : (
               <div className="space-y-4">
                 {users.map((membership) => (
-                  <div key={membership.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">
-                        {membership.profiles.display_name}
-                      </div>
-                      {membership.profiles.email && (
-                        <div className="text-sm text-muted-foreground">
-                          {membership.profiles.email}
+                  <div key={membership.id} className="flex items-center justify-between p-3 border rounded-lg gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar className="h-10 w-10 shrink-0">
+                        <AvatarImage src={membership.profiles.avatar_url || undefined} />
+                        <AvatarFallback>
+                          {(membership.profiles.first_name?.[0] || membership.profiles.display_name?.[0] || 'U').toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{membership.profiles.display_name}</div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                          {membership.profiles.email && (
+                            <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{membership.profiles.email}</span>
+                          )}
+                          {membership.profiles.phone && (
+                            <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{membership.profiles.phone}</span>
+                          )}
+                          {membership.profiles.address && (
+                            <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{membership.profiles.address}</span>
+                          )}
                         </div>
-                      )}
-                      <div className="text-xs text-muted-foreground">
-                        Joined: {new Date(membership.joined_at).toLocaleDateString()}
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          Joined: {new Date(membership.joined_at).toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
+
                     <div className="flex items-center gap-2">
                       <Badge variant={membership.role === 'business_owner' ? 'default' : 'secondary'}>
                         {membership.role.replace('_', ' ').toUpperCase()}
@@ -452,6 +499,20 @@ export function UserSettings() {
           </DialogHeader>
           {selectedUser && (
             <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={selectedUser.profiles.avatar_url || undefined} />
+                  <AvatarFallback>
+                    {(selectedUser.profiles.first_name?.[0] || selectedUser.profiles.display_name?.[0] || 'U').toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="font-semibold text-lg">{selectedUser.profiles.display_name}</div>
+                  <Badge variant={selectedUser.role === 'business_owner' ? 'default' : 'secondary'}>
+                    {selectedUser.role.replace('_', ' ').toUpperCase()}
+                  </Badge>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">First Name</Label>
@@ -463,33 +524,30 @@ export function UserSettings() {
                 </div>
               </div>
               <div>
-                <Label className="text-muted-foreground">Display Name</Label>
-                <p className="font-medium">{selectedUser.profiles.display_name}</p>
+                <Label className="text-muted-foreground">Email</Label>
+                <p className="font-medium">{selectedUser.profiles.email || 'Not set'}</p>
               </div>
-              {selectedUser.profiles.email && (
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Email</Label>
-                  <p className="font-medium">{selectedUser.profiles.email}</p>
+                  <Label className="text-muted-foreground">Phone</Label>
+                  <p className="font-medium">{selectedUser.profiles.phone || 'Not set'}</p>
                 </div>
-              )}
-              <div>
-                <Label className="text-muted-foreground">Role</Label>
-                <div className="mt-1">
-                  <Badge variant={selectedUser.role === 'business_owner' ? 'default' : 'secondary'}>
-                    {selectedUser.role.replace('_', ' ').toUpperCase()}
-                  </Badge>
+                <div>
+                  <Label className="text-muted-foreground">Joined</Label>
+                  <p className="font-medium">{new Date(selectedUser.joined_at).toLocaleDateString()}</p>
                 </div>
               </div>
               <div>
-                <Label className="text-muted-foreground">Joined Date</Label>
-                <p className="font-medium">{new Date(selectedUser.joined_at).toLocaleDateString()}</p>
+                <Label className="text-muted-foreground">Address</Label>
+                <p className="font-medium whitespace-pre-wrap">{selectedUser.profiles.address || 'Not set'}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground">User ID</Label>
-                <p className="font-mono text-sm text-muted-foreground">{selectedUser.user_id}</p>
+                <p className="font-mono text-xs text-muted-foreground">{selectedUser.user_id}</p>
               </div>
             </div>
           )}
+
         </DialogContent>
       </Dialog>
 
@@ -501,33 +559,55 @@ export function UserSettings() {
             <DialogDescription>Update user information and role</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="editFirstName">First Name</Label>
+            <div className="flex items-center gap-3">
+              <Avatar className="h-14 w-14">
+                <AvatarImage src={editingUser.avatarUrl || undefined} />
+                <AvatarFallback>
+                  {(editingUser.firstName?.[0] || 'U').toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Profile photo</Label>
                 <Input
-                  id="editFirstName"
-                  value={editingUser.firstName}
-                  onChange={(e) => setEditingUser({ ...editingUser, firstName: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="editLastName">Last Name</Label>
-                <Input
-                  id="editLastName"
-                  value={editingUser.lastName}
-                  onChange={(e) => setEditingUser({ ...editingUser, lastName: e.target.value })}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => e.target.files?.[0] && handleAvatarUpload(e.target.files[0])}
+                  disabled={uploadingAvatar}
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="editFirstName">First Name</Label>
+                <Input id="editFirstName" value={editingUser.firstName} onChange={(e) => setEditingUser({ ...editingUser, firstName: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editLastName">Last Name</Label>
+                <Input id="editLastName" value={editingUser.lastName} onChange={(e) => setEditingUser({ ...editingUser, lastName: e.target.value })} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="editEmail">Email</Label>
+                <Input id="editEmail" type="email" value={editingUser.email} onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editPhone">Phone</Label>
+                <Input id="editPhone" value={editingUser.phone} onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editAddress">Address</Label>
+              <Input id="editAddress" value={editingUser.address} onChange={(e) => setEditingUser({ ...editingUser, address: e.target.value })} />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="editRole">Role</Label>
-              <Select 
-                value={editingUser.role} 
-                onValueChange={(value) => setEditingUser({ ...editingUser, role: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={editingUser.role} onValueChange={(value) => setEditingUser({ ...editingUser, role: value })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="business_owner">Business Owner</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
@@ -540,6 +620,7 @@ export function UserSettings() {
               </Select>
             </div>
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
               Cancel
