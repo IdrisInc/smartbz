@@ -124,13 +124,24 @@ export function BarcodeScanner({
     e.preventDefault();
     const code = manual.trim();
     if (!code) return;
+    if (seenRef.current.has(code)) {
+      setMismatch('This code was already scanned in this session.');
+      return;
+    }
     const parsed = parseScanned(code);
+    if (!matchesExpecting(parsed)) {
+      setMismatch(`Expected ${expectLabel[expecting]} — this code does not match.`);
+      return;
+    }
+    seenRef.current.add(code);
+    setMismatch(null);
     setLastHit(parsed);
     onDetected?.(code);
     onDetectedStructured?.(parsed);
     setManual('');
     if (!repeating) onClose();
   };
+
 
   const expectLabel: Record<string, string> = {
     imei: 'Expecting: IMEI',
