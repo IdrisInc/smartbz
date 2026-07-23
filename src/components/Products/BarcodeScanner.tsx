@@ -41,7 +41,26 @@ export function BarcodeScanner({
   const [manual, setManual] = useState('');
   const [mode, setMode] = useState<'camera' | 'manual'>('camera');
   const [lastHit, setLastHit] = useState<ParsedScan | null>(null);
+  const [mismatch, setMismatch] = useState<string | null>(null);
   const cooldownRef = useRef<number>(0);
+  const seenRef = useRef<Set<string>>(new Set());
+
+  // Reset dedupe + mismatch when scanner reopens or the expected field changes.
+  useEffect(() => {
+    if (open) {
+      seenRef.current = new Set();
+      setMismatch(null);
+    }
+  }, [open, expecting]);
+
+  const matchesExpecting = (parsed: ParsedScan): boolean => {
+    if (expecting === 'any') return true;
+    if (expecting === 'imei') return !!parsed.imei;
+    if (expecting === 'serial') return !!parsed.serial || parsed.kind === 'unknown' || parsed.kind === 'url';
+    if (expecting === 'sku') return true;
+    return true;
+  };
+
 
   useEffect(() => {
     if (!open || mode !== 'camera') return;
