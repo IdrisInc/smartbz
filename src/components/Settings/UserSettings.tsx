@@ -224,8 +224,13 @@ export function UserSettings() {
     setEditingUser({
       firstName: membership.profiles.first_name || '',
       lastName: membership.profiles.last_name || '',
-      role: membership.role
+      role: membership.role,
+      email: membership.profiles.email || '',
+      phone: membership.profiles.phone || '',
+      address: membership.profiles.address || '',
+      avatarUrl: membership.profiles.avatar_url || '',
     });
+
     setEditDialogOpen(true);
   };
 
