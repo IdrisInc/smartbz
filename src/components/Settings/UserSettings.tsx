@@ -106,7 +106,6 @@ export function UserSettings() {
           };
         })
 
-        })
       );
 
       setUsers(usersWithProfiles);
