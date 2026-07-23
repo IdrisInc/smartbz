@@ -121,6 +121,14 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
     const handle = setTimeout(async () => {
       const nextErrors: DupError[] = units.map(() => ({}));
 
+      // IMEI format validation (Luhn + 15 digits)
+      units.forEach((u, i) => {
+        const imei = u.imei.trim();
+        if (imei && !isValidIMEI(imei)) {
+          nextErrors[i].imei = 'Invalid IMEI (must be 15 digits, Luhn check)';
+        }
+      });
+
       // Intra-batch dupes
       const imeiIdxMap = new Map<string, number[]>();
       const serialIdxMap = new Map<string, number[]>();
@@ -136,6 +144,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
       serialIdxMap.forEach((idxs, val) => {
         if (idxs.length > 1) idxs.forEach(i => (nextErrors[i].serial = `Duplicate serial in batch: ${val}`));
       });
+
 
       // DB check
       const imeis = Array.from(imeiIdxMap.keys());
