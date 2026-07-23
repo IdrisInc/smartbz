@@ -65,9 +65,11 @@ export function UserSettings() {
         (data || []).map(async (membership) => {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('id, first_name, last_name, display_name, user_id')
+            .select('id, first_name, last_name, display_name, user_id, email, phone, address, avatar_url')
             .eq('user_id', membership.user_id)
             .maybeSingle();
+
+
 
           // Extract email from display_name if it looks like an email (fallback from auth)
           let email = '';
