@@ -622,13 +622,14 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
 
       <BarcodeScanner
         open={showScanner}
-        onClose={() => setShowScanner(false)}
+        onClose={() => { setShowScanner(false); setRescanTarget(null); }}
         onDetectedStructured={handleScanResult}
-        repeating
-        title="Scan units"
+        repeating={!rescanTarget}
+        title={rescanTarget ? `Rescan ${rescanTarget.field.toUpperCase()} · row ${rescanTarget.idx + 1}` : 'Scan units'}
         progressLabel={`${completedCount} complete · ${inProgressCount} in progress${hasErrors ? ' · duplicates!' : ''}`}
-        expecting={nextExpecting}
+        expecting={rescanTarget ? rescanTarget.field : nextExpecting}
       />
+
     </>
   );
 }
