@@ -294,6 +294,24 @@ export function UserSettings() {
     }
   };
 
+  const handleAvatarUpload = async (file: File) => {
+    if (!selectedUser) return;
+    try {
+      setUploadingAvatar(true);
+      const path = `${selectedUser.user_id}/${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+      const { error: upErr } = await supabase.storage.from('product-images').upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from('product-images').getPublicUrl(path);
+      setEditingUser(prev => ({ ...prev, avatarUrl: pub.publicUrl }));
+      toast({ title: 'Avatar uploaded' });
+    } catch (e: any) {
+      toast({ title: 'Upload failed', description: e?.message, variant: 'destructive' });
+    } finally {
+      setUploadingAvatar(false);
+    }
+
+  };
+
   return (
     <Tabs defaultValue="users" className="space-y-4">
       <TabsList>
