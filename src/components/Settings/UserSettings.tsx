@@ -317,20 +317,33 @@ export function UserSettings() {
             ) : (
               <div className="space-y-4">
                 {users.map((membership) => (
-                  <div key={membership.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium">
-                        {membership.profiles.display_name}
-                      </div>
-                      {membership.profiles.email && (
-                        <div className="text-sm text-muted-foreground">
-                          {membership.profiles.email}
+                  <div key={membership.id} className="flex items-center justify-between p-3 border rounded-lg gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar className="h-10 w-10 shrink-0">
+                        <AvatarImage src={membership.profiles.avatar_url || undefined} />
+                        <AvatarFallback>
+                          {(membership.profiles.first_name?.[0] || membership.profiles.display_name?.[0] || 'U').toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{membership.profiles.display_name}</div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                          {membership.profiles.email && (
+                            <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{membership.profiles.email}</span>
+                          )}
+                          {membership.profiles.phone && (
+                            <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{membership.profiles.phone}</span>
+                          )}
+                          {membership.profiles.address && (
+                            <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{membership.profiles.address}</span>
+                          )}
                         </div>
-                      )}
-                      <div className="text-xs text-muted-foreground">
-                        Joined: {new Date(membership.joined_at).toLocaleDateString()}
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          Joined: {new Date(membership.joined_at).toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
+
                     <div className="flex items-center gap-2">
                       <Badge variant={membership.role === 'business_owner' ? 'default' : 'secondary'}>
                         {membership.role.replace('_', ' ').toUpperCase()}
