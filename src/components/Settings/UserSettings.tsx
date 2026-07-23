@@ -104,8 +104,8 @@ export function UserSettings() {
               has_profile: !!profile,
             }
           };
+        })
 
-          };
         })
       );
 
