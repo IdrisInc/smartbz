@@ -483,7 +483,11 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                     <span className="text-destructive">duplicates found</span>
                   </>
                 )}
+                <Badge variant="outline" className="ml-1 uppercase text-[10px]">
+                  Next scan: {nextExpecting === 'any' ? 'Serial (Step 1)' : nextExpecting === 'serial' ? 'Serial (Step 1)' : 'IMEI (Step 2)'}
+                </Badge>
               </div>
+
               <div className="flex flex-wrap gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={handleExportCSV}>
                   <Download className="mr-1 h-4 w-4" /> CSV
