@@ -481,6 +481,20 @@ export function UserSettings() {
           </DialogHeader>
           {selectedUser && (
             <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={selectedUser.profiles.avatar_url || undefined} />
+                  <AvatarFallback>
+                    {(selectedUser.profiles.first_name?.[0] || selectedUser.profiles.display_name?.[0] || 'U').toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="font-semibold text-lg">{selectedUser.profiles.display_name}</div>
+                  <Badge variant={selectedUser.role === 'business_owner' ? 'default' : 'secondary'}>
+                    {selectedUser.role.replace('_', ' ').toUpperCase()}
+                  </Badge>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">First Name</Label>
@@ -492,33 +506,30 @@ export function UserSettings() {
                 </div>
               </div>
               <div>
-                <Label className="text-muted-foreground">Display Name</Label>
-                <p className="font-medium">{selectedUser.profiles.display_name}</p>
+                <Label className="text-muted-foreground">Email</Label>
+                <p className="font-medium">{selectedUser.profiles.email || 'Not set'}</p>
               </div>
-              {selectedUser.profiles.email && (
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-muted-foreground">Email</Label>
-                  <p className="font-medium">{selectedUser.profiles.email}</p>
+                  <Label className="text-muted-foreground">Phone</Label>
+                  <p className="font-medium">{selectedUser.profiles.phone || 'Not set'}</p>
                 </div>
-              )}
-              <div>
-                <Label className="text-muted-foreground">Role</Label>
-                <div className="mt-1">
-                  <Badge variant={selectedUser.role === 'business_owner' ? 'default' : 'secondary'}>
-                    {selectedUser.role.replace('_', ' ').toUpperCase()}
-                  </Badge>
+                <div>
+                  <Label className="text-muted-foreground">Joined</Label>
+                  <p className="font-medium">{new Date(selectedUser.joined_at).toLocaleDateString()}</p>
                 </div>
               </div>
               <div>
-                <Label className="text-muted-foreground">Joined Date</Label>
-                <p className="font-medium">{new Date(selectedUser.joined_at).toLocaleDateString()}</p>
+                <Label className="text-muted-foreground">Address</Label>
+                <p className="font-medium whitespace-pre-wrap">{selectedUser.profiles.address || 'Not set'}</p>
               </div>
               <div>
                 <Label className="text-muted-foreground">User ID</Label>
-                <p className="font-mono text-sm text-muted-foreground">{selectedUser.user_id}</p>
+                <p className="font-mono text-xs text-muted-foreground">{selectedUser.user_id}</p>
               </div>
             </div>
           )}
+
         </DialogContent>
       </Dialog>
 
