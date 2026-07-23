@@ -181,6 +181,28 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
 
   const handleScanResult = (parsed: ParsedScan) => {
     console.log('[ReceiveUnits] scan captured', parsed);
+
+    // Targeted rescan of a specific row+field
+    if (rescanTarget) {
+      const value =
+        rescanTarget.field === 'imei'
+          ? (parsed.imei || parsed.raw)
+          : (parsed.serial || parsed.raw);
+      if (rescanTarget.field === 'imei' && !isValidIMEI(value)) {
+        toast({
+          title: 'Invalid IMEI',
+          description: 'Rescan expected a 15-digit IMEI (Luhn valid). Try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      updateUnit(rescanTarget.idx, { [rescanTarget.field === 'imei' ? 'imei' : 'serial']: value } as any);
+      toast({ title: 'Rescanned', description: `${rescanTarget.field.toUpperCase()} row ${rescanTarget.idx + 1} updated` });
+      setRescanTarget(null);
+      setShowScanner(false);
+      return;
+    }
+
     const captured: string[] = [];
     let needsFollowUp = false;
     setUnits(prev => {
@@ -203,7 +225,6 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
 
       slot.completed = !!slot.imei && !!slot.serial;
       next[idx] = slot;
-      // Auto-advance: append a fresh row so the scanner focus moves onward
       if (slot.completed && idx === next.length - 1) next.push(emptyUnit());
       return next;
     });
@@ -214,6 +235,7 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
         : (captured.join(' · ') || `Raw: ${parsed.raw}`),
     });
   };
+
 
   const nextExpecting: 'imei' | 'serial' | 'any' = useMemo(() => {
     const inProgress = units.find(u => (u.imei || u.serial || u.barcode) && (!u.imei || !u.serial) && !u.completed);
