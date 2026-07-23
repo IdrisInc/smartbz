@@ -84,7 +84,17 @@ export function BarcodeScanner({
             if (now - cooldownRef.current < 1200) return; // debounce
             cooldownRef.current = now;
             const raw = result.getText();
+            if (seenRef.current.has(raw)) {
+              setMismatch('This code was already scanned in this session.');
+              return;
+            }
             const parsed = parseScanned(raw);
+            if (!matchesExpecting(parsed)) {
+              setMismatch(`Expected ${expectLabel[expecting]} — got a different code type. Ignored.`);
+              return;
+            }
+            seenRef.current.add(raw);
+            setMismatch(null);
             setLastHit(parsed);
             onDetected?.(raw);
             onDetectedStructured?.(parsed);
@@ -107,7 +117,8 @@ export function BarcodeScanner({
       controlsRef.current?.stop();
       controlsRef.current = null;
     };
-  }, [open, mode, repeating, onDetected, onDetectedStructured, onClose]);
+  }, [open, mode, repeating, onDetected, onDetectedStructured, onClose, expecting]);
+
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
