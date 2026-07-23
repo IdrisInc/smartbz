@@ -248,18 +248,22 @@ export function UserSettings() {
         .maybeSingle();
 
       if (existingProfile) {
-        // Update existing profile
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
             first_name: editingUser.firstName,
             last_name: editingUser.lastName,
-            display_name: `${editingUser.firstName} ${editingUser.lastName}`.trim()
-          })
+            display_name: `${editingUser.firstName} ${editingUser.lastName}`.trim(),
+            email: editingUser.email || null,
+            phone: editingUser.phone || null,
+            address: editingUser.address || null,
+            avatar_url: editingUser.avatarUrl || null,
+          } as any)
           .eq('user_id', selectedUser.user_id);
 
         if (profileError) throw profileError;
       }
+
       // Note: Cannot insert new profiles due to RLS - profile is created on user signup
 
       // Update role in membership
