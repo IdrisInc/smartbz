@@ -574,7 +574,30 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
                           {status.state === 'in_progress' && 'Continue scanning both serial and IMEI'}
                           {status.state === 'complete' && 'Both serial and IMEI captured'}
                         </span>
+                        <div className="ml-auto flex gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-[10px]"
+                            disabled={!selectedProductId}
+                            onClick={() => { setRescanTarget({ idx, field: 'serial' }); setShowScanner(true); }}
+                          >
+                            Rescan S/N
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-[10px]"
+                            disabled={!selectedProductId}
+                            onClick={() => { setRescanTarget({ idx, field: 'imei' }); setShowScanner(true); }}
+                          >
+                            Rescan IMEI
+                          </Button>
+                        </div>
                       </div>
+
                       {(err.imei || err.serial) && (
                         <div className="mt-1 text-xs text-destructive flex items-center gap-1">
                           <AlertCircle className="h-3 w-3" />
