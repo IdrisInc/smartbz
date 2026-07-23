@@ -50,7 +50,9 @@ export function ReceiveUnitsDialog({ open, onClose, onReceived, productId, purch
   const [showScanner, setShowScanner] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dupErrors, setDupErrors] = useState<DupError[]>([{}]);
+  const [rescanTarget, setRescanTarget] = useState<{ idx: number; field: 'serial' | 'imei' } | null>(null);
   const dupCheckSeq = useRef(0);
+
 
   useEffect(() => {
     if (!open || !currentOrganization?.id) return;
