@@ -12,7 +12,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useToast } from '@/hooks/use-toast';
 import { BarcodeScanner } from '@/components/Products/BarcodeScanner';
-import { ParsedScan } from '@/lib/scanParser';
+import { ParsedScan, isValidIMEI } from '@/lib/scanParser';
 import { useExportUtils } from '@/hooks/useExportUtils';
 import { cn } from '@/lib/utils';
 
