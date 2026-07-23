@@ -24,8 +24,10 @@ export function UserSettings() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState({ firstName: '', lastName: '', role: '' });
+  const [editingUser, setEditingUser] = useState({ firstName: '', lastName: '', role: '', email: '', phone: '', address: '', avatarUrl: '' });
   const [updating, setUpdating] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
 
