@@ -67,3 +67,22 @@ export function parseScanned(raw: string): ParsedScan {
 
   return { raw: value, kind: 'unknown' };
 }
+
+/**
+ * Validate an IMEI number: must be 15 digits and satisfy the Luhn checksum.
+ */
+export function isValidIMEI(value: string): boolean {
+  const v = (value ?? '').trim();
+  if (!/^\d{15}$/.test(v)) return false;
+  let sum = 0;
+  for (let i = 0; i < 15; i++) {
+    let d = parseInt(v[i], 10);
+    if (i % 2 === 1) {
+      d *= 2;
+      if (d > 9) d -= 9;
+    }
+    sum += d;
+  }
+  return sum % 10 === 0;
+}
+
