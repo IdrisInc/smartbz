@@ -400,6 +400,34 @@ export const sectorConfigurations: Record<string, SectorConfiguration> = {
       { name: 'revenue_model', type: 'select', options: ['Product Sales', 'Service Fees', 'Subscription', 'Commission'] }
     ]
   }
+,
+
+  restaurant: {
+    id: 'restaurant',
+    name: 'Restaurant & Cafe',
+    features: [
+      { id: 'table_management', name: 'Table Management', description: 'Track dining tables, sections and live table status', enabled: true },
+      { id: 'menu_management', name: 'Menu Management', description: 'Manage menu items, categories and pricing', enabled: true },
+      { id: 'order_types', name: 'Dine-in, Takeaway & Delivery', description: 'Handle different order channels', enabled: true },
+      { id: 'kitchen_workflow', name: 'Kitchen Order Flow', description: 'Send confirmed orders to the kitchen and track preparation', enabled: true },
+      { id: 'split_bills', name: 'Split & Merge Bills', description: 'Split bills per guest or merge tables', enabled: true }
+    ],
+    productCategories: [
+      { id: 'starters', name: 'Starters & Sides', fields: [{ name: 'preparation_time', type: 'number' }, { name: 'spice_level', type: 'select', options: ['Mild', 'Medium', 'Hot'] }] },
+      { id: 'main_courses', name: 'Main Courses', fields: [{ name: 'cuisine_type', type: 'text' }, { name: 'preparation_time', type: 'number' }, { name: 'portion_size', type: 'select', options: ['Single', 'Sharing', 'Family'] }] },
+      { id: 'beverages', name: 'Beverages', fields: [{ name: 'serving_size', type: 'text' }, { name: 'alcoholic', type: 'select', options: ['Yes', 'No'] }] },
+      { id: 'desserts', name: 'Desserts', fields: [{ name: 'contains_allergens', type: 'text' }] },
+      { id: 'combos', name: 'Combos & Offers', fields: [{ name: 'items_included', type: 'text' }, { name: 'available_hours', type: 'text' }] }
+    ],
+    dashboardMetrics: ['Daily Revenue', 'Covers Served', 'Average Ticket Size', 'Table Turnover', 'Top Selling Dishes'],
+    workflows: ['table_service', 'kitchen_order', 'takeaway_order', 'bill_settlement'],
+    reportTypes: ['sales_by_menu_item', 'table_performance', 'peak_hours', 'waiter_performance'],
+    requiredFields: ['menu_price', 'preparation_time'],
+    customFields: [
+      { name: 'menu_section', type: 'select', options: ['Breakfast', 'Lunch', 'Dinner', 'All Day'] },
+      { name: 'dietary_tag', type: 'select', options: ['Vegetarian', 'Vegan', 'Gluten-free', 'Halal', 'None'] }
+    ]
+  }
 };
 
 export function getSectorConfiguration(sectorId: string): SectorConfiguration {

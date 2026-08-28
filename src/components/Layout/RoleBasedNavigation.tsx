@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   LayoutDashboard, Users, Package, ShoppingCart, TrendingUp, FileText, Wallet,
   Settings, Building2, UserCheck, GitBranch, Crown, CreditCard, BarChart3,
-  Store, UserCog, DollarSign, FolderOpen, CheckSquare, Smartphone, HelpCircle
+  Store, UserCog, DollarSign, FolderOpen, CheckSquare, Smartphone, HelpCircle, Utensils
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -63,6 +63,9 @@ export function useRoleBasedNavigation() {
     { title: t('nav.finance'), titleKey: 'nav.finance', url: "/dashboard/finance", icon: Wallet, requiredPermission: 'canManageFinances', moduleKey: 'finance' },
     { title: t('nav.expenseCategories'), titleKey: 'nav.expenseCategories', url: "/dashboard/expense-categories", icon: FolderOpen, requiredPermission: 'canManageExpenses', moduleKey: 'expense-categories' },
     { title: t('nav.cashRegisters'), titleKey: 'nav.cashRegisters', url: "/dashboard/cash-registers", icon: DollarSign, requiredPermission: 'canProcessSales', moduleKey: 'cash-registers' },
+    ...(['restaurant', 'hospitality'].includes(String(currentOrganization?.business_sector))
+      ? [{ title: 'Restaurant', titleKey: 'nav.restaurant', url: "/dashboard/restaurant", icon: Utensils, requiredPermission: 'canProcessSales' as keyof UserPermissions, moduleKey: 'restaurant' }]
+      : []),
     { title: t('nav.contacts'), titleKey: 'nav.contacts', url: "/dashboard/contacts", icon: Users, requiredPermission: 'canManageContacts', moduleKey: 'contacts' },
     { title: t('nav.paymentHistory'), titleKey: 'nav.paymentHistory', url: "/dashboard/payment-history", icon: Smartphone, requiredPermission: 'canManageFinances', moduleKey: 'payment-history' },
     { title: t('nav.reports'), titleKey: 'nav.reports', url: "/dashboard/reports", icon: TrendingUp, requiredPermission: 'canViewReports', moduleKey: 'reports' },

@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, UserMinus, Loader2, Eye, Pencil, MoreHorizontal, Mail, Phone, MapPin } from 'lucide-react';
+import { Plus, UserMinus, Loader2, Eye, Pencil, MoreHorizontal, Mail, Phone, MapPin, ShieldCheck, UserX, UserCheck, Send } from 'lucide-react';
+import { DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { RolesPermissionsTab } from './RolesPermissionsTab';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -27,6 +28,7 @@ export function UserSettings() {
   const [editingUser, setEditingUser] = useState({ firstName: '', lastName: '', role: '', email: '', phone: '', address: '', avatarUrl: '' });
   const [updating, setUpdating] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [invitingId, setInvitingId] = useState<string | null>(null);
 
   const { currentOrganization } = useOrganization();
   const { toast } = useToast();
@@ -54,7 +56,8 @@ export function UserSettings() {
           id,
           role,
           joined_at,
-          user_id
+          user_id,
+          is_active
         `)
         .eq('organization_id', currentOrganization?.id);
 
@@ -91,6 +94,7 @@ export function UserSettings() {
 
           return {
             ...membership,
+            is_active: (membership as any).is_active !== false,
             profiles: {
               id: profile?.id || membership.user_id,
               first_name: profile?.first_name || '',
@@ -294,6 +298,71 @@ export function UserSettings() {
     }
   };
 
+  const ROLE_OPTIONS: { value: string; label: string }[] = [
+    { value: 'business_owner', label: 'Business Owner' },
+    { value: 'manager', label: 'Manager' },
+    { value: 'admin_staff', label: 'Admin Staff' },
+    { value: 'sales_staff', label: 'Sales Staff' },
+    { value: 'inventory_staff', label: 'Inventory Staff' },
+    { value: 'finance_staff', label: 'Finance Staff' },
+    { value: 'cashier', label: 'Cashier' },
+  ];
+
+  const handleChangeRole = async (membership: any, role: string) => {
+    if (membership.role === role) return;
+    try {
+      const { error } = await supabase
+        .from('organization_memberships')
+        .update({ role: role as any })
+        .eq('id', membership.id);
+      if (error) throw error;
+      toast({ title: 'Role updated', description: `${membership.profiles.display_name} is now ${role.replace(/_/g, ' ')}` });
+      fetchUsers();
+    } catch (e: any) {
+      toast({ title: 'Error', description: e?.message || 'Failed to change role', variant: 'destructive' });
+    }
+  };
+
+  const handleToggleActive = async (membership: any) => {
+    const nextActive = !membership.is_active;
+    try {
+      const { error } = await supabase
+        .from('organization_memberships')
+        .update({ is_active: nextActive } as any)
+        .eq('id', membership.id);
+      if (error) throw error;
+      toast({
+        title: nextActive ? 'User activated' : 'User deactivated',
+        description: nextActive
+          ? `${membership.profiles.display_name} can access the system again`
+          : `${membership.profiles.display_name} can no longer access this business`,
+      });
+      fetchUsers();
+    } catch (e: any) {
+      toast({ title: 'Error', description: e?.message || 'Failed to update status', variant: 'destructive' });
+    }
+  };
+
+  const handleSendInvite = async (membership: any) => {
+    const email = membership.profiles.email;
+    if (!email) {
+      toast({ title: 'No email on file', description: 'Add an email address to this user before sending an invite.', variant: 'destructive' });
+      return;
+    }
+    try {
+      setInvitingId(membership.id);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+      if (error) throw error;
+      toast({ title: 'Invite sent', description: `A set-password link was emailed to ${email}` });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e?.message || 'Failed to send invite', variant: 'destructive' });
+    } finally {
+      setInvitingId(null);
+    }
+  };
+
   const handleAvatarUpload = async (file: File) => {
     if (!selectedUser) return;
     try {
@@ -363,6 +432,9 @@ export function UserSettings() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                      <Badge variant={membership.is_active ? 'outline' : 'destructive'}>
+                        {membership.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
                       <Badge variant={membership.role === 'business_owner' ? 'default' : 'secondary'}>
                         {membership.role.replace('_', ' ').toUpperCase()}
                       </Badge>
@@ -381,6 +453,44 @@ export function UserSettings() {
                             <Pencil className="mr-2 h-4 w-4" />
                             Edit User
                           </DropdownMenuItem>
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              <ShieldCheck className="mr-2 h-4 w-4" />
+                              Change Role
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              <DropdownMenuLabel className="text-xs">Assign role</DropdownMenuLabel>
+                              {ROLE_OPTIONS.map((r) => (
+                                <DropdownMenuItem
+                                  key={r.value}
+                                  disabled={membership.role === r.value}
+                                  onClick={() => handleChangeRole(membership, r.value)}
+                                >
+                                  {r.label}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+                          <DropdownMenuItem
+                            onClick={() => handleToggleActive(membership)}
+                            disabled={membership.role === 'business_owner'}
+                          >
+                            {membership.is_active ? (
+                              <><UserX className="mr-2 h-4 w-4" />Deactivate User</>
+                            ) : (
+                              <><UserCheck className="mr-2 h-4 w-4" />Activate User</>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleSendInvite(membership)}
+                            disabled={invitingId === membership.id}
+                          >
+                            {invitingId === membership.id
+                              ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              : <Send className="mr-2 h-4 w-4" />}
+                            Send / Resend Invite
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             onClick={() => handleRemoveUser(membership.profiles.user_id)}
                             disabled={membership.role === 'business_owner'}
@@ -508,9 +618,14 @@ export function UserSettings() {
                 </Avatar>
                 <div>
                   <div className="font-semibold text-lg">{selectedUser.profiles.display_name}</div>
-                  <Badge variant={selectedUser.role === 'business_owner' ? 'default' : 'secondary'}>
-                    {selectedUser.role.replace('_', ' ').toUpperCase()}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={selectedUser.role === 'business_owner' ? 'default' : 'secondary'}>
+                      {selectedUser.role.replace('_', ' ').toUpperCase()}
+                    </Badge>
+                    <Badge variant={selectedUser.is_active ? 'outline' : 'destructive'}>
+                      {selectedUser.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -544,6 +659,21 @@ export function UserSettings() {
               <div>
                 <Label className="text-muted-foreground">User ID</Label>
                 <p className="font-mono text-xs text-muted-foreground">{selectedUser.user_id}</p>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-2 border-t">
+                <Button variant="outline" size="sm" onClick={() => handleSendInvite(selectedUser)} disabled={invitingId === selectedUser.id}>
+                  {invitingId === selectedUser.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                  Send / Resend Invite
+                </Button>
+                <Button
+                  variant={selectedUser.is_active ? 'destructive' : 'default'}
+                  size="sm"
+                  disabled={selectedUser.role === 'business_owner'}
+                  onClick={async () => { await handleToggleActive(selectedUser); setViewDialogOpen(false); }}
+                >
+                  {selectedUser.is_active ? <UserX className="mr-2 h-4 w-4" /> : <UserCheck className="mr-2 h-4 w-4" />}
+                  {selectedUser.is_active ? 'Deactivate' : 'Activate'}
+                </Button>
               </div>
             </div>
           )}
