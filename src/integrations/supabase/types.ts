@@ -1313,31 +1313,43 @@ export type Database = {
         Row: {
           branch_id: string | null
           id: string
+          is_active: boolean
           is_owner: boolean
           joined_at: string
           organization_id: string
           permissions: Json | null
           role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string | null
           user_id: string
         }
         Insert: {
           branch_id?: string | null
           id?: string
+          is_active?: boolean
           is_owner?: boolean
           joined_at?: string
           organization_id: string
           permissions?: Json | null
           role: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
           user_id: string
         }
         Update: {
           branch_id?: string | null
           id?: string
+          is_active?: boolean
           is_owner?: boolean
           joined_at?: string
           organization_id?: string
           permissions?: Json | null
           role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
           user_id?: string
         }
         Relationships: [
@@ -2490,6 +2502,85 @@ export type Database = {
         }
         Relationships: []
       }
+      restaurant_tables: {
+        Row: {
+          area: string | null
+          branch_id: string | null
+          capacity: number
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          current_sale_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          organization_id: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string | null
+        }
+        Insert: {
+          area?: string | null
+          branch_id?: string | null
+          capacity?: number
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          current_sale_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          organization_id: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+        }
+        Update: {
+          area?: string | null
+          branch_id?: string | null
+          capacity?: number
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          current_sale_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_tables_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_tables_current_sale_id_fkey"
+            columns: ["current_sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_tables_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sale_items: {
         Row: {
           created_at: string
@@ -3134,6 +3225,7 @@ export type Database = {
         | "consulting"
         | "non_profit"
         | "other"
+        | "restaurant"
       product_unit_status: "in_stock" | "sold" | "returned" | "damaged" | "lost"
       stock_status:
         | "available"
@@ -3294,6 +3386,7 @@ export const Constants = {
         "consulting",
         "non_profit",
         "other",
+        "restaurant",
       ],
       product_unit_status: ["in_stock", "sold", "returned", "damaged", "lost"],
       stock_status: [
