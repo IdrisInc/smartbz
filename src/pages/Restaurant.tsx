@@ -34,7 +34,8 @@ const statusVariant = (status: string) =>
 
 export default function Restaurant() {
   const { currentOrganization } = useOrganization();
-  const { displayName } = useCurrentUser() as any;
+  const { currentUser } = useCurrentUser();
+  const displayName = currentUser?.displayName;
   const { toast } = useToast();
 
   const [tables, setTables] = useState<RestaurantTable[]>([]);
