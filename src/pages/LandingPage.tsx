@@ -6,6 +6,7 @@ import {
   CheckCircle2, Building2, MapPin, Users, ShoppingCart, Package, 
   DollarSign, BarChart3, Heart, GraduationCap, Home, Truck,
   Hammer, Wheat, Briefcase, Sparkles, ArrowRight, Play, LogIn
+  Utensils,
 } from 'lucide-react';
 import { OnboardingFooter } from '@/components/Organization/OnboardingFooter';
 import { supabase } from '@/integrations/supabase/client';
