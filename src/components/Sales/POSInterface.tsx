@@ -21,6 +21,15 @@ import { validateStockForSale, logAuditEvent } from '@/lib/auditService';
 
 interface POSInterfaceProps {
   onClose: () => void;
+  initialTableId?: string;
+}
+
+interface RestaurantTable {
+  id: string;
+  name: string;
+  area: string | null;
+  capacity: number;
+  status: string;
 }
 
 interface Product {
@@ -38,7 +47,7 @@ interface CartItem {
   quantity: number;
 }
 
-export function POSInterface({ onClose }: POSInterfaceProps) {
+export function POSInterface({ onClose, initialTableId }: POSInterfaceProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showScanner, setShowScanner] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -58,6 +67,8 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
   const [mobileMoneyPhone, setMobileMoneyPhone] = useState('');
   const [mobileMoneyProvider, setMobileMoneyProvider] = useState('MPESA');
   const [isMobileMoneyProcessing, setIsMobileMoneyProcessing] = useState(false);
+  const [tables, setTables] = useState<RestaurantTable[]>([]);
+  const [selectedTableId, setSelectedTableId] = useState<string>(initialTableId || '');
   const receiptRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { currentOrganization } = useOrganization();
@@ -69,6 +80,7 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
       fetchProducts();
       fetchCustomers();
       fetchBusinessSettings();
+      fetchTables();
     }
   }, [currentOrganization]);
 
@@ -85,6 +97,42 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
     } catch (error) {
       console.error('Error fetching business settings:', error);
     }
+  };
+
+  const isRestaurant = ['restaurant', 'hospitality'].includes(String(currentOrganization?.business_sector));
+
+  const fetchTables = async () => {
+    if (!isRestaurant || !currentOrganization?.id) return;
+    const { data, error } = await (supabase as any)
+      .from('restaurant_tables')
+      .select('id, name, area, capacity, status')
+      .eq('organization_id', currentOrganization.id)
+      .eq('is_active', true)
+      .order('name');
+    if (!error) setTables((data as RestaurantTable[]) || []);
+  };
+
+  const selectTable = async (tableId: string) => {
+    setSelectedTableId(tableId);
+    if (!tableId) return;
+    await (supabase as any)
+      .from('restaurant_tables')
+      .update({ status: 'occupied', updated_by_name: currentUser?.displayName || null })
+      .eq('id', tableId);
+    setTables(prev => prev.map(t => (t.id === tableId ? { ...t, status: 'occupied' } : t)));
+  };
+
+  const closeTableOrder = async (saleId: string) => {
+    if (!selectedTableId) return;
+    await (supabase as any)
+      .from('restaurant_tables')
+      .update({
+        status: 'cleaning',
+        current_sale_id: saleId,
+        updated_by_name: currentUser?.displayName || null,
+      })
+      .eq('id', selectedTableId);
+    setTables(prev => prev.map(t => (t.id === selectedTableId ? { ...t, status: 'cleaning' } : t)));
   };
 
   const fetchCustomers = async () => {
@@ -338,6 +386,7 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
       receipt.paymentMethod = paymentMethod;
       setPaymentCode(JSON.stringify(receipt, null, 2));
       setCompletedSaleId(saleData.id);
+      await closeTableOrder(saleData.id);
       setShowPaymentCode(true);
 
       // Audit log
@@ -466,6 +515,7 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
         receipt.paymentMethod = `Mobile Money (${mobileMoneyProvider})`;
         setPaymentCode(JSON.stringify(receipt, null, 2));
         setCompletedSaleId(saleData.id);
+      await closeTableOrder(saleData.id);
         setShowMobileMoneyDialog(false);
         setShowPaymentCode(true);
       } else {
@@ -787,6 +837,24 @@ export function POSInterface({ onClose }: POSInterfaceProps) {
                           </div>
 
                           <div className="space-y-2 sm:space-y-3">
+                            {isRestaurant && (
+                              <div>
+                                <Label htmlFor="table" className="text-xs sm:text-sm">Table</Label>
+                                <Select value={selectedTableId || 'takeaway'} onValueChange={(value) => selectTable(value === 'takeaway' ? '' : value)}>
+                                  <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm">
+                                    <SelectValue placeholder="Takeaway / counter" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="takeaway">Takeaway / counter</SelectItem>
+                                    {tables.map((table) => (
+                                      <SelectItem key={table.id} value={table.id}>
+                                        {table.name}{table.area ? ` · ${table.area}` : ''} — {table.status}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
                             <div>
                               <Label htmlFor="customer" className="text-xs sm:text-sm">Customer</Label>
                               <div className="flex gap-2">
