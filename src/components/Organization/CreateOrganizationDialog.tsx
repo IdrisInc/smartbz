@@ -37,6 +37,7 @@ const businessSectors = [
   { value: 'agriculture', label: 'Agriculture' },
   { value: 'entertainment', label: 'Entertainment' },
   { value: 'consulting', label: 'Consulting' },
+  { value: 'restaurant', label: 'Restaurant & Cafe' },
   { value: 'non_profit', label: 'Non-Profit' },
   { value: 'other', label: 'Other' },
 ];
