@@ -70,13 +70,15 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       setLoading(true);
       
       // Fetch user's memberships
-      const { data: membershipData, error: membershipError } = await supabase
+      const { data: allMemberships, error: membershipError } = await supabase
         .from('organization_memberships')
         .select('*')
         .eq('user_id', user?.id);
 
       if (membershipError) throw membershipError;
-      setMemberships(membershipData || []);
+      // Deactivated memberships must not grant access to the business
+      const membershipData = (allMemberships || []).filter((m: any) => m.is_active !== false);
+      setMemberships(membershipData);
 
       // Fetch organizations user is member of
       const orgIds = membershipData?.map(m => m.organization_id) || [];
