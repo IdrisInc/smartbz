@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Search, Receipt, CreditCard, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,8 @@ export default function Sales() {
   const [activeTab, setActiveTab] = useState('sales');
   const [showForm, setShowForm] = useState(false);
   const [showPOS, setShowPOS] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const posTableId = searchParams.get('table') || undefined;
   const [showReturnDialog, setShowReturnDialog] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showReturnDetailsModal, setShowReturnDetailsModal] = useState(false);
@@ -33,6 +36,10 @@ export default function Sales() {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectingSaleId, setRejectingSaleId] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
+
+  useEffect(() => {
+    if (searchParams.get('pos') === '1') setShowPOS(true);
+  }, [searchParams]);
 
   const {
     sales, returns, stats, loading, loadingReturns,
@@ -215,7 +222,19 @@ export default function Sales() {
         </Tabs>
 
         {showForm && <SaleForm onClose={() => setShowForm(false)} />}
-        {showPOS && <POSInterface onClose={() => setShowPOS(false)} />}
+        {showPOS && (
+          <POSInterface
+            initialTableId={posTableId}
+            onClose={() => {
+              setShowPOS(false);
+              if (searchParams.get('pos')) {
+                searchParams.delete('pos');
+                searchParams.delete('table');
+                setSearchParams(searchParams, { replace: true });
+              }
+            }}
+          />
+        )}
 
         <SaleReturnDialog
           open={showReturnDialog}

@@ -21,6 +21,7 @@ const businessSectors = [
   { value: 'finance', label: 'Finance' },
   { value: 'education', label: 'Education' },
   { value: 'hospitality', label: 'Hospitality' },
+  { value: 'restaurant', label: 'Restaurant & Cafe' },
   { value: 'real_estate', label: 'Real Estate' },
   { value: 'construction', label: 'Construction' },
   { value: 'transportation', label: 'Transportation' },
