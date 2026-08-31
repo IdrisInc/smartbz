@@ -6,11 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Plus, Utensils, Pencil, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Utensils, Pencil, Trash2, ShoppingCart } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface RestaurantTable {
   id: string;
@@ -37,6 +38,7 @@ export default function Restaurant() {
   const { currentUser } = useCurrentUser();
   const displayName = currentUser?.displayName;
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [tables, setTables] = useState<RestaurantTable[]>([]);
   const [loading, setLoading] = useState(true);
@@ -200,6 +202,13 @@ export default function Restaurant() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <Button
+                      size="sm"
+                      className="h-8"
+                      onClick={() => navigate(`/dashboard/sales?pos=1&table=${table.id}`)}
+                    >
+                      <ShoppingCart className="mr-1 h-4 w-4" /> Order
+                    </Button>
                     <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => openEdit(table)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
