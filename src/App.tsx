@@ -31,6 +31,7 @@ import NotFound from "./pages/NotFound";
 import Trunker from "./pages/Trunker";
 import CashRegisters from "./pages/CashRegisters";
 import Restaurant from "./pages/Restaurant";
+import RestaurantLayout from "./pages/RestaurantLayout";
 import ExpenseCategories from "./pages/ExpenseCategories";
 import PaymentHistory from "./pages/PaymentHistory";
 import PendingApprovals from "./pages/PendingApprovals";
@@ -101,6 +102,7 @@ function App() {
                         <Route path="expense-categories" element={<ExpenseCategories />} />
                         <Route path="cash-registers" element={<CashRegisters />} />
                         <Route path="restaurant" element={<Restaurant />} />
+                        <Route path="restaurant-layout" element={<RestaurantLayout />} />
                         <Route path="reports" element={<Reports />} />
                         <Route path="settings" element={<Settings />} />
                         <Route path="branches" element={<Branches />} />
