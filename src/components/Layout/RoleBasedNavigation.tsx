@@ -64,7 +64,10 @@ export function useRoleBasedNavigation() {
     { title: t('nav.expenseCategories'), titleKey: 'nav.expenseCategories', url: "/dashboard/expense-categories", icon: FolderOpen, requiredPermission: 'canManageExpenses', moduleKey: 'expense-categories' },
     { title: t('nav.cashRegisters'), titleKey: 'nav.cashRegisters', url: "/dashboard/cash-registers", icon: DollarSign, requiredPermission: 'canProcessSales', moduleKey: 'cash-registers' },
     ...(['restaurant', 'hospitality'].includes(String(currentOrganization?.business_sector))
-      ? [{ title: 'Restaurant', titleKey: 'nav.restaurant', url: "/dashboard/restaurant", icon: Utensils, requiredPermission: 'canProcessSales' as keyof UserPermissions, moduleKey: 'restaurant' }]
+      ? [
+          { title: 'Restaurant', titleKey: 'nav.restaurant', url: "/dashboard/restaurant", icon: Utensils, requiredPermission: 'canProcessSales' as keyof UserPermissions, moduleKey: 'restaurant' },
+          { title: 'Restaurant Layout', titleKey: 'nav.restaurantLayout', url: "/dashboard/restaurant-layout", icon: Utensils, requiredPermission: 'canProcessSales' as keyof UserPermissions, moduleKey: 'restaurant' },
+        ]
       : []),
     { title: t('nav.contacts'), titleKey: 'nav.contacts', url: "/dashboard/contacts", icon: Users, requiredPermission: 'canManageContacts', moduleKey: 'contacts' },
     { title: t('nav.paymentHistory'), titleKey: 'nav.paymentHistory', url: "/dashboard/payment-history", icon: Smartphone, requiredPermission: 'canManageFinances', moduleKey: 'payment-history' },
