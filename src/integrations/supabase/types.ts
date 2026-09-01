@@ -1841,7 +1841,9 @@ export type Database = {
           product_id: string
           purchase_order_id: string | null
           received_at: string
+          returned_at: string | null
           sale_id: string | null
+          sale_return_id: string | null
           serial_number: string | null
           sold_at: string | null
           status: Database["public"]["Enums"]["product_unit_status"]
@@ -1860,7 +1862,9 @@ export type Database = {
           product_id: string
           purchase_order_id?: string | null
           received_at?: string
+          returned_at?: string | null
           sale_id?: string | null
+          sale_return_id?: string | null
           serial_number?: string | null
           sold_at?: string | null
           status?: Database["public"]["Enums"]["product_unit_status"]
@@ -1879,7 +1883,9 @@ export type Database = {
           product_id?: string
           purchase_order_id?: string | null
           received_at?: string
+          returned_at?: string | null
           sale_id?: string | null
+          sale_return_id?: string | null
           serial_number?: string | null
           sold_at?: string | null
           status?: Database["public"]["Enums"]["product_unit_status"]
@@ -2502,6 +2508,51 @@ export type Database = {
         }
         Relationships: []
       }
+      restaurant_floor_plans: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          organization_id: string
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          organization_id: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+        }
+        Relationships: []
+      }
       restaurant_tables: {
         Row: {
           area: string | null
@@ -2511,11 +2562,14 @@ export type Database = {
           created_by: string | null
           created_by_name: string | null
           current_sale_id: string | null
+          floor_plan_id: string | null
           id: string
           is_active: boolean
           name: string
           notes: string | null
           organization_id: string
+          pos_x: number | null
+          pos_y: number | null
           status: string
           updated_at: string
           updated_by: string | null
@@ -2529,11 +2583,14 @@ export type Database = {
           created_by?: string | null
           created_by_name?: string | null
           current_sale_id?: string | null
+          floor_plan_id?: string | null
           id?: string
           is_active?: boolean
           name: string
           notes?: string | null
           organization_id: string
+          pos_x?: number | null
+          pos_y?: number | null
           status?: string
           updated_at?: string
           updated_by?: string | null
@@ -2547,11 +2604,14 @@ export type Database = {
           created_by?: string | null
           created_by_name?: string | null
           current_sale_id?: string | null
+          floor_plan_id?: string | null
           id?: string
           is_active?: boolean
           name?: string
           notes?: string | null
           organization_id?: string
+          pos_x?: number | null
+          pos_y?: number | null
           status?: string
           updated_at?: string
           updated_by?: string | null
@@ -2570,6 +2630,13 @@ export type Database = {
             columns: ["current_sale_id"]
             isOneToOne: false
             referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_tables_floor_plan_id_fkey"
+            columns: ["floor_plan_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_floor_plans"
             referencedColumns: ["id"]
           },
           {
