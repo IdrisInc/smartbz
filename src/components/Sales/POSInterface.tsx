@@ -891,7 +891,17 @@ export function POSInterface({ onClose, initialTableId }: POSInterfaceProps) {
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
-                                </Select>
+                                 </Select>
+                                {floorPlan?.image_url && tables.some(t => t.pos_x != null) && (
+                                  <div className="mt-2">
+                                    <FloorPlanView
+                                      imageUrl={floorPlan.image_url}
+                                      tables={tables as any}
+                                      selectedTableId={selectedTableId}
+                                      onTableClick={(t) => selectTable(t.id)}
+                                    />
+                                  </div>
+                                )}
                               </div>
                             )}
                             <div>
