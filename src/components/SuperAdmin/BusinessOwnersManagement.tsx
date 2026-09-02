@@ -285,6 +285,12 @@ export function BusinessOwnersManagement() {
           <CardTitle>Business Owners Management</CardTitle>
           <CardDescription>
             Manage all business owners and their organizations
+            {(() => {
+              const pending = businessOwners.filter(
+                o => o.organization_status === 'pending' || o.organization_status === 'pending_activation',
+              ).length;
+              return pending > 0 ? ` · ${pending} business request(s) awaiting approval` : ' · no pending requests';
+            })()}
           </CardDescription>
         </CardHeader>
         <CardContent>
