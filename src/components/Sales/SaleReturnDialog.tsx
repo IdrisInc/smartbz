@@ -110,10 +110,25 @@ export function SaleReturnDialog({ open, onOpenChange, onSuccess }: SaleReturnDi
 
       if (error) throw error;
       setSaleItems(data || []);
+
+      const { data: units } = await supabase
+        .from('product_serial_units')
+        .select('id, imei, serial_number, product_id, products(name)')
+        .eq('sale_id', saleId)
+        .eq('status', 'sold');
+      setSoldUnits(units || []);
+      setSelectedUnitIds([]);
     } catch (error) {
       console.error('Error fetching sale items:', error);
     }
   };
+
+  const toggleUnit = (unitId: string) => {
+    setSelectedUnitIds(prev =>
+      prev.includes(unitId) ? prev.filter(id => id !== unitId) : [...prev, unitId],
+    );
+  };
+
 
   const addItemToReturn = (saleItem: any) => {
     // Check if already added
