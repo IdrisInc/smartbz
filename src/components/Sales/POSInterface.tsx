@@ -68,6 +68,8 @@ export function POSInterface({ onClose, initialTableId }: POSInterfaceProps) {
   const [mobileMoneyProvider, setMobileMoneyProvider] = useState('MPESA');
   const [isMobileMoneyProcessing, setIsMobileMoneyProcessing] = useState(false);
   const [tables, setTables] = useState<RestaurantTable[]>([]);
+  const [floorPlan, setFloorPlan] = useState<{ id: string; name: string; image_url: string | null } | null>(null);
+  const [scannedUnits, setScannedUnits] = useState<Record<string, string[]>>({});
   const [selectedTableId, setSelectedTableId] = useState<string>(initialTableId || '');
   const receiptRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
