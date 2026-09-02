@@ -46,6 +46,8 @@ export function SaleReturnDialog({ open, onOpenChange, onSuccess }: SaleReturnDi
   const [selectedSaleId, setSelectedSaleId] = useState('');
   const [saleItems, setSaleItems] = useState<any[]>([]);
   const [returnItems, setReturnItems] = useState<ReturnItem[]>([]);
+  const [soldUnits, setSoldUnits] = useState<any[]>([]);
+  const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     return_number: `SR-${Date.now().toString().slice(-6)}`,
     return_date: new Date().toISOString().split('T')[0],
@@ -110,10 +112,25 @@ export function SaleReturnDialog({ open, onOpenChange, onSuccess }: SaleReturnDi
 
       if (error) throw error;
       setSaleItems(data || []);
+
+      const { data: units } = await supabase
+        .from('product_serial_units')
+        .select('id, imei, serial_number, product_id, products(name)')
+        .eq('sale_id', saleId)
+        .eq('status', 'sold');
+      setSoldUnits(units || []);
+      setSelectedUnitIds([]);
     } catch (error) {
       console.error('Error fetching sale items:', error);
     }
   };
+
+  const toggleUnit = (unitId: string) => {
+    setSelectedUnitIds(prev =>
+      prev.includes(unitId) ? prev.filter(id => id !== unitId) : [...prev, unitId],
+    );
+  };
+
 
   const addItemToReturn = (saleItem: any) => {
     // Check if already added
@@ -242,9 +259,26 @@ export function SaleReturnDialog({ open, onOpenChange, onSuccess }: SaleReturnDi
 
       if (itemsError) throw itemsError;
 
+      // Serialized units go back into stock with the same IMEI / serial
+      if (selectedUnitIds.length > 0) {
+        const damaged = returnItems.some(i => i.condition !== 'good');
+        const { error: unitsError } = await supabase
+          .from('product_serial_units')
+          .update({
+            status: damaged ? 'damaged' : 'in_stock',
+            sale_id: null,
+            sale_return_id: returnData.id,
+            returned_at: new Date().toISOString(),
+            sold_at: null,
+            updated_by_name: currentUser?.displayName,
+          })
+          .in('id', selectedUnitIds);
+        if (unitsError) throw unitsError;
+      }
+
       toast({
         title: "Success",
-        description: "Sale return created successfully. Awaiting approval.",
+        description: `Sale return created successfully. Awaiting approval.${selectedUnitIds.length ? ` ${selectedUnitIds.length} unit(s) returned to stock.` : ''}`,
       });
       
       onSuccess();
@@ -343,6 +377,38 @@ export function SaleReturnDialog({ open, onOpenChange, onSuccess }: SaleReturnDi
               </div>
             </div>
           )}
+
+          {soldUnits.length > 0 && (
+            <div className="space-y-2">
+              <Label>Serialized Units Sold on This Sale</Label>
+              <p className="text-xs text-muted-foreground">
+                Select the units coming back. They return to stock with the same IMEI / serial number.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {soldUnits.map((unit) => (
+                  <label
+                    key={unit.id}
+                    className="flex items-center gap-3 rounded-md border p-2 text-sm cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={selectedUnitIds.includes(unit.id)}
+                      onCheckedChange={() => toggleUnit(unit.id)}
+                    />
+                    <span className="min-w-0">
+                      <span className="block font-medium truncate">{unit.products?.name || 'Unit'}</span>
+                      <span className="block text-xs text-muted-foreground truncate">
+                        {unit.imei ? `IMEI ${unit.imei}` : ''}
+                        {unit.imei && unit.serial_number ? ' · ' : ''}
+                        {unit.serial_number ? `S/N ${unit.serial_number}` : ''}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+
 
           {returnItems.length > 0 && (
             <div className="space-y-2">

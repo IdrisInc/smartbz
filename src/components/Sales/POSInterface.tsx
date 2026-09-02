@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { ContactForm } from '@/components/Contacts/ContactForm';
 import { useExportUtils } from '@/hooks/useExportUtils';
+import { FloorPlanView } from '@/components/Restaurant/FloorPlanView';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { validateStockForSale, logAuditEvent } from '@/lib/auditService';
 
@@ -30,6 +31,9 @@ interface RestaurantTable {
   area: string | null;
   capacity: number;
   status: string;
+  pos_x?: number | null;
+  pos_y?: number | null;
+  floor_plan_id?: string | null;
 }
 
 interface Product {
@@ -68,6 +72,8 @@ export function POSInterface({ onClose, initialTableId }: POSInterfaceProps) {
   const [mobileMoneyProvider, setMobileMoneyProvider] = useState('MPESA');
   const [isMobileMoneyProcessing, setIsMobileMoneyProcessing] = useState(false);
   const [tables, setTables] = useState<RestaurantTable[]>([]);
+  const [floorPlan, setFloorPlan] = useState<{ id: string; name: string; image_url: string | null } | null>(null);
+  const [scannedUnits, setScannedUnits] = useState<Record<string, string[]>>({});
   const [selectedTableId, setSelectedTableId] = useState<string>(initialTableId || '');
   const receiptRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -103,14 +109,40 @@ export function POSInterface({ onClose, initialTableId }: POSInterfaceProps) {
 
   const fetchTables = async () => {
     if (!isRestaurant || !currentOrganization?.id) return;
-    const { data, error } = await (supabase as any)
-      .from('restaurant_tables')
-      .select('id, name, area, capacity, status')
-      .eq('organization_id', currentOrganization.id)
-      .eq('is_active', true)
-      .order('name');
+    const [{ data, error }, { data: planData }] = await Promise.all([
+      (supabase as any)
+        .from('restaurant_tables')
+        .select('id, name, area, capacity, status, pos_x, pos_y, floor_plan_id')
+        .eq('organization_id', currentOrganization.id)
+        .eq('is_active', true)
+        .order('name'),
+      (supabase as any)
+        .from('restaurant_floor_plans')
+        .select('id, name, image_url')
+        .eq('organization_id', currentOrganization.id)
+        .eq('is_active', true)
+        .order('created_at')
+        .limit(1),
+    ]);
     if (!error) setTables((data as RestaurantTable[]) || []);
+    setFloorPlan(planData?.[0] || null);
   };
+
+  const markUnitsSold = async (saleId: string) => {
+    const unitIds = Object.values(scannedUnits).flat();
+    if (unitIds.length === 0) return;
+    await supabase
+      .from('product_serial_units')
+      .update({
+        status: 'sold',
+        sale_id: saleId,
+        sold_at: new Date().toISOString(),
+        sale_return_id: null,
+        updated_by_name: currentUser?.displayName || null,
+      })
+      .in('id', unitIds);
+  };
+
 
   const selectTable = async (tableId: string) => {
     setSelectedTableId(tableId);
@@ -214,8 +246,13 @@ export function POSInterface({ onClose, initialTableId }: POSInterfaceProps) {
             toast({ title: 'Unit unavailable', description: `Status: ${unit.status}`, variant: 'destructive' });
             return;
           }
+          if (Object.values(scannedUnits).flat().includes(unit.id)) {
+            toast({ title: 'Already in cart', description: 'This unit was already scanned', variant: 'destructive' });
+            return;
+          }
           const p: any = unit.product;
           addToCart({ id: p.id, name: `${p.name} · ${parsed.imei || parsed.serial}`, price: p.price, category: p.category, stock_quantity: p.stock_quantity });
+          setScannedUnits(prev => ({ ...prev, [p.id]: [...(prev[p.id] || []), unit.id] }));
           toast({ title: 'Unit added', description: `${p.name} (${parsed.imei ? 'IMEI ' + parsed.imei : 'SN ' + parsed.serial})` });
           return;
         }
@@ -386,6 +423,7 @@ export function POSInterface({ onClose, initialTableId }: POSInterfaceProps) {
       receipt.paymentMethod = paymentMethod;
       setPaymentCode(JSON.stringify(receipt, null, 2));
       setCompletedSaleId(saleData.id);
+      await markUnitsSold(saleData.id);
       await closeTableOrder(saleData.id);
       setShowPaymentCode(true);
 
@@ -515,6 +553,7 @@ export function POSInterface({ onClose, initialTableId }: POSInterfaceProps) {
         receipt.paymentMethod = `Mobile Money (${mobileMoneyProvider})`;
         setPaymentCode(JSON.stringify(receipt, null, 2));
         setCompletedSaleId(saleData.id);
+      await markUnitsSold(saleData.id);
       await closeTableOrder(saleData.id);
         setShowMobileMoneyDialog(false);
         setShowPaymentCode(true);
@@ -671,6 +710,7 @@ export function POSInterface({ onClose, initialTableId }: POSInterfaceProps) {
 
   const handleNewSale = () => {
     setCart([]);
+    setScannedUnits({});
     setSelectedCustomerId('');
     setPaymentCode('');
     setShowPaymentCode(false);
@@ -852,7 +892,17 @@ export function POSInterface({ onClose, initialTableId }: POSInterfaceProps) {
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
-                                </Select>
+                                 </Select>
+                                {floorPlan?.image_url && tables.some(t => t.pos_x != null) && (
+                                  <div className="mt-2">
+                                    <FloorPlanView
+                                      imageUrl={floorPlan.image_url}
+                                      tables={tables as any}
+                                      selectedTableId={selectedTableId}
+                                      onTableClick={(t) => selectTable(t.id)}
+                                    />
+                                  </div>
+                                )}
                               </div>
                             )}
                             <div>
