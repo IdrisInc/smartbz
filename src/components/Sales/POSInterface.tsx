@@ -245,8 +245,13 @@ export function POSInterface({ onClose, initialTableId }: POSInterfaceProps) {
             toast({ title: 'Unit unavailable', description: `Status: ${unit.status}`, variant: 'destructive' });
             return;
           }
+          if (Object.values(scannedUnits).flat().includes(unit.id)) {
+            toast({ title: 'Already in cart', description: 'This unit was already scanned', variant: 'destructive' });
+            return;
+          }
           const p: any = unit.product;
           addToCart({ id: p.id, name: `${p.name} · ${parsed.imei || parsed.serial}`, price: p.price, category: p.category, stock_quantity: p.stock_quantity });
+          setScannedUnits(prev => ({ ...prev, [p.id]: [...(prev[p.id] || []), unit.id] }));
           toast({ title: 'Unit added', description: `${p.name} (${parsed.imei ? 'IMEI ' + parsed.imei : 'SN ' + parsed.serial})` });
           return;
         }
