@@ -422,6 +422,7 @@ export function POSInterface({ onClose, initialTableId }: POSInterfaceProps) {
       receipt.paymentMethod = paymentMethod;
       setPaymentCode(JSON.stringify(receipt, null, 2));
       setCompletedSaleId(saleData.id);
+      await markUnitsSold(saleData.id);
       await closeTableOrder(saleData.id);
       setShowPaymentCode(true);
 
@@ -551,6 +552,7 @@ export function POSInterface({ onClose, initialTableId }: POSInterfaceProps) {
         receipt.paymentMethod = `Mobile Money (${mobileMoneyProvider})`;
         setPaymentCode(JSON.stringify(receipt, null, 2));
         setCompletedSaleId(saleData.id);
+      await markUnitsSold(saleData.id);
       await closeTableOrder(saleData.id);
         setShowMobileMoneyDialog(false);
         setShowPaymentCode(true);
