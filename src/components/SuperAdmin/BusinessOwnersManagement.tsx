@@ -107,6 +107,33 @@ export function BusinessOwnersManagement() {
         };
       }) || [];
 
+      // Include businesses awaiting activation even if no owner membership exists yet
+      const { data: pendingOrgs } = await supabase
+        .from('organizations')
+        .select('id, name, status, subscription_plan, created_at')
+        .in('status', ['pending', 'pending_activation']);
+
+      (pendingOrgs || []).forEach((org: any) => {
+        if (owners.some(o => o.organization_id === org.id)) return;
+        owners.push({
+          id: `org-${org.id}`,
+          email: 'No owner account yet',
+          first_name: undefined,
+          last_name: undefined,
+          organization_name: org.name,
+          organization_id: org.id,
+          organization_status: org.status,
+          subscription_plan: org.subscription_plan,
+          joined_at: org.created_at,
+        } as any);
+      });
+
+      // Pending approvals first
+      owners.sort((a, b) => {
+        const pending = (s?: string) => (s === 'pending' || s === 'pending_activation' ? 0 : 1);
+        return pending(a.organization_status) - pending(b.organization_status);
+      });
+
       setBusinessOwners(owners);
     } catch (error) {
       console.error('Error loading business owners:', error);
