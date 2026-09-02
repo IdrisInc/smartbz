@@ -709,6 +709,7 @@ export function POSInterface({ onClose, initialTableId }: POSInterfaceProps) {
 
   const handleNewSale = () => {
     setCart([]);
+    setScannedUnits({});
     setSelectedCustomerId('');
     setPaymentCode('');
     setShowPaymentCode(false);
