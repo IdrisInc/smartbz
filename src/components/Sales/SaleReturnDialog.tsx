@@ -46,6 +46,8 @@ export function SaleReturnDialog({ open, onOpenChange, onSuccess }: SaleReturnDi
   const [selectedSaleId, setSelectedSaleId] = useState('');
   const [saleItems, setSaleItems] = useState<any[]>([]);
   const [returnItems, setReturnItems] = useState<ReturnItem[]>([]);
+  const [soldUnits, setSoldUnits] = useState<any[]>([]);
+  const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     return_number: `SR-${Date.now().toString().slice(-6)}`,
     return_date: new Date().toISOString().split('T')[0],
