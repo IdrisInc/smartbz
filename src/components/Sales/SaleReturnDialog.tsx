@@ -259,9 +259,26 @@ export function SaleReturnDialog({ open, onOpenChange, onSuccess }: SaleReturnDi
 
       if (itemsError) throw itemsError;
 
+      // Serialized units go back into stock with the same IMEI / serial
+      if (selectedUnitIds.length > 0) {
+        const damaged = returnItems.some(i => i.condition !== 'good');
+        const { error: unitsError } = await supabase
+          .from('product_serial_units')
+          .update({
+            status: damaged ? 'damaged' : 'in_stock',
+            sale_id: null,
+            sale_return_id: returnData.id,
+            returned_at: new Date().toISOString(),
+            sold_at: null,
+            updated_by_name: currentUser?.displayName,
+          })
+          .in('id', selectedUnitIds);
+        if (unitsError) throw unitsError;
+      }
+
       toast({
         title: "Success",
-        description: "Sale return created successfully. Awaiting approval.",
+        description: `Sale return created successfully. Awaiting approval.${selectedUnitIds.length ? ` ${selectedUnitIds.length} unit(s) returned to stock.` : ''}`,
       });
       
       onSuccess();
