@@ -378,6 +378,38 @@ export function SaleReturnDialog({ open, onOpenChange, onSuccess }: SaleReturnDi
             </div>
           )}
 
+          {soldUnits.length > 0 && (
+            <div className="space-y-2">
+              <Label>Serialized Units Sold on This Sale</Label>
+              <p className="text-xs text-muted-foreground">
+                Select the units coming back. They return to stock with the same IMEI / serial number.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {soldUnits.map((unit) => (
+                  <label
+                    key={unit.id}
+                    className="flex items-center gap-3 rounded-md border p-2 text-sm cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={selectedUnitIds.includes(unit.id)}
+                      onCheckedChange={() => toggleUnit(unit.id)}
+                    />
+                    <span className="min-w-0">
+                      <span className="block font-medium truncate">{unit.products?.name || 'Unit'}</span>
+                      <span className="block text-xs text-muted-foreground truncate">
+                        {unit.imei ? `IMEI ${unit.imei}` : ''}
+                        {unit.imei && unit.serial_number ? ' · ' : ''}
+                        {unit.serial_number ? `S/N ${unit.serial_number}` : ''}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+
+
           {returnItems.length > 0 && (
             <div className="space-y-2">
               <Label>Sale Return Items</Label>
