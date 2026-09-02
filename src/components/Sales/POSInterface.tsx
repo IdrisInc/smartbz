@@ -30,6 +30,9 @@ interface RestaurantTable {
   area: string | null;
   capacity: number;
   status: string;
+  pos_x?: number | null;
+  pos_y?: number | null;
+  floor_plan_id?: string | null;
 }
 
 interface Product {
