@@ -103,14 +103,40 @@ export function POSInterface({ onClose, initialTableId }: POSInterfaceProps) {
 
   const fetchTables = async () => {
     if (!isRestaurant || !currentOrganization?.id) return;
-    const { data, error } = await (supabase as any)
-      .from('restaurant_tables')
-      .select('id, name, area, capacity, status')
-      .eq('organization_id', currentOrganization.id)
-      .eq('is_active', true)
-      .order('name');
+    const [{ data, error }, { data: planData }] = await Promise.all([
+      (supabase as any)
+        .from('restaurant_tables')
+        .select('id, name, area, capacity, status, pos_x, pos_y, floor_plan_id')
+        .eq('organization_id', currentOrganization.id)
+        .eq('is_active', true)
+        .order('name'),
+      (supabase as any)
+        .from('restaurant_floor_plans')
+        .select('id, name, image_url')
+        .eq('organization_id', currentOrganization.id)
+        .eq('is_active', true)
+        .order('created_at')
+        .limit(1),
+    ]);
     if (!error) setTables((data as RestaurantTable[]) || []);
+    setFloorPlan(planData?.[0] || null);
   };
+
+  const markUnitsSold = async (saleId: string) => {
+    const unitIds = Object.values(scannedUnits).flat();
+    if (unitIds.length === 0) return;
+    await supabase
+      .from('product_serial_units')
+      .update({
+        status: 'sold',
+        sale_id: saleId,
+        sold_at: new Date().toISOString(),
+        sale_return_id: null,
+        updated_by_name: currentUser?.displayName || null,
+      })
+      .in('id', unitIds);
+  };
+
 
   const selectTable = async (tableId: string) => {
     setSelectedTableId(tableId);
