@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { ContactForm } from '@/components/Contacts/ContactForm';
 import { useExportUtils } from '@/hooks/useExportUtils';
+import { FloorPlanView } from '@/components/Restaurant/FloorPlanView';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { validateStockForSale, logAuditEvent } from '@/lib/auditService';
 
