@@ -78,7 +78,8 @@ export function BusinessOwnersManagement() {
             user_id,
             first_name,
             last_name,
-            display_name
+            display_name,
+            email
           `)
           .in('user_id', userIds);
 
