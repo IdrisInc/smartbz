@@ -215,7 +215,7 @@ export function BusinessOwnersManagement() {
           break;
       }
 
-      if (actionType !== 'monitor') {
+      if (actionType !== 'monitor' && selectedOwner.organization_id) {
         const { error: updateError } = await supabase
           .from('organizations')
           .update({ 
