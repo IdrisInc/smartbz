@@ -97,7 +97,7 @@ export function BusinessOwnersManagement() {
         
         return {
           id: profile?.id || membership.user_id,
-          email: profile?.display_name || 'No email',
+          email: profile?.email || profile?.display_name || 'No email',
           first_name: profile?.first_name,
           last_name: profile?.last_name,
           organization_name: organization?.name,
