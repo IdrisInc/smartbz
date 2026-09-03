@@ -78,7 +78,8 @@ export function BusinessOwnersManagement() {
             user_id,
             first_name,
             last_name,
-            display_name
+            display_name,
+            email
           `)
           .in('user_id', userIds);
 
@@ -96,7 +97,7 @@ export function BusinessOwnersManagement() {
         
         return {
           id: profile?.id || membership.user_id,
-          email: profile?.display_name || 'No email',
+          email: profile?.email || profile?.display_name || 'No email',
           first_name: profile?.first_name,
           last_name: profile?.last_name,
           organization_name: organization?.name,
@@ -127,6 +128,34 @@ export function BusinessOwnersManagement() {
           joined_at: org.created_at,
         } as any);
       });
+
+      // Include newly signed-up users who have not registered a business yet
+      const { data: allMemberships } = await supabase
+        .from('organization_memberships')
+        .select('user_id');
+      const membersSet = new Set((allMemberships || []).map((m: any) => m.user_id));
+
+      const { data: allProfiles } = await supabase
+        .from('profiles')
+        .select('id, user_id, first_name, last_name, display_name, email, role, created_at');
+
+      (allProfiles || []).forEach((p: any) => {
+        if (membersSet.has(p.user_id)) return;
+        if (p.role === 'super_admin') return;
+        owners.push({
+          id: p.user_id,
+          email: p.email || p.display_name || 'No email',
+          first_name: p.first_name,
+          last_name: p.last_name,
+          organization_name: 'No business registered',
+          organization_id: undefined,
+          organization_status: 'pending',
+          subscription_plan: undefined,
+          joined_at: p.created_at,
+        } as any);
+      });
+
+
 
       // Pending approvals first
       owners.sort((a, b) => {
@@ -186,7 +215,7 @@ export function BusinessOwnersManagement() {
           break;
       }
 
-      if (actionType !== 'monitor') {
+      if (actionType !== 'monitor' && selectedOwner.organization_id) {
         const { error: updateError } = await supabase
           .from('organizations')
           .update({ 
