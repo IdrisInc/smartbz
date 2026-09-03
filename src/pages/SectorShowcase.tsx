@@ -9,7 +9,7 @@ import {
   Hammer, Wheat, DollarSign, BarChart3, Briefcase, Building2,
   Play, Sparkles, ArrowLeft, CheckCircle2, Calendar, Users,
   TrendingUp, Activity, Target, FileText, Settings, Shield,
-  Clock, MapPin, Wrench, Leaf, Music, BookOpen
+  Clock, MapPin, Wrench, Leaf, Music, BookOpen, Utensils
 } from 'lucide-react';
 import { sectorConfigurations, SectorConfiguration } from '@/config/sectorConfigurations';
 import { SectorModulePreview } from '@/components/Sectors/SectorModulePreview';
@@ -22,6 +22,7 @@ const sectorIcons: Record<string, React.ElementType> = {
   hospitality: Home, real_estate: Building2, construction: Hammer,
   transportation: Truck, agriculture: Wheat, entertainment: Play,
   consulting: Briefcase, non_profit: Heart, other: Sparkles,
+  restaurant: Utensils,
 };
 
 const sectorColors: Record<string, string> = {
@@ -39,6 +40,7 @@ const sectorColors: Record<string, string> = {
   entertainment: 'bg-rose-500/10 text-rose-700 border-rose-200',
   consulting: 'bg-slate-500/10 text-slate-700 border-slate-200',
   non_profit: 'bg-sky-500/10 text-sky-700 border-sky-200',
+  restaurant: 'bg-fuchsia-500/10 text-fuchsia-700 border-fuchsia-200',
   other: 'bg-violet-500/10 text-violet-700 border-violet-200',
 };
 
@@ -57,6 +59,7 @@ const sectorDescriptions: Record<string, string> = {
   entertainment: 'Media, events, leisure',
   consulting: 'Professional services',
   non_profit: 'NGOs, charities',
+  restaurant: 'Restaurants, cafes, bars',
   other: 'Any other business type',
 };
 
