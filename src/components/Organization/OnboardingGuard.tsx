@@ -20,7 +20,12 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && !orgLoading && onboardingChecked && user && needsOnboarding) {
+    if (loading || orgLoading || !onboardingChecked) return;
+    if (!user) {
+      navigate('/auth', { replace: true });
+      return;
+    }
+    if (needsOnboarding) {
       navigate('/onboarding', { replace: true });
     }
   }, [needsOnboarding, onboardingChecked, user, loading, orgLoading, navigate]);
