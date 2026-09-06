@@ -21,7 +21,7 @@ export function MaintenanceGuard({ children }: { children: React.ReactNode }) {
           .from('system_settings')
           .select('setting_value')
           .eq('setting_key', 'maintenance_mode')
-          .single();
+          .maybeSingle();
 
         if (data) {
           setMaintenance(data.setting_value as unknown as MaintenanceConfig);
