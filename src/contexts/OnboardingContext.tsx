@@ -20,7 +20,8 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
 
   const checkOnboardingStatus = async () => {
     if (!user) {
-      setOnboardingChecked(false);
+      setNeedsOnboarding(false);
+      setOnboardingChecked(true);
       return;
     }
     if (loading) return; // wait until orgs finished loading
