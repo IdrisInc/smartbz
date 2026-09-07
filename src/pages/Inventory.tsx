@@ -592,10 +592,15 @@ export default function Inventory() {
             <ClipboardList className="h-4 w-4 mr-2" />
             Quotations
           </TabsTrigger>
+          <TabsTrigger value="devices">
+            <Smartphone className="h-4 w-4 mr-2" />
+            Devices
+          </TabsTrigger>
           <TabsTrigger value="audit-log">
             <History className="h-4 w-4 mr-2" />
             Audit Log
           </TabsTrigger>
+
         </TabsList>
         </div>
 
