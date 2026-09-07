@@ -96,15 +96,6 @@ serve(async (req) => {
       }
 
       if (!isAdmin) {
-        const { data: adminProfile } = await supabaseAdmin
-          .from('profiles')
-          .select('role')
-          .eq('user_id', requestingUser.id)
-          .maybeSingle()
-        if (adminProfile?.role === 'super_admin') isAdmin = true
-      }
-
-      if (!isAdmin) {
         throw new Error('Only admins can perform admin registration')
       }
     }
