@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Package, TrendingDown, AlertTriangle, Loader2, FileText, RotateCcw, ClipboardList, Check, Eye, ArrowRight, History, Printer, Download, Mail, Settings2, Ban, Trash2, ScanLine } from 'lucide-react';
+import { Plus, Search, Package, TrendingDown, AlertTriangle, Loader2, FileText, RotateCcw, ClipboardList, Check, Eye, ArrowRight, History, Printer, Download, Mail, Settings2, Ban, Trash2, ScanLine, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,7 @@ import { StockByStatusCard } from '@/components/Inventory/StockByStatusCard';
 import { StockAdjustmentsTable } from '@/components/Inventory/StockAdjustmentsTable';
 import { StockAuditLog } from '@/components/Inventory/StockAuditLog';
 import { ReceiveUnitsDialog } from '@/components/Inventory/ReceiveUnitsDialog';
+import { SerializedUnitsDashboard } from '@/components/Inventory/SerializedUnitsDashboard';
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { supabase } from '@/integrations/supabase/client';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -705,6 +706,11 @@ export default function Inventory() {
         {/* Stock by Status Tab */}
         <TabsContent value="stock-status" className="space-y-4">
           <StockByStatusCard />
+        </TabsContent>
+
+        {/* Device / serialized units tracking */}
+        <TabsContent value="devices" className="space-y-4">
+          <SerializedUnitsDashboard />
         </TabsContent>
 
         {/* Stock Adjustments Tab */}
