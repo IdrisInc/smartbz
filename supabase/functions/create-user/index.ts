@@ -80,13 +80,22 @@ serve(async (req) => {
     }
     } else {
       // For admin registration, verify the requesting user is an admin using service role
-      const { data: adminMemberships } = await supabaseAdmin
-        .from('organization_memberships')
-        .select('role')
-        .eq('user_id', requestingUser.id)
-        .eq('role', 'admin')
+      let isAdmin = false
 
-      if (!adminMemberships || adminMemberships.length === 0) {
+      const { data: superAdminCheck } = await supabaseAdmin
+        .rpc('is_super_admin', { check_user_id: requestingUser.id })
+      if (superAdminCheck === true) isAdmin = true
+
+      if (!isAdmin) {
+        const { data: adminMemberships } = await supabaseAdmin
+          .from('organization_memberships')
+          .select('role')
+          .eq('user_id', requestingUser.id)
+          .in('role', ['super_admin', 'admin', 'admin_staff'])
+        if (adminMemberships && adminMemberships.length > 0) isAdmin = true
+      }
+
+      if (!isAdmin) {
         throw new Error('Only admins can perform admin registration')
       }
     }

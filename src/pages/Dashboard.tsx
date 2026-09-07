@@ -6,6 +6,7 @@ import { SuperAdminDashboard } from '@/components/SuperAdmin/EnhancedSuperAdminD
 import { BusinessOwnerDashboard as BODashboard } from '@/components/BusinessOwner/BusinessOwnerDashboard';
 import { StaffDashboard as StaffDash } from '@/components/Staff/StaffDashboard';
 import { SectorDashboard } from '@/components/Sectors/SectorDashboard';
+import { SerializedUnitsDashboard } from '@/components/Inventory/SerializedUnitsDashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -275,6 +276,7 @@ export default function Dashboard() {
           <div className="space-y-6">
             <SectorDashboard />
             <BODashboard />
+            <SerializedUnitsDashboard />
           </div>
         );
       case 'manager':
@@ -282,6 +284,7 @@ export default function Dashboard() {
           <div className="space-y-6">
             <SectorDashboard />
             <StaffDash />
+            <SerializedUnitsDashboard />
           </div>
         );
       case 'admin_staff':
