@@ -161,18 +161,15 @@ export function BusinessOwnersManagement() {
       });
 
       // Include newly signed-up users who have not registered a business yet
-      const { data: allMemberships } = await supabase
-        .from('organization_memberships')
-        .select('user_id');
-      const membersSet = new Set((allMemberships || []).map((m: any) => m.user_id));
+      const membersSet = new Set((allMembershipRows || []).map((m: any) => m.user_id));
 
       const { data: allProfiles } = await supabase
         .from('profiles')
-        .select('id, user_id, first_name, last_name, display_name, email, role, created_at');
+        .select('id, user_id, first_name, last_name, display_name, email, created_at');
 
       (allProfiles || []).forEach((p: any) => {
         if (membersSet.has(p.user_id)) return;
-        if (p.role === 'super_admin') return;
+        if (superAdminIds.has(p.user_id)) return;
         owners.push({
           id: p.user_id,
           email: p.email || p.display_name || 'No email',
