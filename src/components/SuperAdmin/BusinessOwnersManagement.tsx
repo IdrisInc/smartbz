@@ -122,12 +122,15 @@ export function BusinessOwnersManagement() {
       const owners = membershipData?.map((membership: any) => {
         const organization = orgData?.find(org => org.id === membership.organization_id);
         const profile = profileData?.find((p: any) => p.user_id === membership.user_id);
-        
+        const isPlatformAdmin = superAdminIds.has(membership.user_id);
+
         return {
           id: profile?.id || membership.user_id,
-          email: profile?.email || profile?.display_name || 'No email',
-          first_name: profile?.first_name,
-          last_name: profile?.last_name,
+          email: isPlatformAdmin
+            ? 'Created by platform admin — no owner account yet'
+            : profile?.email || profile?.display_name || 'No email',
+          first_name: isPlatformAdmin ? 'No registered owner' : profile?.first_name,
+          last_name: isPlatformAdmin ? '' : profile?.last_name,
           organization_name: organization?.name,
           organization_id: membership.organization_id,
           organization_status: organization?.status,
