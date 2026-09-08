@@ -258,6 +258,8 @@ function CashierDashboard() {
 
 export default function Dashboard() {
   const { userRole, loading } = useUserRole();
+  const { currentOrganization } = useOrganization();
+  const isRestaurant = currentOrganization?.business_sector === 'restaurant';
 
   if (loading) {
     return (
