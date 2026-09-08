@@ -279,7 +279,7 @@ export default function Dashboard() {
           <div className="space-y-6">
             <SectorDashboard />
             <BODashboard />
-            <SerializedUnitsDashboard />
+            {!isRestaurant && <SerializedUnitsDashboard />}
           </div>
         );
       case 'manager':
@@ -287,7 +287,7 @@ export default function Dashboard() {
           <div className="space-y-6">
             <SectorDashboard />
             <StaffDash />
-            <SerializedUnitsDashboard />
+            {!isRestaurant && <SerializedUnitsDashboard />}
           </div>
         );
       case 'admin_staff':
