@@ -183,6 +183,23 @@ const sectorModules: Record<string, { title: string; description: string; icon: 
       { label: 'System Uptime', value: '99.9%', progress: 99 },
     ]},
   ],
+  restaurant: [
+    { title: 'Table Service', description: 'Dining tables, sections & live status', icon: Users, items: [
+      { label: 'Tables Occupied', value: '--' },
+      { label: 'Covers Served Today', value: '--' },
+      { label: 'Table Turnover', value: '--' },
+    ]},
+    { title: 'Kitchen Orders', description: 'Dine-in, takeaway & delivery order flow', icon: Clock, items: [
+      { label: 'Orders In Kitchen', value: '--' },
+      { label: 'Average Prep Time', value: '--' },
+      { label: 'Orders Served', value: '--' },
+    ]},
+    { title: 'Menu & Billing', description: 'Menu items, pricing and bill settlement', icon: ShoppingCart, items: [
+      { label: 'Menu Items', value: '--' },
+      { label: 'Average Ticket', value: '--' },
+      { label: 'Bills Settled Today', value: '--' },
+    ]},
+  ],
   other: [
     { title: 'Business Overview', description: 'General business metrics', icon: BarChart3, items: [
       { label: 'Total Revenue', value: '$125K' },

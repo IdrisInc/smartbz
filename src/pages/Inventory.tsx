@@ -593,10 +593,12 @@ export default function Inventory() {
             <ClipboardList className="h-4 w-4 mr-2" />
             Quotations
           </TabsTrigger>
-          <TabsTrigger value="devices">
-            <Smartphone className="h-4 w-4 mr-2" />
-            Devices
-          </TabsTrigger>
+          {currentOrganization?.business_sector !== 'restaurant' && (
+            <TabsTrigger value="devices">
+              <Smartphone className="h-4 w-4 mr-2" />
+              Devices
+            </TabsTrigger>
+          )}
           <TabsTrigger value="audit-log">
             <History className="h-4 w-4 mr-2" />
             Audit Log
@@ -709,9 +711,11 @@ export default function Inventory() {
         </TabsContent>
 
         {/* Device / serialized units tracking */}
-        <TabsContent value="devices" className="space-y-4">
-          <SerializedUnitsDashboard />
-        </TabsContent>
+        {currentOrganization?.business_sector !== 'restaurant' && (
+          <TabsContent value="devices" className="space-y-4">
+            <SerializedUnitsDashboard />
+          </TabsContent>
+        )}
 
         {/* Stock Adjustments Tab */}
         <TabsContent value="adjustments" className="space-y-4">

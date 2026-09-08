@@ -40,18 +40,46 @@ export function BusinessOwnersManagement() {
 
   const loadBusinessOwners = async () => {
     try {
-      // Get organization memberships for business owners
-      const { data: membershipData, error: membershipError } = await supabase
+      // Get all memberships so we can tell platform super admins apart from real owners
+      const { data: allMembershipRows, error: membershipError } = await supabase
         .from('organization_memberships')
         .select(`
           user_id,
           organization_id,
           role,
           joined_at
-        `)
-        .eq('role', 'business_owner');
+        `);
 
       if (membershipError) throw membershipError;
+
+      // Any user holding a super_admin membership anywhere is a platform admin, not a business owner
+      const superAdminIds = new Set(
+        (allMembershipRows || []).filter((m: any) => m.role === 'super_admin').map((m: any) => m.user_id),
+      );
+
+      // Pick one owner per organization: prefer the actually registered (non super admin) owner
+      const ownerByOrg = new Map<string, any>();
+      (allMembershipRows || [])
+        .filter((m: any) => m.role === 'business_owner')
+        .forEach((m: any) => {
+          const existing = ownerByOrg.get(m.organization_id);
+          if (!existing) {
+            ownerByOrg.set(m.organization_id, m);
+            return;
+          }
+          const existingIsAdmin = superAdminIds.has(existing.user_id);
+          const candidateIsAdmin = superAdminIds.has(m.user_id);
+          if (existingIsAdmin && !candidateIsAdmin) {
+            ownerByOrg.set(m.organization_id, m);
+            return;
+          }
+          if (existingIsAdmin === candidateIsAdmin && new Date(m.joined_at) < new Date(existing.joined_at)) {
+            ownerByOrg.set(m.organization_id, m);
+          }
+        });
+
+      const membershipData = Array.from(ownerByOrg.values());
+
 
       // Get organizations for those memberships
       const orgIds = membershipData?.map(m => m.organization_id) || [];
@@ -94,12 +122,15 @@ export function BusinessOwnersManagement() {
       const owners = membershipData?.map((membership: any) => {
         const organization = orgData?.find(org => org.id === membership.organization_id);
         const profile = profileData?.find((p: any) => p.user_id === membership.user_id);
-        
+        const isPlatformAdmin = superAdminIds.has(membership.user_id);
+
         return {
           id: profile?.id || membership.user_id,
-          email: profile?.email || profile?.display_name || 'No email',
-          first_name: profile?.first_name,
-          last_name: profile?.last_name,
+          email: isPlatformAdmin
+            ? 'Created by platform admin — no owner account yet'
+            : profile?.email || profile?.display_name || 'No email',
+          first_name: isPlatformAdmin ? 'No registered owner' : profile?.first_name,
+          last_name: isPlatformAdmin ? '' : profile?.last_name,
           organization_name: organization?.name,
           organization_id: membership.organization_id,
           organization_status: organization?.status,
@@ -130,18 +161,15 @@ export function BusinessOwnersManagement() {
       });
 
       // Include newly signed-up users who have not registered a business yet
-      const { data: allMemberships } = await supabase
-        .from('organization_memberships')
-        .select('user_id');
-      const membersSet = new Set((allMemberships || []).map((m: any) => m.user_id));
+      const membersSet = new Set((allMembershipRows || []).map((m: any) => m.user_id));
 
       const { data: allProfiles } = await supabase
         .from('profiles')
-        .select('id, user_id, first_name, last_name, display_name, email, role, created_at');
+        .select('id, user_id, first_name, last_name, display_name, email, created_at');
 
       (allProfiles || []).forEach((p: any) => {
         if (membersSet.has(p.user_id)) return;
-        if (p.role === 'super_admin') return;
+        if (superAdminIds.has(p.user_id)) return;
         owners.push({
           id: p.user_id,
           email: p.email || p.display_name || 'No email',

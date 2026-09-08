@@ -2,6 +2,7 @@
 import React from 'react';
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { SuperAdminDashboard } from '@/components/SuperAdmin/EnhancedSuperAdminDashboard';
 import { BusinessOwnerDashboard as BODashboard } from '@/components/BusinessOwner/BusinessOwnerDashboard';
 import { StaffDashboard as StaffDash } from '@/components/Staff/StaffDashboard';
@@ -258,6 +259,8 @@ function CashierDashboard() {
 
 export default function Dashboard() {
   const { userRole, loading } = useUserRole();
+  const { currentOrganization } = useOrganization();
+  const isRestaurant = currentOrganization?.business_sector === 'restaurant';
 
   if (loading) {
     return (
@@ -276,7 +279,7 @@ export default function Dashboard() {
           <div className="space-y-6">
             <SectorDashboard />
             <BODashboard />
-            <SerializedUnitsDashboard />
+            {!isRestaurant && <SerializedUnitsDashboard />}
           </div>
         );
       case 'manager':
@@ -284,7 +287,7 @@ export default function Dashboard() {
           <div className="space-y-6">
             <SectorDashboard />
             <StaffDash />
-            <SerializedUnitsDashboard />
+            {!isRestaurant && <SerializedUnitsDashboard />}
           </div>
         );
       case 'admin_staff':
