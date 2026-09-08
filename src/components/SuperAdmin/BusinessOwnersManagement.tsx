@@ -40,18 +40,46 @@ export function BusinessOwnersManagement() {
 
   const loadBusinessOwners = async () => {
     try {
-      // Get organization memberships for business owners
-      const { data: membershipData, error: membershipError } = await supabase
+      // Get all memberships so we can tell platform super admins apart from real owners
+      const { data: allMembershipRows, error: membershipError } = await supabase
         .from('organization_memberships')
         .select(`
           user_id,
           organization_id,
           role,
           joined_at
-        `)
-        .eq('role', 'business_owner');
+        `);
 
       if (membershipError) throw membershipError;
+
+      // Any user holding a super_admin membership anywhere is a platform admin, not a business owner
+      const superAdminIds = new Set(
+        (allMembershipRows || []).filter((m: any) => m.role === 'super_admin').map((m: any) => m.user_id),
+      );
+
+      // Pick one owner per organization: prefer the actually registered (non super admin) owner
+      const ownerByOrg = new Map<string, any>();
+      (allMembershipRows || [])
+        .filter((m: any) => m.role === 'business_owner')
+        .forEach((m: any) => {
+          const existing = ownerByOrg.get(m.organization_id);
+          if (!existing) {
+            ownerByOrg.set(m.organization_id, m);
+            return;
+          }
+          const existingIsAdmin = superAdminIds.has(existing.user_id);
+          const candidateIsAdmin = superAdminIds.has(m.user_id);
+          if (existingIsAdmin && !candidateIsAdmin) {
+            ownerByOrg.set(m.organization_id, m);
+            return;
+          }
+          if (existingIsAdmin === candidateIsAdmin && new Date(m.joined_at) < new Date(existing.joined_at)) {
+            ownerByOrg.set(m.organization_id, m);
+          }
+        });
+
+      const membershipData = Array.from(ownerByOrg.values());
+
 
       // Get organizations for those memberships
       const orgIds = membershipData?.map(m => m.organization_id) || [];
