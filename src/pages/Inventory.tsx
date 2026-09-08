@@ -711,9 +711,11 @@ export default function Inventory() {
         </TabsContent>
 
         {/* Device / serialized units tracking */}
-        <TabsContent value="devices" className="space-y-4">
-          <SerializedUnitsDashboard />
-        </TabsContent>
+        {currentOrganization?.business_sector !== 'restaurant' && (
+          <TabsContent value="devices" className="space-y-4">
+            <SerializedUnitsDashboard />
+          </TabsContent>
+        )}
 
         {/* Stock Adjustments Tab */}
         <TabsContent value="adjustments" className="space-y-4">
