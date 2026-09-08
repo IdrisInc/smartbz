@@ -1123,6 +1123,107 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_categories: {
+        Row: {
+          created_at: string
+          created_by_name: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          organization_id: string
+          sort_order: number
+          updated_at: string
+          updated_by_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by_name?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          organization_id: string
+          sort_order?: number
+          updated_at?: string
+          updated_by_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by_name?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          sort_order?: number
+          updated_at?: string
+          updated_by_name?: string | null
+        }
+        Relationships: []
+      }
+      menu_items: {
+        Row: {
+          category_id: string | null
+          cost_price: number | null
+          created_at: string
+          created_by_name: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_available: boolean
+          name: string
+          organization_id: string
+          prep_time_minutes: number | null
+          price: number
+          updated_at: string
+          updated_by_name: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          cost_price?: number | null
+          created_at?: string
+          created_by_name?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_available?: boolean
+          name: string
+          organization_id: string
+          prep_time_minutes?: number | null
+          price?: number
+          updated_at?: string
+          updated_by_name?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          cost_price?: number | null
+          created_at?: string
+          created_by_name?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_available?: boolean
+          name?: string
+          organization_id?: string
+          prep_time_minutes?: number | null
+          price?: number
+          updated_at?: string
+          updated_by_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "menu_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       module_configs: {
         Row: {
           basic_enabled: boolean | null
@@ -2552,6 +2653,143 @@ export type Database = {
           updated_by_name?: string | null
         }
         Relationships: []
+      }
+      restaurant_order_items: {
+        Row: {
+          created_at: string
+          created_by_name: string | null
+          id: string
+          item_name: string
+          menu_item_id: string | null
+          notes: string | null
+          order_id: string
+          organization_id: string
+          quantity: number
+          status: string
+          total_price: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_name?: string | null
+          id?: string
+          item_name: string
+          menu_item_id?: string | null
+          notes?: string | null
+          order_id: string
+          organization_id: string
+          quantity?: number
+          status?: string
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_name?: string | null
+          id?: string
+          item_name?: string
+          menu_item_id?: string | null
+          notes?: string | null
+          order_id?: string
+          organization_id?: string
+          quantity?: number
+          status?: string
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_order_items_menu_item_id_fkey"
+            columns: ["menu_item_id"]
+            isOneToOne: false
+            referencedRelation: "menu_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_orders: {
+        Row: {
+          branch_id: string | null
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          customer_name: string | null
+          discount_amount: number
+          id: string
+          notes: string | null
+          order_number: string
+          order_type: string
+          organization_id: string
+          sale_id: string | null
+          status: string
+          subtotal: number
+          table_id: string | null
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+          updated_by_name: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_name?: string | null
+          discount_amount?: number
+          id?: string
+          notes?: string | null
+          order_number: string
+          order_type?: string
+          organization_id: string
+          sale_id?: string | null
+          status?: string
+          subtotal?: number
+          table_id?: string | null
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          updated_by_name?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          customer_name?: string | null
+          discount_amount?: number
+          id?: string
+          notes?: string | null
+          order_number?: string
+          order_type?: string
+          organization_id?: string
+          sale_id?: string | null
+          status?: string
+          subtotal?: number
+          table_id?: string | null
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          updated_by_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_orders_table_id_fkey"
+            columns: ["table_id"]
+            isOneToOne: false
+            referencedRelation: "restaurant_tables"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       restaurant_tables: {
         Row: {
