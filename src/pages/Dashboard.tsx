@@ -2,6 +2,7 @@
 import React from 'react';
 import { ProtectedRoute } from '@/components/Auth/ProtectedRoute';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { SuperAdminDashboard } from '@/components/SuperAdmin/EnhancedSuperAdminDashboard';
 import { BusinessOwnerDashboard as BODashboard } from '@/components/BusinessOwner/BusinessOwnerDashboard';
 import { StaffDashboard as StaffDash } from '@/components/Staff/StaffDashboard';
